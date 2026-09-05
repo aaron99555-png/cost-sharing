@@ -335,6 +335,14 @@ input:focus,select:focus{border-color:#d58a95;box-shadow:0 0 0 3px rgba(196,68,8
 }
 </style>
 
+
+<style>
+#cloudStatus{min-width:118px;text-align:center}
+#cloudStatus.cloud-ok{background:rgba(255,255,255,.18);color:#fff}
+#cloudStatus.cloud-error{background:rgba(100,12,26,.34);color:#fff}
+#cloudStatus.cloud-sync{background:rgba(255,255,255,.10);color:#fff}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -344,6 +352,7 @@ input:focus,select:focus{border-color:#d58a95;box-shadow:0 0 0 3px rgba(196,68,8
       <p>收款進度、未繳名單與金額狀態，一頁掌握</p>
     </div>
     <div class="actions">
+      <span id="cloudStatus" class="btn cloud-sync" style="cursor:default">☁️ 雲端連線中</span>
       <button class="btn" id="adminBtn">🔐 管理者登入</button>
       <button class="btn" id="logoutBtn" style="display:none">登出管理</button>
     </div>
@@ -369,6 +378,13 @@ input:focus,select:focus{border-color:#d58a95;box-shadow:0 0 0 3px rgba(196,68,8
 
   <section class="card admin-panel" id="adminPanel">
     <div class="card-title"><h2>管理者設定</h2><span class="pill paid">管理模式</span></div>
+    <div class="summary-line" style="margin-bottom:14px">
+      <span class="summary-chip">新增人員</span>
+      <span class="summary-chip">刪除人員</span>
+      <span class="summary-chip">名單匯入</span>
+      <span class="summary-chip">資料匯入</span>
+      <span class="summary-chip">Excel 匯出</span>
+    </div>
     <div class="admin-grid">
       <div class="field"><label>專案名稱</label><input id="projectName" maxlength="40" placeholder="例如：王老師年度訂閱收款"></div>
       <div class="field"><label>總金額</label><input id="totalAmount" type="number" min="0" step="1" placeholder="例如 168000"></div>
@@ -377,10 +393,12 @@ input:focus,select:focus{border-color:#d58a95;box-shadow:0 0 0 3px rgba(196,68,8
       <div class="field"><label>操作</label><button class="btn primary" id="addPersonBtn">＋ 新增人員</button></div>
     </div>
     <div class="tools">
-      <button class="btn" id="importNamesBtn">匯入人員名單</button>
-      <button class="btn" id="importDetailBtn">匯入匯款明細</button>
-      <button class="btn" id="exportBtn">匯出 Excel</button>
+      <button class="btn" id="importNamesBtn">匯入人員名單 Excel</button>
+      <button class="btn" id="importDetailBtn">匯入人員＋匯款資料</button>
+      <button class="btn" id="exportBtn">匯出完整資料 Excel</button>
+      <button class="btn" id="exportPeopleBtn">匯出人員名單</button>
       <button class="btn" id="templateBtn">下載 Excel 範本</button>
+      <button class="btn" id="cloudSyncBtn">立即同步雲端</button>
       <button class="btn" id="backupBtn">備份 JSON</button>
       <button class="btn" id="restoreBtn">還原 JSON</button>
       <button class="btn danger" id="deleteSelectedBtn">刪除勾選</button>
@@ -388,7 +406,9 @@ input:focus,select:focus{border-color:#d58a95;box-shadow:0 0 0 3px rgba(196,68,8
       <input type="file" id="detailFile" accept=".xlsx,.xls,.csv" hidden>
       <input type="file" id="restoreFile" accept=".json" hidden>
     </div>
-    <p class="note">管理者密碼：16888。匯入名單至少要有「姓名」欄；明細可包含「姓名、帳號後五碼、匯款金額、備註」。相同姓名會更新，不會重複新增。</p>
+    <div class="note" style="margin-top:12px;padding:10px 12px;background:#fff6f7;border:1px solid #f0d9dd;border-radius:10px">雲端節點：<b>paymentRegistry</b>｜資料庫：<b>analyst-277bd-default-rtdb.firebaseio.com</b></div>
+    <div class="note" style="margin-top:8px">資料同步：管理者新增、修改、刪除與資料更新後會自動儲存 Firebase；其他裝置開啟後會讀取雲端資料，每 5 秒檢查一次，切回頁面前景時也會立即同步。網路中斷時保留 localStorage 本機資料。</div>
+    <p class="note">管理者權限：可新增／刪除人員、批次刪除、匯入人員名單 Excel、匯入匯款資料、匯出完整人員與匯款明細。一般使用者僅可登記或修改匯款資訊。管理者密碼：16888。</p>
   </section>
 
   <section class="card">
@@ -450,6 +470,12 @@ input:focus,select:focus{border-color:#d58a95;box-shadow:0 0 0 3px rgba(196,68,8
 
 <script>
 const STORAGE_KEY='payment_registry_v2';
+const FIREBASE_BASE='https://analyst-277bd-default-rtdb.firebaseio.com';
+const FIREBASE_PATH='paymentRegistry';
+const FIREBASE_URL=`${FIREBASE_BASE}/${FIREBASE_PATH}.json`;
+let firebaseReady=false;
+let firebaseSyncTimer=null;
+let isApplyingRemote=false;
 const LEGACY_KEY='payment_registry_v1';
 const ADMIN_PASSWORD='16888';
 const clone=o=>JSON.parse(JSON.stringify(o));
@@ -478,7 +504,111 @@ const statusClass=p=>paid(p)?'paid':'unpaid';
 const fmtTime=v=>v?new Date(v).toLocaleString('zh-TW',{hour12:false}):'—';
 
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
-function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render()}
+function setCloudStatus(type,msg){
+  const el=$('#cloudStatus');
+  if(!el)return;
+  el.classList.remove('cloud-ok','cloud-error','cloud-sync');
+  el.classList.add(type==='ok'?'cloud-ok':type==='error'?'cloud-error':'cloud-sync');
+  el.textContent=msg;
+}
+
+function cleanStateForCloud(data){
+  const copy=JSON.parse(JSON.stringify(data));
+  copy.people=(copy.people||[]).map(({selected,...p})=>p);
+  return copy;
+}
+
+function firebaseErrorText(err,status){
+  const msg=String(err?.message||err||'');
+  if(status===401||status===403||/permission|denied/i.test(msg)){
+    return '⛔ Firebase 權限被拒絕';
+  }
+  if(/failed to fetch|network/i.test(msg)){
+    return '⚠️ 無法連線 Firebase';
+  }
+  return '⚠️ 離線使用本機資料';
+}
+
+async function loadFromFirebase(){
+  setCloudStatus('sync','☁️ 雲端讀取中');
+  try{
+    const res=await fetch(FIREBASE_URL,{cache:'no-store'});
+    if(!res.ok){
+      const body=await res.text().catch(()=> '');
+      const err=new Error(body || `HTTP ${res.status}`);
+      err.status=res.status;
+      throw err;
+    }
+    const remote=await res.json();
+
+    if(remote && typeof remote==='object'){
+      isApplyingRemote=true;
+      state=remote;
+      state.settings ||= {totalAmount:0,shareCount:0,projectName:'收費匯款登記表'};
+      if(!state.settings.projectName)state.settings.projectName='收費匯款登記表';
+      state.people ||= [];
+      state.people=state.people.map(p=>({selected:false,...p}));
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      isApplyingRemote=false;
+      render();
+      firebaseReady=true;
+      setCloudStatus('ok','☁️ 雲端已同步');
+    }else{
+      // 雲端目前沒有資料：保留本機，不自動用空白狀態覆蓋 Firebase。
+      firebaseReady=true;
+      setCloudStatus('ok','☁️ 雲端尚無資料');
+    }
+  }catch(err){
+    console.error('Firebase load error:',err);
+    firebaseReady=false;
+    setCloudStatus('error',firebaseErrorText(err,err.status));
+    render();
+  }
+}
+
+async function syncToFirebase(force=false){
+  if(isApplyingRemote)return;
+
+  const doSync=async()=>{
+    setCloudStatus('sync','☁️ 同步中');
+    try{
+      const payload=cleanStateForCloud(state);
+      payload.modifiedAt=Date.now();
+      const res=await fetch(FIREBASE_URL,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+      if(!res.ok){
+        const body=await res.text().catch(()=> '');
+        const err=new Error(body || `HTTP ${res.status}`);
+        err.status=res.status;
+        throw err;
+      }
+      firebaseReady=true;
+      setCloudStatus('ok','☁️ 雲端已同步');
+    }catch(err){
+      console.error('Firebase sync error:',err);
+      firebaseReady=false;
+      setCloudStatus('error',firebaseErrorText(err,err.status));
+      if(isAdmin){
+        toast(err.status===401||err.status===403?'Firebase Rules 尚未允許讀寫':'雲端同步失敗');
+      }
+    }
+  };
+
+  if(firebaseSyncTimer)clearTimeout(firebaseSyncTimer);
+  if(force)await doSync();
+  else firebaseSyncTimer=setTimeout(doSync,350);
+}
+
+function save(){
+  // 先寫入 localStorage，網路中斷時仍可正常保留資料
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+  render();
+  // 有網路時自動同步至 Firebase；失敗不影響本機資料
+  syncToFirebase();
+}
 
 function getRows(){
   const q=$('#search').value.trim().toLowerCase();
@@ -696,8 +826,23 @@ function exportExcel(template=false){
  XLSX.writeFile(wb,template?`${safeName}_匯入範本.xlsx`:`${safeName}_匯款明細.xlsx`);
 }
 $('#exportBtn').onclick=()=>isAdmin&&exportExcel(false);
+$('#exportPeopleBtn').onclick=()=>{
+ if(!isAdmin)return;
+ const rows=state.people.map((p,i)=>({'序號':i+1,'姓名':p.name}));
+ const ws=XLSX.utils.json_to_sheet(rows);
+ ws['!cols']=[{wch:8},{wch:20}];
+ const wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,ws,'人員名單');
+ const safeName=(state.settings.projectName||'收費匯款登記表').replace(/[\\/:*?"<>|]/g,'_');
+ XLSX.writeFile(wb,`${safeName}_人員名單.xlsx`);
+};
 $('#templateBtn').onclick=()=>isAdmin&&exportExcel(true);
 
+$('#cloudSyncBtn').onclick=async()=>{
+ if(!isAdmin)return;
+ await syncToFirebase(true);
+ if(firebaseReady)toast('雲端同步完成');
+};
 $('#backupBtn').onclick=()=>{
  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=((state.settings.projectName||'收費匯款登記表').replace(/[\\/:*?"<>|]/g,'_'))+'_備份.json';a.click();URL.revokeObjectURL(a.href);
@@ -715,6 +860,76 @@ $('#restoreFile').onchange=e=>{
 };
 
 render();
+loadFromFirebase();
+
+setInterval(async()=>{
+  try{
+    const res=await fetch(FIREBASE_URL,{cache:'no-store'});
+    if(!res.ok){
+      if(res.status===401||res.status===403)setCloudStatus('error','⛔ Firebase 權限被拒絕');
+      return;
+    }
+    const remote=await res.json();
+    if(!remote || typeof remote!=='object')return;
+
+    const localClean=cleanStateForCloud(state);
+    const remoteClean=cleanStateForCloud(remote);
+
+    if(JSON.stringify(remoteClean)!==JSON.stringify(localClean)){
+      isApplyingRemote=true;
+      state=remote;
+      state.settings ||= {totalAmount:0,shareCount:0,projectName:'收費匯款登記表'};
+      if(!state.settings.projectName)state.settings.projectName='收費匯款登記表';
+      state.people ||= [];
+      state.people=state.people.map(p=>({selected:false,...p}));
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      isApplyingRemote=false;
+      render();
+      setCloudStatus('ok','☁️ 已取得最新資料');
+    }
+  }catch(err){
+    console.warn('Firebase refresh failed:',err);
+  }
+},5000);
+
+
+// 回到前景／重新聚焦時，立即重新讀取 Firebase 最新資料
+async function syncWhenForeground(){
+  if(document.visibilityState && document.visibilityState!=='visible') return;
+  try{
+    const res=await fetch(FIREBASE_URL,{cache:'no-store'});
+    if(!res.ok){
+      if(res.status===401||res.status===403)setCloudStatus('error','⛔ Firebase 權限被拒絕');
+      return;
+    }
+    const remote=await res.json();
+    if(!remote || typeof remote!=='object')return;
+
+    const localClean=cleanStateForCloud(state);
+    const remoteClean=cleanStateForCloud(remote);
+
+    if(JSON.stringify(remoteClean)!==JSON.stringify(localClean)){
+      isApplyingRemote=true;
+      state=remote;
+      state.settings ||= {totalAmount:0,shareCount:0,projectName:'收費匯款登記表'};
+      if(!state.settings.projectName)state.settings.projectName='收費匯款登記表';
+      state.people ||= [];
+      state.people=state.people.map(p=>({selected:false,...p}));
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      isApplyingRemote=false;
+      render();
+    }
+    setCloudStatus('ok','☁️ 雲端已同步');
+  }catch(err){
+    console.warn('Foreground sync failed:',err);
+    setCloudStatus('error','⚠️ 離線使用本機資料');
+  }
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') syncWhenForeground(); });
+window.addEventListener('focus',syncWhenForeground);
+window.addEventListener('online',syncWhenForeground);
+window.addEventListener('offline',()=>setCloudStatus('error','⚠️ 離線使用本機資料'));
+
 </script>
 </body>
 </html>
