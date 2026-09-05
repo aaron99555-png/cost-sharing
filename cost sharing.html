@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1d4ed8">
+<title>收費匯款登記表｜優化版</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#718096;--line:#e6eaf0;
+  --blue:#2563eb;--blue2:#eff6ff;--green:#0f9f68;--green2:#ecfdf5;
+  --amber:#d18700;--amber2:#fff7e6;--red:#d93f54;--red2:#fff1f3;
+  --purple:#7c3aed;--purple2:#f5f3ff;--shadow:0 12px 34px rgba(20,36,65,.08);
+  --radius:18px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC",Arial,sans-serif}
+button,input,select{font:inherit}
+button{touch-action:manipulation}
+.wrap{max-width:1240px;margin:auto;padding:22px}
+.topbar{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px}
+.brand h1{font-size:29px;margin:0;font-weight:900;letter-spacing:-.4px}
+.brand p{margin:7px 0 0;color:var(--muted);font-size:14px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:0;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer;background:white;color:var(--text);box-shadow:0 0 0 1px var(--line) inset;transition:.15s}
+.btn:hover{transform:translateY(-1px)}
+.btn.primary{background:var(--blue);color:white;box-shadow:none}
+.btn.success{background:var(--green);color:white;box-shadow:none}
+.btn.danger{background:var(--red2);color:var(--red)}
+.btn.ghost{background:transparent}
+.btn.small{padding:7px 10px;border-radius:9px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.hero{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}
+.stat{background:var(--card);border-radius:var(--radius);padding:17px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.stat:after{content:"";position:absolute;right:-15px;bottom:-25px;width:74px;height:74px;border-radius:50%;background:rgba(37,99,235,.05)}
+.stat .label{font-size:12px;color:var(--muted);font-weight:700}
+.stat .value{font-size:27px;font-weight:900;margin-top:7px;font-variant-numeric:tabular-nums}
+.stat .sub{font-size:12px;color:var(--muted);margin-top:5px}
+.green{color:var(--green)}.amber{color:var(--amber)}.red{color:var(--red)}.blue{color:var(--blue)}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
+.card-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.card-title h2{margin:0;font-size:18px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:900}
+.paid{background:var(--green2);color:var(--green)}.unpaid{background:var(--amber2);color:var(--amber)}
+.short{background:var(--red2);color:var(--red)}.over{background:var(--purple2);color:var(--purple)}
+.progress-wrap{height:15px;border-radius:999px;background:#edf1f6;overflow:hidden}
+.progress{height:100%;width:0;background:linear-gradient(90deg,#10b981,#2563eb);transition:.25s}
+.progress-meta{display:flex;justify-content:space-between;gap:10px;margin-top:8px;color:var(--muted);font-size:13px}
+.admin-panel{display:none}.admin-panel.show{display:block}
+.admin-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:12px;color:var(--muted);font-weight:700}
+input,select{width:100%;border:1px solid var(--line);border-radius:12px;background:white;padding:11px 12px;outline:none;color:var(--text)}
+input:focus,select:focus{border-color:#8bb0ff;box-shadow:0 0 0 3px #edf4ff}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.toolbar{display:grid;grid-template-columns:1.4fr .8fr auto auto;gap:10px;align-items:end}
+.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.tab{border:0;border-radius:999px;padding:8px 12px;background:#f3f5f8;color:#556176;font-weight:800;cursor:pointer}
+.tab.active{background:var(--blue);color:#fff}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px}
+table{width:100%;border-collapse:collapse;min-width:980px}
+th,td{padding:12px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{position:sticky;top:0;background:#f8fafc;color:#5f6d82;font-size:12px;z-index:2;white-space:nowrap}
+tbody tr:hover{background:#fafcff}
+.name{font-weight:900}.money{font-weight:900;font-variant-numeric:tabular-nums}
+.muted{color:var(--muted);font-size:12px}
+.admin-cell{display:none}.is-admin .admin-cell{display:table-cell}.admin-only{display:none}.is-admin .admin-only{display:inline-flex}
+.check-col{width:38px}
+.warn-row{background:#fffafb}
+.summary-line{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.summary-chip{background:#f7f9fc;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;color:#526079}
+.mobile-list{display:none}
+.person-card{border:1px solid var(--line);border-radius:15px;padding:14px;margin-bottom:10px;background:#fff}
+.person-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.person-name{font-size:17px;font-weight:900}
+.person-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:11px 0}
+.person-item{background:#f8fafc;border-radius:11px;padding:9px}
+.person-item .k{font-size:11px;color:var(--muted)}.person-item .v{font-size:14px;font-weight:800;margin-top:3px}
+.person-actions{display:flex;gap:8px}.person-actions .btn{flex:1}
+.note{font-size:12px;color:var(--muted);line-height:1.65}
+.empty{text-align:center;padding:34px;color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(10,18,30,.48);display:none;align-items:center;justify-content:center;padding:18px;z-index:99}
+.modal.show{display:flex}
+.modal-box{width:min(450px,100%);background:white;border-radius:20px;padding:20px;box-shadow:0 28px 90px rgba(0,0,0,.22)}
+.modal h3{margin:0 0 14px;font-size:20px}.modal-row{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#172033;color:white;padding:11px 15px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:.2s;z-index:150;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:900px){
+  .hero{grid-template-columns:repeat(3,1fr)}
+  .admin-grid{grid-template-columns:1fr 1fr}
+  .toolbar{grid-template-columns:1fr 1fr}
+}
+@media(max-width:680px){
+  .wrap{padding:13px}.topbar{flex-direction:column}
+  .brand h1{font-size:24px}.actions{width:100%}.actions .btn{flex:1}
+  .hero{grid-template-columns:1fr 1fr;gap:9px}.stat{padding:14px}.stat .value{font-size:23px}
+  .toolbar{grid-template-columns:1fr}.admin-grid{grid-template-columns:1fr 1fr}
+  .desktop-table{display:none}.mobile-list{display:block}
+  .progress-meta{font-size:12px}
+  .card{padding:14px;border-radius:16px}
+}
+@media(max-width:420px){.admin-grid{grid-template-columns:1fr}.hero{grid-template-columns:1fr 1fr}}
+</style>
+
+<style>
+/* 2026 refined visual system */
+:root{
+  --bg:#f3f6fb;
+  --card:#ffffff;
+  --text:#17233c;
+  --muted:#78859a;
+  --line:#e7ebf2;
+  --blue:#315fbd;
+  --blue2:#edf3ff;
+  --green:#168365;
+  --green2:#eaf7f2;
+  --amber:#b77a18;
+  --amber2:#fff6e6;
+  --red:#c94e5e;
+  --red2:#fff0f2;
+  --shadow:0 8px 28px rgba(30,51,84,.07);
+  --radius:20px;
+}
+body{
+  background:
+    radial-gradient(circle at 8% -5%,rgba(49,95,189,.09),transparent 25%),
+    linear-gradient(180deg,#f8faff 0,#f3f6fb 240px);
+}
+.wrap{max-width:1220px;padding:28px 22px 42px}
+.topbar{
+  background:linear-gradient(135deg,#203c73 0%,#315fbd 100%);
+  color:#fff;border-radius:24px;padding:24px 26px;
+  box-shadow:0 14px 38px rgba(37,68,125,.18);
+  align-items:center;margin-bottom:20px;
+}
+.brand h1{font-size:28px;letter-spacing:.2px}
+.brand p{color:rgba(255,255,255,.76)}
+.topbar .btn{background:rgba(255,255,255,.13);color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;backdrop-filter:blur(8px)}
+.hero{gap:14px}
+.stat{
+  border:1px solid rgba(225,231,240,.85);
+  box-shadow:var(--shadow);
+  padding:19px 18px;
+}
+.stat:after{width:88px;height:88px;background:rgba(49,95,189,.045)}
+.stat .label{font-size:13px;letter-spacing:.2px}
+.stat .value{font-size:29px;margin-top:9px}
+.card{border:1px solid rgba(225,231,240,.9);box-shadow:var(--shadow);padding:20px}
+.card-title h2{font-size:19px}
+.progress-wrap{height:11px;background:#edf1f6}
+.progress{background:linear-gradient(90deg,#1b9871,#3970d0)}
+.summary-chip{background:#f7f9fc;border-color:#e9edf3}
+.admin-panel{
+  border-top:4px solid #315fbd;
+}
+input,select{
+  min-height:44px;background:#fbfcfe;border-color:#dfe5ee;
+}
+input:focus,select:focus{background:#fff;border-color:#6d91d8;box-shadow:0 0 0 3px rgba(49,95,189,.10)}
+.btn{border-radius:11px;box-shadow:0 0 0 1px #dfe5ee inset}
+.btn.primary{background:#315fbd}
+.btn.success{background:#168365}
+.tabs{
+  padding:4px;background:#f1f4f8;border-radius:14px;width:max-content;max-width:100%;
+}
+.tab{background:transparent;border-radius:10px;padding:8px 16px}
+.tab.active{background:#fff;color:#315fbd;box-shadow:0 2px 8px rgba(30,51,84,.09)}
+.table-wrap{border-color:#e3e8ef}
+th{background:#f7f9fc;color:#68768c;padding-top:13px;padding-bottom:13px}
+td{padding-top:13px;padding-bottom:13px}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#f8faff}
+.pill{padding:6px 10px}
+.paid{background:#e9f7f1;color:#13765c}
+.unpaid{background:#fff4df;color:#a56a0a}
+.money{color:#273956}
+.person-card{box-shadow:0 4px 16px rgba(30,51,84,.05)}
+.person-item{background:#f6f8fb}
+.toast{background:#233451}
+@media(max-width:680px){
+  body{background:#f4f7fb}
+  .wrap{padding:12px 12px 28px}
+  .topbar{border-radius:20px;padding:19px;margin-bottom:13px}
+  .brand h1{font-size:22px}
+  .brand p{font-size:12px;line-height:1.55}
+  .hero{gap:8px;margin:12px 0}
+  .stat{border-radius:15px;padding:13px}
+  .stat .label{font-size:11px}
+  .stat .value{font-size:22px}
+  .card{padding:14px;border-radius:16px;margin-bottom:11px}
+  .tabs{width:100%;display:grid;grid-template-columns:repeat(3,1fr)}
+  .tab{padding:9px 7px}
+  .person-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+
+
+<style>
+/* Premium background & palette */
+:root{
+  --bg:#eef3f9;
+  --card:rgba(255,255,255,.94);
+  --text:#17243b;
+  --muted:#748198;
+  --line:#e1e8f0;
+  --blue:#315fbd;
+  --blue2:#edf3ff;
+  --green:#15775e;
+  --green2:#e9f6f1;
+  --amber:#a96f16;
+  --amber2:#fff4df;
+  --red:#c74a5d;
+  --red2:#fff0f2;
+  --shadow:0 12px 34px rgba(37,55,85,.10);
+}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 8% 8%, rgba(85,126,205,.18), transparent 26%),
+    radial-gradient(circle at 92% 0%, rgba(89,176,170,.12), transparent 24%),
+    radial-gradient(circle at 84% 88%, rgba(123,104,197,.09), transparent 28%),
+    linear-gradient(135deg,#edf3fb 0%,#f7f9fc 42%,#eef4f6 100%);
+  background-attachment:fixed;
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.18) 1px, transparent 1px);
+  background-size:34px 34px;
+  mask-image:linear-gradient(to bottom,rgba(0,0,0,.22),transparent 42%);
+}
+.topbar{
+  background:
+    linear-gradient(135deg,rgba(28,52,99,.98) 0%,rgba(49,95,189,.96) 55%,rgba(41,112,157,.93) 100%);
+  box-shadow:0 18px 44px rgba(36,61,109,.22);
+  border:1px solid rgba(255,255,255,.12);
+}
+.card,.stat{
+  background:rgba(255,255,255,.91);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.78);
+  box-shadow:0 10px 30px rgba(31,49,77,.085);
+}
+.admin-panel{
+  background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(248,251,255,.94));
+}
+.table-wrap{
+  background:rgba(255,255,255,.75);
+}
+th{
+  background:rgba(246,249,253,.96);
+}
+tbody tr:hover{
+  background:rgba(238,244,255,.72);
+}
+.person-card{
+  background:rgba(255,255,255,.94);
+  box-shadow:0 8px 24px rgba(31,49,77,.08);
+}
+@media(max-width:680px){
+  body{
+    background:
+      radial-gradient(circle at 5% 5%, rgba(85,126,205,.14), transparent 30%),
+      linear-gradient(180deg,#eef3f9 0%,#f6f8fb 100%);
+  }
+  body:before{display:none}
+}
+</style>
+
+
+<style>
+/* 收款 Dashboard Red Edition */
+:root{
+  --blue:#344b73;
+  --blue2:#eef2f7;
+  --green:#c84455;
+  --green2:#fff0f2;
+  --amber:#b7791f;
+  --amber2:#fff6e7;
+  --red:#c84455;
+  --red2:#fff0f2;
+}
+body{
+  background:
+    radial-gradient(circle at 8% 5%,rgba(196,68,85,.13),transparent 27%),
+    radial-gradient(circle at 93% 2%,rgba(87,111,150,.12),transparent 25%),
+    linear-gradient(145deg,#f3f5f9 0%,#fafbfc 46%,#f5f1f2 100%);
+}
+.topbar{
+  background:linear-gradient(135deg,#702c38 0%,#a83c4c 48%,#c84b5d 100%);
+  box-shadow:0 18px 44px rgba(111,43,55,.20);
+}
+.btn.primary{background:#bd4354}
+.progress{background:linear-gradient(90deg,#a93849,#d85b6b)}
+.paid{background:#fff0f2;color:#b6384a}
+.stat .green,.green{color:#bd4354}
+.tabs .tab.active{color:#b6384a}
+.admin-panel{border-top-color:#bd4354}
+input:focus,select:focus{border-color:#d58a95;box-shadow:0 0 0 3px rgba(196,68,85,.10)}
+</style>
+
+
+<style>
+.hero{grid-template-columns:repeat(4,1fr)}
+.stat:nth-child(2){background:linear-gradient(145deg,#fff,#fff5f6)}
+.stat:nth-child(3){background:linear-gradient(145deg,#fff,#fffbf3)}
+.stat:nth-child(4){background:linear-gradient(145deg,#fff,#f7f8fb)}
+.summary-line{margin-top:14px}
+.summary-chip{
+  background:rgba(248,249,252,.92);
+  padding:9px 12px;
+  border-radius:11px;
+}
+.summary-chip strong{color:#293852;margin-left:4px}
+.card-title h2{letter-spacing:.1px}
+#receivedMoney{color:#b6384a}
+@media(max-width:900px){.hero{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:680px){
+  .hero{grid-template-columns:repeat(2,1fr)}
+  .summary-line{display:grid;grid-template-columns:1fr 1fr}
+  .summary-chip{display:flex;justify-content:space-between}
+}
+</style>
+
+
+<style>
+@media(min-width:901px){
+  #projectName{font-weight:800;color:#7f2f3c}
+}
+</style>
+
+</head>
+<body>
+<div class="wrap" id="app">
+  <header class="topbar">
+    <div class="brand">
+      <h1>💰 <span id="projectTitle">收費匯款登記表</span></h1>
+      <p>收款進度、未繳名單與金額狀態，一頁掌握</p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="adminBtn">🔐 管理者登入</button>
+      <button class="btn" id="logoutBtn" style="display:none">登出管理</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="stat"><div class="label">總人數</div><div class="value" id="totalPeople">0</div><div class="sub">目前名單</div></div>
+    <div class="stat"><div class="label">已繳人數</div><div class="value green" id="paidPeople">0</div><div class="sub" id="paidRate">完成率 0%</div></div>
+    <div class="stat"><div class="label">未繳人數</div><div class="value amber" id="unpaidPeople">0</div><div class="sub">待完成</div></div>
+    <div class="stat"><div class="label">已收金額</div><div class="value blue" id="receivedMoney">$0</div><div class="sub" id="targetMoney">目標 $0</div></div>
+  </section>
+
+  <section class="card">
+    <div class="card-title"><h2>收款進度</h2><span class="pill paid" id="progressBadge">0%</span></div>
+    <div class="progress-wrap"><div class="progress" id="progress"></div></div>
+    <div class="progress-meta"><span id="progressLabel">0 / 0 人已完成</span><span id="moneyGap">尚差 $0</span></div>
+    <div class="summary-line">
+      <span class="summary-chip">目標金額 <strong id="targetChip">$0</strong></span>
+      <span class="summary-chip">每人應繳 <strong id="perPersonChip">$0</strong></span>
+      <span class="summary-chip">分擔人數 <strong id="shareCountChip">0</strong></span>
+    </div>
+  </section>
+
+  <section class="card admin-panel" id="adminPanel">
+    <div class="card-title"><h2>管理者設定</h2><span class="pill paid">管理模式</span></div>
+    <div class="admin-grid">
+      <div class="field"><label>專案名稱</label><input id="projectName" maxlength="40" placeholder="例如：王老師年度訂閱收款"></div>
+      <div class="field"><label>總金額</label><input id="totalAmount" type="number" min="0" step="1" placeholder="例如 168000"></div>
+      <div class="field"><label>分擔人數</label><input id="shareCount" type="number" min="1" step="1" placeholder="例如 120"></div>
+      <div class="field"><label>新增姓名</label><input id="newName" placeholder="輸入姓名"></div>
+      <div class="field"><label>操作</label><button class="btn primary" id="addPersonBtn">＋ 新增人員</button></div>
+    </div>
+    <div class="tools">
+      <button class="btn" id="importNamesBtn">匯入人員名單</button>
+      <button class="btn" id="importDetailBtn">匯入匯款明細</button>
+      <button class="btn" id="exportBtn">匯出 Excel</button>
+      <button class="btn" id="templateBtn">下載 Excel 範本</button>
+      <button class="btn" id="backupBtn">備份 JSON</button>
+      <button class="btn" id="restoreBtn">還原 JSON</button>
+      <button class="btn danger" id="deleteSelectedBtn">刪除勾選</button>
+      <input type="file" id="namesFile" accept=".xlsx,.xls,.csv" hidden>
+      <input type="file" id="detailFile" accept=".xlsx,.xls,.csv" hidden>
+      <input type="file" id="restoreFile" accept=".json" hidden>
+    </div>
+    <p class="note">管理者密碼：16888。匯入名單至少要有「姓名」欄；明細可包含「姓名、帳號後五碼、匯款金額、備註」。相同姓名會更新，不會重複新增。</p>
+  </section>
+
+  <section class="card">
+    <div class="card-title"><h2>匯款名單</h2><span class="muted" id="resultCount">0 筆</span></div>
+
+    <div class="tabs">
+      <button class="tab active" data-filter="all">全部</button>
+      <button class="tab" data-filter="paid">已繳</button>
+      <button class="tab" data-filter="unpaid">未繳</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="field"><label>搜尋姓名／後五碼</label><input id="search" placeholder="輸入姓名或後五碼"></div>
+      <div class="field"><label>排序</label>
+        <select id="sortBy">
+          <option value="unpaidFirst">未繳優先</option><option value="default">原始順序</option>
+          <option value="name">姓名</option>
+          <option value="amountDesc">金額高 → 低</option>
+          <option value="amountAsc">金額低 → 高</option>
+          <option value="updated">最近更新</option>
+        </select>
+      </div>
+      <button class="btn" id="copyUnpaidBtn">複製未繳名單</button>
+      <button class="btn" id="clearFilter">清除篩選</button>
+    </div>
+
+    <div class="desktop-table table-wrap" style="margin-top:14px">
+      <table>
+        <thead>
+          <tr>
+            <th class="admin-cell check-col"><input type="checkbox" id="checkAll"></th>
+            <th>#</th><th>姓名</th><th>狀態</th><th>帳號後五碼</th><th>匯款金額</th><th>備註</th><th>最後更新</th><th>操作</th><th class="admin-cell">管理</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="mobile-list" id="mobileList"></div>
+  </section>
+</div>
+
+<div class="modal" id="loginModal"><div class="modal-box">
+  <h3>管理者登入</h3>
+  <div class="field"><label>管理者密碼</label><input id="adminPassword" type="password" placeholder="請輸入密碼"></div>
+  <div class="modal-row"><button class="btn" data-close="loginModal">取消</button><button class="btn primary" id="loginSubmit">登入</button></div>
+</div></div>
+
+<div class="modal" id="payModal"><div class="modal-box">
+  <h3 id="payTitle">登記匯款</h3>
+  <input id="payId" type="hidden">
+  <div class="field"><label>帳號後五碼</label><input id="last5" inputmode="numeric" maxlength="5" placeholder="例如 12345"></div>
+  <div class="field" style="margin-top:10px"><label>匯款金額</label><input id="payAmount" type="number" min="0" step="1" placeholder="請輸入金額"></div>
+  <div class="field" style="margin-top:10px"><label>備註</label><input id="note" placeholder="選填"></div>
+  <div class="modal-row"><button class="btn" data-close="payModal">取消</button><button class="btn primary" id="savePay">儲存登記</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY='payment_registry_v2';
+const LEGACY_KEY='payment_registry_v1';
+const ADMIN_PASSWORD='16888';
+const clone=o=>JSON.parse(JSON.stringify(o));
+let state=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+if(!state){
+  const old=JSON.parse(localStorage.getItem(LEGACY_KEY)||'null');
+  state=old||{settings:{totalAmount:0,shareCount:0},people:[]};
+}
+state.settings ||= {totalAmount:0,shareCount:0,projectName:'收費匯款登記表'};
+if(!state.settings.projectName) state.settings.projectName='收費匯款登記表';
+state.people ||= [];
+state.people=state.people.map(p=>({selected:false,...p}));
+let isAdmin=sessionStorage.getItem('payment_admin')==='1';
+let activeFilter='all';
+
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+const money=n=>'$'+Number(n||0).toLocaleString('zh-TW');
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const paid=p=>Number(p.amount)>0 && /^\d{5}$/.test(String(p.last5||''));
+const expected=()=>{const t=Number(state.settings.totalAmount)||0,c=Number(state.settings.shareCount)||0;return c?t/c:0};
+const payState=p=>paid(p)?'paid':'unpaid';
+const statusLabel=p=>paid(p)?'已繳':'未繳';
+const statusClass=p=>paid(p)?'paid':'unpaid';
+const fmtTime=v=>v?new Date(v).toLocaleString('zh-TW',{hour12:false}):'—';
+
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render()}
+
+function getRows(){
+  const q=$('#search').value.trim().toLowerCase();
+  let rows=state.people.map((p,i)=>({...p,_index:i})).filter(p=>{
+    const text=(p.name+' '+(p.last5||'')).toLowerCase();
+    if(q&&!text.includes(q))return false;
+    if(activeFilter==='all')return true;
+    return payState(p)===activeFilter;
+  });
+  const sort=$('#sortBy').value;
+  if(sort==='unpaidFirst')rows.sort((a,b)=>(paid(a)?1:0)-(paid(b)?1:0));
+  if(sort==='name')rows.sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
+  if(sort==='amountDesc')rows.sort((a,b)=>(b.amount||0)-(a.amount||0));
+  if(sort==='amountAsc')rows.sort((a,b)=>(a.amount||0)-(b.amount||0));
+  if(sort==='updated')rows.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  return rows;
+}
+
+function render(){
+  const total=state.people.length;
+  const paidN=state.people.filter(paid).length;
+  const unpaidN=total-paidN;
+  const received=state.people.reduce((s,p)=>s+(Number(p.amount)||0),0);
+  const target=Number(state.settings.totalAmount)||0;
+  const e=expected();
+  const completion=total?paidN/total*100:0;
+
+  $('#totalPeople').textContent=total;
+  $('#paidPeople').textContent=paidN;
+  $('#unpaidPeople').textContent=unpaidN;
+  $('#receivedMoney').textContent=money(received);
+  $('#targetMoney').textContent='目標 '+money(target);
+  $('#targetChip').textContent=money(target);
+  $('#perPersonChip').textContent=e?money(Math.round(e)):'$0';
+  $('#shareCountChip').textContent=state.settings.shareCount||0;
+  $('#paidRate').textContent='完成率 '+Math.round(completion)+'%';
+  $('#progress').style.width=Math.min(completion,100)+'%';
+  $('#progressBadge').textContent=Math.round(completion)+'%';
+  $('#progressLabel').textContent=`${paidN} / ${total} 人已完成`;
+  $('#moneyGap').textContent=target?(received>=target?`超過目標 ${money(received-target)}`:`尚差 ${money(target-received)}`):'尚未設定總金額';
+
+  const projectName=state.settings.projectName||'收費匯款登記表';
+  $('#projectTitle').textContent=projectName;
+  document.title=projectName+'｜收款管理';
+  $('#projectName').value=projectName;
+  $('#totalAmount').value=state.settings.totalAmount||'';
+  $('#shareCount').value=state.settings.shareCount||'';
+  $('#app').classList.toggle('is-admin',isAdmin);
+  $('#adminPanel').classList.toggle('show',isAdmin);
+  $('#adminBtn').style.display=isAdmin?'none':'inline-flex';
+  $('#logoutBtn').style.display=isAdmin?'inline-flex':'none';
+
+  const rows=getRows();
+  $('#resultCount').textContent=`${rows.length} 筆`;
+  $('#tbody').innerHTML=rows.length?rows.map((p,i)=>{
+    return `<tr style="box-shadow:inset 4px 0 0 ${paid(p)?'#c84455':'#d7a03b'}">
+      <td class="admin-cell"><input type="checkbox" ${p.selected?'checked':''} onchange="toggleSelect('${p.id}',this.checked)"></td>
+      <td>${i+1}</td>
+      <td><div class="name">${esc(p.name)}</div></td>
+      <td><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></td>
+      <td>${esc(p.last5||'—')}</td>
+      <td class="money">${p.amount?money(p.amount):'—'}</td>
+      <td>${esc(p.note||'—')}</td>
+      <td class="muted">${fmtTime(p.updatedAt)}</td>
+      <td><button class="btn small primary" onclick="openPay('${p.id}')">${paid(p)?'修改':'登記'}</button></td>
+      <td class="admin-cell"><button class="btn small danger" onclick="deletePerson('${p.id}')">刪除</button></td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="10" class="empty">目前沒有符合條件的資料</td></tr>`;
+
+  $('#mobileList').innerHTML=rows.length?rows.map(p=>{
+    return `<div class="person-card" style="border-left:4px solid ${paid(p)?'#c84455':'#d7a03b'}">
+      <div class="person-top">
+        <div><div class="person-name">${esc(p.name)}</div></div>
+        <span class="pill ${statusClass(p)}">${statusLabel(p)}</span>
+      </div>
+      <div class="person-grid">
+        <div class="person-item"><div class="k">帳號後五碼</div><div class="v">${esc(p.last5||'—')}</div></div>
+        <div class="person-item"><div class="k">匯款金額</div><div class="v">${p.amount?money(p.amount):'—'}</div></div>
+        <div class="person-item"><div class="k">最後更新</div><div class="v">${fmtTime(p.updatedAt)}</div></div>
+      </div>
+      ${p.note?`<div class="note" style="margin-bottom:10px">備註：${esc(p.note)}</div>`:''}
+      <div class="person-actions">
+        <button class="btn primary" onclick="openPay('${p.id}')">${paid(p)?'修改匯款':'登記匯款'}</button>
+        ${isAdmin?`<button class="btn danger" onclick="deletePerson('${p.id}')">刪除</button>`:''}
+      </div>
+    </div>`;
+  }).join(''):`<div class="empty">目前沒有符合條件的資料</div>`;
+
+  const all=state.people.length>0&&state.people.every(p=>p.selected);
+  $('#checkAll').checked=all;
+}
+function openPay(id){
+  const p=state.people.find(x=>x.id===id);if(!p)return;
+  $('#payId').value=id;$('#payTitle').textContent=`${p.name}｜${paid(p)?'修改匯款':'登記匯款'}`;
+  $('#last5').value=p.last5||'';$('#payAmount').value=p.amount||'';$('#note').value=p.note||'';
+  $('#payModal').classList.add('show');
+}
+function deletePerson(id){
+  if(!isAdmin)return;
+  const p=state.people.find(x=>x.id===id);
+  if(confirm(`確定刪除「${p?.name||''}」？`)){state.people=state.people.filter(x=>x.id!==id);save()}
+}
+function toggleSelect(id,v){const p=state.people.find(x=>x.id===id);if(p){p.selected=v;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render()}}
+window.openPay=openPay;window.deletePerson=deletePerson;window.toggleSelect=toggleSelect;
+
+$$('[data-close]').forEach(b=>b.onclick=()=>$('#'+b.dataset.close).classList.remove('show'));
+$('#adminBtn').onclick=()=>{$('#adminPassword').value='';$('#loginModal').classList.add('show');setTimeout(()=>$('#adminPassword').focus(),50)};
+$('#adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginSubmit').click()});
+$('#loginSubmit').onclick=()=>{if($('#adminPassword').value===ADMIN_PASSWORD){isAdmin=true;sessionStorage.setItem('payment_admin','1');$('#loginModal').classList.remove('show');render();toast('已進入管理模式')}else alert('密碼錯誤')};
+$('#logoutBtn').onclick=()=>{isAdmin=false;sessionStorage.removeItem('payment_admin');render();toast('已登出管理模式')};
+
+$('#savePay').onclick=()=>{
+  const p=state.people.find(x=>x.id===$('#payId').value);if(!p)return;
+  const last5=$('#last5').value.trim(),amount=Number($('#payAmount').value);
+  if(!/^\d{5}$/.test(last5))return alert('帳號後五碼必須為 5 位數字');
+  if(!(amount>0))return alert('請輸入正確匯款金額');
+  p.last5=last5;p.amount=amount;p.note=$('#note').value.trim();p.updatedAt=Date.now();save();
+  $('#payModal').classList.remove('show');toast('匯款資料已儲存');
+};
+
+$('#addPersonBtn').onclick=()=>{
+  const name=$('#newName').value.trim();if(!name)return alert('請輸入姓名');
+  if(state.people.some(p=>p.name===name))return alert('此姓名已存在');
+  state.people.push({id:uid(),name,last5:'',amount:0,note:'',updatedAt:null,selected:false});
+  $('#newName').value='';save();toast('已新增人員');
+};
+$('#newName').addEventListener('keydown',e=>{if(e.key==='Enter'&&isAdmin)$('#addPersonBtn').click()});
+$('#projectName').onchange=e=>{
+  if(!isAdmin)return;
+  const name=e.target.value.trim();
+  state.settings.projectName=name||'收費匯款登記表';
+  save();
+  toast('專案名稱已更新');
+};
+$('#projectName').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&isAdmin){e.target.blur()}
+});
+$('#totalAmount').onchange=e=>{if(isAdmin){state.settings.totalAmount=Number(e.target.value)||0;save()}};
+$('#shareCount').onchange=e=>{if(isAdmin){state.settings.shareCount=Number(e.target.value)||0;save()}};
+
+$$('.tab').forEach(b=>b.onclick=()=>{
+  activeFilter=b.dataset.filter;$$('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();
+});
+$('#search').oninput=render;$('#sortBy').onchange=render;
+$('#clearFilter').onclick=()=>{$('#search').value='';$('#sortBy').value='unpaidFirst';activeFilter='all';$$('.tab').forEach(x=>x.classList.toggle('active',x.dataset.filter==='all'));render()};
+$('#copyUnpaidBtn').onclick=async()=>{
+  const names=state.people.filter(p=>!paid(p)).map(p=>p.name);
+  if(!names.length)return toast('目前沒有未繳人員');
+  const text=`未繳名單（${names.length}人）\n`+names.map((n,i)=>`${i+1}. ${n}`).join('\n');
+  try{await navigator.clipboard.writeText(text);toast('未繳名單已複製')}catch{prompt('請複製以下內容',text)}
+};
+$('#checkAll').onchange=e=>{if(!isAdmin)return;state.people.forEach(p=>p.selected=e.target.checked);save()};
+$('#deleteSelectedBtn').onclick=()=>{
+  const n=state.people.filter(p=>p.selected).length;if(!n)return alert('尚未勾選人員');
+  if(confirm(`確定刪除已勾選的 ${n} 位人員？`)){state.people=state.people.filter(p=>!p.selected);save();toast('已刪除勾選人員')}
+};
+
+function readWorkbook(file,cb){
+ const r=new FileReader();r.onload=e=>{try{
+  const wb=XLSX.read(e.target.result,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]];
+  cb(XLSX.utils.sheet_to_json(ws,{defval:''}));
+ }catch(err){alert('Excel 讀取失敗：'+err.message)}};r.readAsArrayBuffer(file);
+}
+$('#importNamesBtn').onclick=()=>$('#namesFile').click();
+$('#importDetailBtn').onclick=()=>$('#detailFile').click();
+$('#namesFile').onchange=e=>{
+ const f=e.target.files[0];if(!f)return;
+ readWorkbook(f,rows=>{
+  let add=0,skip=0;
+  rows.forEach(r=>{const name=String(r['姓名']||r['name']||Object.values(r)[0]||'').trim();if(!name)return;
+   if(state.people.some(p=>p.name===name)){skip++;return}
+   state.people.push({id:uid(),name,last5:'',amount:0,note:'',updatedAt:null,selected:false});add++;
+  });
+  save();alert(`匯入完成\n新增：${add} 人\n重複略過：${skip} 人`);e.target.value='';
+ });
+};
+$('#detailFile').onchange=e=>{
+ const f=e.target.files[0];if(!f)return;
+ readWorkbook(f,rows=>{
+  let count=0,newN=0;
+  rows.forEach(r=>{
+   const name=String(r['姓名']||r['name']||'').trim();if(!name)return;
+   let p=state.people.find(x=>x.name===name);
+   if(!p){p={id:uid(),name,last5:'',amount:0,note:'',updatedAt:null,selected:false};state.people.push(p);newN++}
+   let last5=String(r['帳號後五碼']||r['後五碼']||'').trim().replace(/\D/g,'');
+   const amount=Number(r['匯款金額']||r['金額']||0);
+   if(last5)p.last5=last5.padStart(5,'0').slice(-5);if(amount>0)p.amount=amount;
+   p.note=String(r['備註']||p.note||'');p.updatedAt=Date.now();count++;
+  });
+  save();alert(`匯入完成\n更新：${count} 筆\n新增名單：${newN} 人`);e.target.value='';
+ });
+};
+function exportExcel(template=false){
+ const e=expected();
+ const rows=template?
+  [{'姓名':'王小明','帳號後五碼':'12345','匯款金額':1400,'備註':''}]:
+  state.people.map((p,i)=>({'序號':i+1,'姓名':p.name,'繳款狀態':statusLabel(p),'帳號後五碼':p.last5||'','匯款金額':Number(p.amount)||0,'應繳金額':Math.round(e||0),'備註':p.note||'','最後更新':p.updatedAt?fmtTime(p.updatedAt):''}));
+ const ws=XLSX.utils.json_to_sheet(rows);
+ ws['!cols']=[{wch:8},{wch:16},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:22},{wch:22}];
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,template?'匯入範本':'匯款明細');
+ if(!template){
+  const summary=[
+   {'項目':'專案名稱','數值':state.settings.projectName||'收費匯款登記表'},
+   {'項目':'總人數','數值':state.people.length},
+   {'項目':'已繳人數','數值':state.people.filter(paid).length},
+   {'項目':'未繳人數','數值':state.people.filter(p=>!paid(p)).length},
+   {'項目':'已收金額','數值':state.people.reduce((s,p)=>s+(Number(p.amount)||0),0)},
+   {'項目':'設定總金額','數值':Number(state.settings.totalAmount)||0},
+   {'項目':'分擔人數','數值':Number(state.settings.shareCount)||0},
+   {'項目':'每人應繳','數值':e}
+  ];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),'統計摘要');
+ }
+ const safeName=(state.settings.projectName||'收費匯款登記表').replace(/[\\/:*?"<>|]/g,'_');
+ XLSX.writeFile(wb,template?`${safeName}_匯入範本.xlsx`:`${safeName}_匯款明細.xlsx`);
+}
+$('#exportBtn').onclick=()=>isAdmin&&exportExcel(false);
+$('#templateBtn').onclick=()=>isAdmin&&exportExcel(true);
+
+$('#backupBtn').onclick=()=>{
+ const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=((state.settings.projectName||'收費匯款登記表').replace(/[\\/:*?"<>|]/g,'_'))+'_備份.json';a.click();URL.revokeObjectURL(a.href);
+};
+$('#restoreBtn').onclick=()=>$('#restoreFile').click();
+$('#restoreFile').onchange=e=>{
+ const f=e.target.files[0];if(!f)return;
+ const r=new FileReader();r.onload=ev=>{try{
+  const data=JSON.parse(ev.target.result);
+  if(!data||!Array.isArray(data.people)||!data.settings)throw new Error('格式不正確');
+  if(confirm(`將還原 ${data.people.length} 筆人員資料，並覆蓋目前資料。確定嗎？`)){
+   state=data;state.people=state.people.map(p=>({selected:false,...p}));save();toast('資料已還原')
+  }
+ }catch(err){alert('備份檔讀取失敗：'+err.message)}};r.readAsText(f);e.target.value='';
+};
+
+render();
+</script>
+</body>
+</html>
