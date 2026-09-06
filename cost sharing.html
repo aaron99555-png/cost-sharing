@@ -343,13 +343,32 @@ input:focus,select:focus{border-color:#d58a95;box-shadow:0 0 0 3px rgba(196,68,8
 #cloudStatus.cloud-sync{background:rgba(255,255,255,.10);color:#fff}
 </style>
 
+
+<style>
+/* Premium red dashboard refinement */
+:root{--bg:#f5f2f3;--surface:#fff;--line:#eadfe2;--text:#2d2a2b;--muted:#7f7578;--primary:#a83e50;--primary-dark:#7d2b3a;--primary-soft:#fff1f4;--warning:#b8842f;--warning-soft:#fff7e8;--shadow:0 18px 48px rgba(88,48,56,.10);--shadow-sm:0 8px 24px rgba(88,48,56,.07);}
+html{scroll-behavior:smooth}
+body{color:var(--text);background:radial-gradient(circle at 7% 2%,rgba(168,62,80,.13),transparent 26%),radial-gradient(circle at 96% 10%,rgba(95,111,145,.09),transparent 24%),linear-gradient(155deg,#f6f2f3 0%,#fafafa 48%,#f2eef0 100%);min-height:100vh}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;background-image:linear-gradient(rgba(120,90,100,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(120,90,100,.05) 1px,transparent 1px);background-size:28px 28px;mask-image:linear-gradient(to bottom,black,transparent 72%)}
+.topbar{position:sticky;top:0;z-index:50;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);background:linear-gradient(120deg,rgba(102,38,49,.97),rgba(164,57,75,.96) 55%,rgba(193,72,90,.94));border-bottom:1px solid rgba(255,255,255,.18);box-shadow:0 12px 34px rgba(90,30,42,.20)}
+.topbar h1{font-size:clamp(22px,2.2vw,31px);font-weight:900;letter-spacing:.2px}.topbar .sub{opacity:.84;font-size:13px}.topbar .actions{gap:8px}.topbar .btn{border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.11);color:#fff}.topbar .btn:hover{background:rgba(255,255,255,.18);transform:translateY(-1px)}
+main,.container,.wrap{max-width:1240px;margin-left:auto;margin-right:auto}.hero{gap:14px;margin-top:20px}.stat{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.72);background:linear-gradient(145deg,rgba(255,255,255,.94),rgba(255,250,251,.87));box-shadow:var(--shadow-sm);border-radius:18px;padding:18px 18px 17px}.stat:after{content:"";position:absolute;width:82px;height:82px;right:-24px;top:-26px;border-radius:50%;background:radial-gradient(circle,rgba(168,62,80,.10),transparent 68%)}.stat .label{color:var(--muted);font-size:13px;font-weight:800;letter-spacing:.25px}.stat .value{font-size:clamp(27px,3vw,38px);line-height:1.12;margin-top:8px;font-weight:950;letter-spacing:-.5px}.stat .sub{margin-top:5px;color:#9b8e92}.stat:nth-child(2){border-color:#efd7dd;background:linear-gradient(145deg,#fff,#fff4f6)}.stat:nth-child(2) .value{color:#a83e50}.stat:nth-child(3){border-color:#efdfbe;background:linear-gradient(145deg,#fff,#fff9ee)}.stat:nth-child(3) .value{color:#a97525}.stat:nth-child(4) .value{color:#7d2b3a}
+.card{border:1px solid rgba(230,216,220,.9);border-radius:20px;box-shadow:var(--shadow-sm);background:rgba(255,255,255,.91);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}.card:hover{box-shadow:var(--shadow)}.card-title{gap:10px}.card-title h2{font-size:18px;font-weight:900;letter-spacing:.1px}.note{color:var(--muted);line-height:1.7}.summary-line{gap:8px}.summary-chip{border:1px solid #eee2e5;background:linear-gradient(180deg,#fff,#fbf7f8);color:#685e61;box-shadow:0 4px 14px rgba(86,51,58,.04)}.summary-chip strong{color:#7d2b3a}.progress{background:linear-gradient(90deg,#8f3142,#c14f62 60%,#dc7080);box-shadow:0 0 18px rgba(168,62,80,.18)}
+.tabs{background:#f5eff1;padding:5px;border-radius:14px;gap:5px}.tabs .tab{border-radius:10px;font-weight:800;color:#7a6f72}.tabs .tab.active{background:#fff;color:#9c3648;box-shadow:0 4px 12px rgba(93,51,60,.08)}
+input,select,textarea{border:1px solid #e4d9dc!important;border-radius:12px!important;background:#fff!important;color:#302d2e}input:hover,select:hover,textarea:hover{border-color:#d5bec4!important}input:focus,select:focus,textarea:focus{outline:none!important;border-color:#c66b7a!important;box-shadow:0 0 0 4px rgba(168,62,80,.09)!important}label{font-weight:800;color:#695e61}.btn{border-radius:12px;font-weight:850;transition:.18s ease}.btn:hover{transform:translateY(-1px)}.btn.primary{background:linear-gradient(135deg,#963345,#c44f62);color:#fff;border:none;box-shadow:0 7px 18px rgba(168,62,80,.19)}.btn.danger{background:#fff4f5;color:#a13244;border:1px solid #efd7dc}
+table{border-collapse:separate;border-spacing:0}thead th{position:sticky;top:0;z-index:2;background:#f7f2f4;color:#695e61;font-size:12px;font-weight:900;letter-spacing:.2px;border-bottom:1px solid #e9dde0}tbody tr{background:rgba(255,255,255,.88);transition:.15s ease}tbody tr:hover{background:#fff8f9}tbody td{border-bottom:1px solid #f0e7e9}.pill,.status{font-weight:900;border-radius:999px}.paid{background:#fff0f3!important;color:#a4384b!important;border:1px solid #efd2d8}.unpaid{background:#fff7e8!important;color:#9b6d20!important;border:1px solid #f0dfb8}
+.person-card{border-radius:17px;background:linear-gradient(145deg,#fff,#fcf8f9);border:1px solid #eadfe2;box-shadow:0 8px 20px rgba(91,53,62,.06)}.person-card:hover{box-shadow:0 12px 28px rgba(91,53,62,.09)}.person-card .name{font-size:17px;font-weight:950}.admin-panel{border:1px solid #e9dadd;background:linear-gradient(145deg,rgba(255,248,250,.98),rgba(255,255,255,.95));box-shadow:0 14px 34px rgba(102,48,59,.08)}.admin-panel .card-title{border-bottom:1px dashed #ead9dd;padding-bottom:12px;margin-bottom:12px}#cloudStatus{border-radius:999px!important;font-weight:900;letter-spacing:.1px}.toast{border-radius:14px!important;box-shadow:0 12px 30px rgba(70,35,42,.20)!important}
+@media(max-width:700px){body:before{display:none}.topbar{padding-top:max(10px,env(safe-area-inset-top))}.topbar h1{font-size:22px}.topbar .sub{font-size:12px}.topbar .actions{width:100%;justify-content:space-between;margin-top:10px}#cloudStatus{flex:1;min-width:0}.hero{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px;margin-top:12px}.stat{padding:14px 13px;border-radius:15px}.stat .value{font-size:26px}.card{border-radius:17px;padding:15px}.summary-line{grid-template-columns:1fr 1fr!important}.summary-chip{font-size:12px;padding:8px 9px}.tabs{position:sticky;top:88px;z-index:12;box-shadow:0 8px 20px rgba(77,47,54,.06)}.person-card{padding:14px}.btn{min-height:42px}}
+@media(max-width:410px){.stat .label{font-size:12px}.stat .value{font-size:23px}.summary-line{grid-template-columns:1fr!important}}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
   <header class="topbar">
     <div class="brand">
       <h1>💰 <span id="projectTitle">收費匯款登記表</span></h1>
-      <p>收款進度、未繳名單與金額狀態，一頁掌握</p>
+      <p>收款進度、未繳名單、雲端同步，一頁掌握</p>
     </div>
     <div class="actions">
       <span id="cloudStatus" class="btn cloud-sync" style="cursor:default">☁️ 雲端連線中</span>
@@ -377,7 +396,7 @@ input:focus,select:focus{border-color:#d58a95;box-shadow:0 0 0 3px rgba(196,68,8
   </section>
 
   <section class="card admin-panel" id="adminPanel">
-    <div class="card-title"><h2>管理者設定</h2><span class="pill paid">管理模式</span></div>
+    <div class="card-title"><h2>管理者控制台</h2><span class="pill paid">管理模式</span></div>
     <div class="summary-line" style="margin-bottom:14px">
       <span class="summary-chip">新增人員</span>
       <span class="summary-chip">刪除人員</span>
@@ -393,12 +412,12 @@ input:focus,select:focus{border-color:#d58a95;box-shadow:0 0 0 3px rgba(196,68,8
       <div class="field"><label>操作</label><button class="btn primary" id="addPersonBtn">＋ 新增人員</button></div>
     </div>
     <div class="tools">
-      <button class="btn" id="importNamesBtn">匯入人員名單 Excel</button>
-      <button class="btn" id="importDetailBtn">匯入人員＋匯款資料</button>
-      <button class="btn" id="exportBtn">匯出完整資料 Excel</button>
+      <button class="btn" id="importNamesBtn">匯入人員名單</button>
+      <button class="btn" id="importDetailBtn">匯入匯款資料</button>
+      <button class="btn" id="exportBtn">匯出完整明細</button>
       <button class="btn" id="exportPeopleBtn">匯出人員名單</button>
       <button class="btn" id="templateBtn">下載 Excel 範本</button>
-      <button class="btn" id="cloudSyncBtn">立即同步雲端</button>
+      <button class="btn" id="cloudSyncBtn">☁️ 立即同步</button>
       <button class="btn" id="backupBtn">備份 JSON</button>
       <button class="btn" id="restoreBtn">還原 JSON</button>
       <button class="btn danger" id="deleteSelectedBtn">刪除勾選</button>
@@ -408,7 +427,7 @@ input:focus,select:focus{border-color:#d58a95;box-shadow:0 0 0 3px rgba(196,68,8
     </div>
     <div class="note" style="margin-top:12px;padding:10px 12px;background:#fff6f7;border:1px solid #f0d9dd;border-radius:10px">雲端節點：<b>paymentRegistry</b>｜資料庫：<b>analyst-277bd-default-rtdb.firebaseio.com</b></div>
     <div class="note" style="margin-top:8px">資料同步：管理者新增、修改、刪除與資料更新後會自動儲存 Firebase；其他裝置開啟後會讀取雲端資料，每 5 秒檢查一次，切回頁面前景時也會立即同步。網路中斷時保留 localStorage 本機資料。</div>
-    <p class="note">管理者權限：可新增／刪除人員、批次刪除、匯入人員名單 Excel、匯入匯款資料、匯出完整人員與匯款明細。一般使用者僅可登記或修改匯款資訊。管理者密碼：16888。</p>
+    <p class="note">管理者權限：可新增／刪除人員、批次刪除、匯入人員名單、匯入匯款資料、匯出完整人員與匯款明細。一般使用者僅可登記或修改匯款資訊。管理者密碼：16888。</p>
   </section>
 
   <section class="card">
