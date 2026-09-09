@@ -362,13 +362,195 @@ table{border-collapse:separate;border-spacing:0}thead th{position:sticky;top:0;z
 @media(max-width:410px){.stat .label{font-size:12px}.stat .value{font-size:23px}.summary-line{grid-template-columns:1fr!important}}
 </style>
 
+
+<style>
+/* ===== 精品儀表板強化版 ===== */
+.project-banner{
+  padding:22px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255,255,255,.48), transparent 30%),
+    linear-gradient(135deg, rgba(99,33,45,.98) 0%, rgba(167,62,80,.97) 55%, rgba(199,83,102,.94) 100%);
+  color:#fff;
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 18px 42px rgba(91,31,43,.18);
+}
+.project-banner-main{
+  display:grid;
+  grid-template-columns:1.65fr .95fr;
+  gap:20px;
+  align-items:center;
+}
+.eyebrow{
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:1.3px;
+  opacity:.74;
+  margin-bottom:8px;
+}
+.project-copy h2{
+  margin:0 0 12px;
+  font-size:30px;
+  font-weight:950;
+  letter-spacing:.2px;
+}
+.hero-amount-row{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin-bottom:14px;
+}
+.hero-amount-box{
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:16px;
+  padding:14px 15px;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.hero-amount-box .k{
+  font-size:12px;
+  opacity:.75;
+  margin-bottom:6px;
+}
+.hero-amount-box .v{
+  font-size:28px;
+  font-weight:950;
+  line-height:1.08;
+  letter-spacing:-.4px;
+}
+.hero-amount-box .v.subtle{font-size:24px}
+.hero-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.meta-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 12px;
+  border-radius:999px;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.14);
+  font-size:12px;
+  font-weight:800;
+}
+.progress-ring-card{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+}
+.ring-wrap{
+  width:190px;
+  height:190px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:conic-gradient(#b24356 0deg, #f0e4e7 0deg 360deg);
+  box-shadow:0 16px 36px rgba(91,31,43,.25);
+}
+.ring-inner{
+  width:146px;
+  height:146px;
+  border-radius:50%;
+  background:linear-gradient(180deg,#fff,#fff8f9);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  color:#7d2b3a;
+}
+.ring-percent{
+  font-size:34px;
+  font-weight:950;
+  line-height:1;
+}
+.ring-label{
+  margin-top:6px;
+  font-size:12px;
+  color:#8a6e75;
+  font-weight:700;
+}
+.ring-meta .big{
+  font-size:16px;
+  font-weight:900;
+  text-align:center;
+}
+.ring-meta .small{
+  font-size:12px;
+  opacity:.82;
+  text-align:center;
+}
+.hero{grid-template-columns:repeat(5,1fr)!important}
+.hero .stat:nth-child(5) .value{color:#7d2b3a}
+.list-sticky-zone{
+  position:sticky;
+  top:84px;
+  z-index:18;
+  background:linear-gradient(180deg, rgba(245,242,243,.98), rgba(245,242,243,.93));
+  padding:8px 0 12px;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.toolbar{
+  background:rgba(255,255,255,.78);
+  border:1px solid #eee3e6;
+  border-radius:16px;
+  padding:12px;
+  box-shadow:0 8px 22px rgba(88,48,56,.06);
+}
+#cloudStatus{
+  padding:8px 12px!important;
+  min-width:auto!important;
+  border-radius:999px!important;
+}
+.dt-compact .m{
+  font-size:13px;
+  font-weight:800;
+  color:#43373a;
+  line-height:1.15;
+}
+.dt-compact .y{
+  font-size:11px;
+  color:#8b7b80;
+  margin-top:4px;
+}
+.admin-heading{
+  margin-bottom:12px;
+  padding-bottom:12px;
+  border-bottom:1px dashed #ead9dd;
+}
+#adminToggleBtn{min-width:66px}
+@media(max-width:1024px){
+  .project-banner-main{grid-template-columns:1fr}
+  .progress-ring-card{flex-direction:row;justify-content:flex-start}
+}
+@media(max-width:900px){
+  .hero{grid-template-columns:repeat(2,1fr)!important}
+}
+@media(max-width:700px){
+  .project-banner{padding:16px}
+  .project-copy h2{font-size:24px}
+  .hero-amount-row{grid-template-columns:1fr;gap:9px}
+  .hero-amount-box{padding:12px 13px}
+  .hero-amount-box .v,.hero-amount-box .v.subtle{font-size:24px}
+  .ring-wrap{width:146px;height:146px}
+  .ring-inner{width:112px;height:112px}
+  .ring-percent{font-size:28px}
+  .list-sticky-zone{top:73px;padding:6px 0 10px}
+  .toolbar{grid-template-columns:1fr;padding:10px}
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
   <header class="topbar">
     <div class="brand">
       <h1>💰 <span id="projectTitle">收費匯款登記表</span></h1>
-      <p>收款進度、未繳名單、雲端同步，一頁掌握</p>
+      <p>精品酒紅收款儀表板｜未繳名單、雲端同步、一頁掌握</p>
     </div>
     <div class="actions">
       <span id="cloudStatus" class="btn cloud-sync" style="cursor:default">☁️ 雲端連線中</span>
@@ -377,11 +559,52 @@ table{border-collapse:separate;border-spacing:0}thead th{position:sticky;top:0;z
     </div>
   </header>
 
+  <section class="card project-banner">
+    <div class="project-banner-main">
+      <div class="project-copy">
+        <div class="eyebrow">PROJECT OVERVIEW</div>
+        <h2 id="heroProjectName">收費匯款登記表</h2>
+        <div class="hero-amount-row">
+          <div class="hero-amount-box">
+            <div class="k">已收金額</div>
+            <div class="v" id="heroReceived">$0</div>
+          </div>
+          <div class="hero-amount-box">
+            <div class="k">目標金額</div>
+            <div class="v subtle" id="heroTarget">$0</div>
+          </div>
+          <div class="hero-amount-box">
+            <div class="k">尚差金額</div>
+            <div class="v subtle" id="heroShort">$0</div>
+          </div>
+        </div>
+        <div class="hero-meta">
+          <span class="meta-chip">已繳 <strong id="heroPaidCount">0</strong> 人</span>
+          <span class="meta-chip">未繳 <strong id="heroUnpaidCount">0</strong> 人</span>
+          <span class="meta-chip">每人應繳 <strong id="heroPerPerson">$0</strong></span>
+        </div>
+      </div>
+      <div class="progress-ring-card">
+        <div class="ring-wrap" id="ringWrap">
+          <div class="ring-inner">
+            <div class="ring-percent" id="heroPercent">0%</div>
+            <div class="ring-label">收款完成度</div>
+          </div>
+        </div>
+        <div class="ring-meta">
+          <div class="big" id="heroCountLine">0 / 0 人已完成</div>
+          <div class="small">其他裝置開啟後會自動讀取雲端資料</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="hero">
     <div class="stat"><div class="label">總人數</div><div class="value" id="totalPeople">0</div><div class="sub">目前名單</div></div>
     <div class="stat"><div class="label">已繳人數</div><div class="value green" id="paidPeople">0</div><div class="sub" id="paidRate">完成率 0%</div></div>
     <div class="stat"><div class="label">未繳人數</div><div class="value amber" id="unpaidPeople">0</div><div class="sub">待完成</div></div>
     <div class="stat"><div class="label">已收金額</div><div class="value blue" id="receivedMoney">$0</div><div class="sub" id="targetMoney">目標 $0</div></div>
+    <div class="stat"><div class="label">尚差金額</div><div class="value" id="shortMoney">$0</div><div class="sub">距離收齊還差</div></div>
   </section>
 
   <section class="card">
@@ -396,7 +619,8 @@ table{border-collapse:separate;border-spacing:0}thead th{position:sticky;top:0;z
   </section>
 
   <section class="card admin-panel" id="adminPanel">
-    <div class="card-title"><h2>管理者控制台</h2><span class="pill paid">管理模式</span></div>
+    <div class="card-title admin-heading"><div style="display:flex;align-items:center;gap:10px"><h2>管理者控制台</h2><span class="pill paid">管理模式</span></div><button class="btn small" type="button" id="adminToggleBtn">收合</button></div>
+    <div id="adminPanelBody">
     <div class="summary-line" style="margin-bottom:14px">
       <span class="summary-chip">新增人員</span>
       <span class="summary-chip">刪除人員</span>
@@ -428,11 +652,13 @@ table{border-collapse:separate;border-spacing:0}thead th{position:sticky;top:0;z
     <div class="note" style="margin-top:12px;padding:10px 12px;background:#fff6f7;border:1px solid #f0d9dd;border-radius:10px">雲端節點：<b>paymentRegistry</b>｜資料庫：<b>analyst-277bd-default-rtdb.firebaseio.com</b></div>
     <div class="note" style="margin-top:8px">資料同步：管理者新增、修改、刪除與資料更新後會自動儲存 Firebase；其他裝置開啟後會讀取雲端資料，每 5 秒檢查一次，切回頁面前景時也會立即同步。網路中斷時保留 localStorage 本機資料。</div>
     <p class="note">管理者權限：可新增／刪除人員、批次刪除、匯入人員名單、匯入匯款資料、匯出完整人員與匯款明細。一般使用者僅可登記或修改匯款資訊。管理者密碼：16888。</p>
+    </div>
   </section>
 
   <section class="card">
     <div class="card-title"><h2>匯款名單</h2><span class="muted" id="resultCount">0 筆</span></div>
 
+    <div class="list-sticky-zone">
     <div class="tabs">
       <button class="tab active" data-filter="all">全部</button>
       <button class="tab" data-filter="paid">已繳</button>
@@ -454,12 +680,14 @@ table{border-collapse:separate;border-spacing:0}thead th{position:sticky;top:0;z
       <button class="btn" id="clearFilter">清除篩選</button>
     </div>
 
+    </div>
+
     <div class="desktop-table table-wrap" style="margin-top:14px">
       <table>
         <thead>
           <tr>
             <th class="admin-cell check-col"><input type="checkbox" id="checkAll"></th>
-            <th>#</th><th>姓名</th><th>狀態</th><th>帳號後五碼</th><th>匯款金額</th><th>備註</th><th>最後更新</th><th>操作</th><th class="admin-cell">管理</th>
+            <th>#</th><th>姓名</th><th>狀態</th><th>帳號後五碼</th><th>匯款金額</th><th>匯款日期／時間</th><th>備註</th><th>最後更新</th><th>操作</th><th class="admin-cell">管理</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -481,6 +709,7 @@ table{border-collapse:separate;border-spacing:0}thead th{position:sticky;top:0;z
   <input id="payId" type="hidden">
   <div class="field"><label>帳號後五碼</label><input id="last5" inputmode="numeric" maxlength="5" placeholder="例如 12345"></div>
   <div class="field" style="margin-top:10px"><label>匯款金額</label><input id="payAmount" type="number" min="0" step="1" placeholder="請輸入金額"></div>
+  <div class="field" style="margin-top:10px"><label>匯款日期／時間</label><input id="paymentDateTime" type="datetime-local"></div>
   <div class="field" style="margin-top:10px"><label>備註</label><input id="note" placeholder="選填"></div>
   <div class="modal-row"><button class="btn" data-close="payModal">取消</button><button class="btn primary" id="savePay">儲存登記</button></div>
 </div></div>
@@ -509,6 +738,7 @@ state.people ||= [];
 state.people=state.people.map(p=>({selected:false,...p}));
 let isAdmin=sessionStorage.getItem('payment_admin')==='1';
 let activeFilter='all';
+let adminPanelOpen=(localStorage.getItem('payment_admin_panel_open')||'1')==='1';
 
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -518,9 +748,21 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&
 const paid=p=>Number(p.amount)>0 && /^\d{5}$/.test(String(p.last5||''));
 const expected=()=>{const t=Number(state.settings.totalAmount)||0,c=Number(state.settings.shareCount)||0;return c?t/c:0};
 const payState=p=>paid(p)?'paid':'unpaid';
-const statusLabel=p=>paid(p)?'已繳':'未繳';
+const statusLabel=p=>paid(p)?'✓ 已完成':'待匯款';
 const statusClass=p=>paid(p)?'paid':'unpaid';
-const fmtTime=v=>v?new Date(v).toLocaleString('zh-TW',{hour12:false}):'—';
+function fmtTime(v){ return v?new Date(v).toLocaleString('zh-TW',{hour12:false}):'—'; }
+function paymentTimeText(p){ return p?.paymentAt ? fmtTime(p.paymentAt) : '—'; }
+function toDateTimeLocal(ts){
+  if(!ts)return '';
+  const d=new Date(ts), pad=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function fmtCompactDateHTML(ts){
+  if(!ts) return '<span class="muted">—</span>';
+  const d=new Date(ts), pad=n=>String(n).padStart(2,'0');
+  const main=`${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `<div class="dt-compact"><div class="m">${main}</div><div class="y">${d.getFullYear()}</div></div>`;
+}
 
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
 function setCloudStatus(type,msg){
@@ -659,6 +901,7 @@ function render(){
   $('#paidPeople').textContent=paidN;
   $('#unpaidPeople').textContent=unpaidN;
   $('#receivedMoney').textContent=money(received);
+  $('#shortMoney').textContent=money(Math.max(target-received,0));
   $('#targetMoney').textContent='目標 '+money(target);
   $('#targetChip').textContent=money(target);
   $('#perPersonChip').textContent=e?money(Math.round(e)):'$0';
@@ -671,12 +914,26 @@ function render(){
 
   const projectName=state.settings.projectName||'收費匯款登記表';
   $('#projectTitle').textContent=projectName;
+  $('#heroProjectName').textContent=projectName;
+  $('#heroReceived').textContent=money(received);
+  $('#heroTarget').textContent=money(target);
+  $('#heroShort').textContent=money(Math.max(target-received,0));
+  $('#heroPaidCount').textContent=paidN;
+  $('#heroUnpaidCount').textContent=unpaidN;
+  $('#heroPerPerson').textContent=e?money(Math.round(e)):'$0';
+  $('#heroPercent').textContent=Math.round(completion)+'%';
+  $('#heroCountLine').textContent=`${paidN} / ${total} 人已完成`;
+  const ringDegree=Math.max(0,Math.min(360,completion*3.6));
+  $('#ringWrap').style.background=`conic-gradient(#b24356 0deg ${ringDegree}deg, #f0e4e7 ${ringDegree}deg 360deg)`;
   document.title=projectName+'｜收款管理';
   $('#projectName').value=projectName;
   $('#totalAmount').value=state.settings.totalAmount||'';
   $('#shareCount').value=state.settings.shareCount||'';
   $('#app').classList.toggle('is-admin',isAdmin);
   $('#adminPanel').classList.toggle('show',isAdmin);
+  const adminBody=$('#adminPanelBody'), adminToggleBtn=$('#adminToggleBtn');
+  if(adminBody) adminBody.style.display=adminPanelOpen?'block':'none';
+  if(adminToggleBtn) adminToggleBtn.textContent=adminPanelOpen?'收合':'展開';
   $('#adminBtn').style.display=isAdmin?'none':'inline-flex';
   $('#logoutBtn').style.display=isAdmin?'inline-flex':'none';
 
@@ -690,12 +947,13 @@ function render(){
       <td><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></td>
       <td>${esc(p.last5||'—')}</td>
       <td class="money">${p.amount?money(p.amount):'—'}</td>
+      <td>${fmtCompactDateHTML(p.paymentAt)}</td>
       <td>${esc(p.note||'—')}</td>
-      <td class="muted">${fmtTime(p.updatedAt)}</td>
+      <td>${fmtCompactDateHTML(p.updatedAt)}</td>
       <td><button class="btn small primary" onclick="openPay('${p.id}')">${paid(p)?'修改':'登記'}</button></td>
       <td class="admin-cell"><button class="btn small danger" onclick="deletePerson('${p.id}')">刪除</button></td>
     </tr>`;
-  }).join(''):`<tr><td colspan="10" class="empty">目前沒有符合條件的資料</td></tr>`;
+  }).join(''):`<tr><td colspan="11" class="empty">目前沒有符合條件的資料</td></tr>`;
 
   $('#mobileList').innerHTML=rows.length?rows.map(p=>{
     return `<div class="person-card" style="border-left:4px solid ${paid(p)?'#c84455':'#d7a03b'}">
@@ -706,6 +964,7 @@ function render(){
       <div class="person-grid">
         <div class="person-item"><div class="k">帳號後五碼</div><div class="v">${esc(p.last5||'—')}</div></div>
         <div class="person-item"><div class="k">匯款金額</div><div class="v">${p.amount?money(p.amount):'—'}</div></div>
+        <div class="person-item"><div class="k">匯款日期／時間</div><div class="v">${paymentTimeText(p)}</div></div>
         <div class="person-item"><div class="k">最後更新</div><div class="v">${fmtTime(p.updatedAt)}</div></div>
       </div>
       ${p.note?`<div class="note" style="margin-bottom:10px">備註：${esc(p.note)}</div>`:''}
@@ -722,7 +981,10 @@ function render(){
 function openPay(id){
   const p=state.people.find(x=>x.id===id);if(!p)return;
   $('#payId').value=id;$('#payTitle').textContent=`${p.name}｜${paid(p)?'修改匯款':'登記匯款'}`;
-  $('#last5').value=p.last5||'';$('#payAmount').value=p.amount||'';$('#note').value=p.note||'';
+  $('#last5').value=p.last5||'';
+  $('#payAmount').value=p.amount||'';
+  $('#paymentDateTime').value=toDateTimeLocal(p.paymentAt || Date.now());
+  $('#note').value=p.note||'';
   $('#payModal').classList.add('show');
 }
 function deletePerson(id){
@@ -738,20 +1000,28 @@ $('#adminBtn').onclick=()=>{$('#adminPassword').value='';$('#loginModal').classL
 $('#adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginSubmit').click()});
 $('#loginSubmit').onclick=()=>{if($('#adminPassword').value===ADMIN_PASSWORD){isAdmin=true;sessionStorage.setItem('payment_admin','1');$('#loginModal').classList.remove('show');render();toast('已進入管理模式')}else alert('密碼錯誤')};
 $('#logoutBtn').onclick=()=>{isAdmin=false;sessionStorage.removeItem('payment_admin');render();toast('已登出管理模式')};
+$('#adminToggleBtn').onclick=()=>{
+  adminPanelOpen=!adminPanelOpen;
+  localStorage.setItem('payment_admin_panel_open',adminPanelOpen?'1':'0');
+  render();
+};
 
 $('#savePay').onclick=()=>{
   const p=state.people.find(x=>x.id===$('#payId').value);if(!p)return;
   const last5=$('#last5').value.trim(),amount=Number($('#payAmount').value);
   if(!/^\d{5}$/.test(last5))return alert('帳號後五碼必須為 5 位數字');
   if(!(amount>0))return alert('請輸入正確匯款金額');
-  p.last5=last5;p.amount=amount;p.note=$('#note').value.trim();p.updatedAt=Date.now();save();
+  const paymentInput=$('#paymentDateTime').value;
+  const paymentAt=paymentInput ? new Date(paymentInput).getTime() : Date.now();
+  if(!Number.isFinite(paymentAt))return alert('請輸入正確的匯款日期／時間');
+  p.last5=last5;p.amount=amount;p.paymentAt=paymentAt;p.note=$('#note').value.trim();p.updatedAt=Date.now();save();
   $('#payModal').classList.remove('show');toast('匯款資料已儲存');
 };
 
 $('#addPersonBtn').onclick=()=>{
   const name=$('#newName').value.trim();if(!name)return alert('請輸入姓名');
   if(state.people.some(p=>p.name===name))return alert('此姓名已存在');
-  state.people.push({id:uid(),name,last5:'',amount:0,note:'',updatedAt:null,selected:false});
+  state.people.push({id:uid(),name,last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false});
   $('#newName').value='';save();toast('已新增人員');
 };
 $('#newName').addEventListener('keydown',e=>{if(e.key==='Enter'&&isAdmin)$('#addPersonBtn').click()});
@@ -799,7 +1069,7 @@ $('#namesFile').onchange=e=>{
   let add=0,skip=0;
   rows.forEach(r=>{const name=String(r['姓名']||r['name']||Object.values(r)[0]||'').trim();if(!name)return;
    if(state.people.some(p=>p.name===name)){skip++;return}
-   state.people.push({id:uid(),name,last5:'',amount:0,note:'',updatedAt:null,selected:false});add++;
+   state.people.push({id:uid(),name,last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false});add++;
   });
   save();alert(`匯入完成\n新增：${add} 人\n重複略過：${skip} 人`);e.target.value='';
  });
@@ -811,10 +1081,17 @@ $('#detailFile').onchange=e=>{
   rows.forEach(r=>{
    const name=String(r['姓名']||r['name']||'').trim();if(!name)return;
    let p=state.people.find(x=>x.name===name);
-   if(!p){p={id:uid(),name,last5:'',amount:0,note:'',updatedAt:null,selected:false};state.people.push(p);newN++}
+   if(!p){p={id:uid(),name,last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false};state.people.push(p);newN++}
    let last5=String(r['帳號後五碼']||r['後五碼']||'').trim().replace(/\D/g,'');
    const amount=Number(r['匯款金額']||r['金額']||0);
    if(last5)p.last5=last5.padStart(5,'0').slice(-5);if(amount>0)p.amount=amount;
+   const importedTime=r['匯款日期/時間']||r['匯款日期／時間']||r['匯款時間']||r['匯款日期']||'';
+   if(importedTime){
+     const dt=new Date(importedTime);
+     if(!isNaN(dt))p.paymentAt=dt.getTime();
+   }else if(amount>0 && !p.paymentAt){
+     p.paymentAt=Date.now();
+   }
    p.note=String(r['備註']||p.note||'');p.updatedAt=Date.now();count++;
   });
   save();alert(`匯入完成\n更新：${count} 筆\n新增名單：${newN} 人`);e.target.value='';
@@ -823,8 +1100,8 @@ $('#detailFile').onchange=e=>{
 function exportExcel(template=false){
  const e=expected();
  const rows=template?
-  [{'姓名':'王小明','帳號後五碼':'12345','匯款金額':1400,'備註':''}]:
-  state.people.map((p,i)=>({'序號':i+1,'姓名':p.name,'繳款狀態':statusLabel(p),'帳號後五碼':p.last5||'','匯款金額':Number(p.amount)||0,'應繳金額':Math.round(e||0),'備註':p.note||'','最後更新':p.updatedAt?fmtTime(p.updatedAt):''}));
+  [{'姓名':'王小明','帳號後五碼':'12345','匯款金額':1400,'匯款日期／時間':'2026/09/09 23:00','備註':''}]:
+  state.people.map((p,i)=>({'序號':i+1,'姓名':p.name,'繳款狀態':statusLabel(p),'帳號後五碼':p.last5||'','匯款金額':Number(p.amount)||0,'匯款日期／時間':p.paymentAt?fmtTime(p.paymentAt):'','應繳金額':Math.round(e||0),'備註':p.note||'','最後更新':p.updatedAt?fmtTime(p.updatedAt):''}));
  const ws=XLSX.utils.json_to_sheet(rows);
  ws['!cols']=[{wch:8},{wch:16},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:22},{wch:22}];
  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,template?'匯入範本':'匯款明細');
