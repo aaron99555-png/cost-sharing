@@ -3,637 +3,207 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#1d4ed8">
-<title>收費匯款登記表｜優化版</title>
+<title>收費匯款登記表｜收款管理</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{
-  --bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#718096;--line:#e6eaf0;
-  --blue:#2563eb;--blue2:#eff6ff;--green:#0f9f68;--green2:#ecfdf5;
-  --amber:#d18700;--amber2:#fff7e6;--red:#d93f54;--red2:#fff1f3;
-  --purple:#7c3aed;--purple2:#f5f3ff;--shadow:0 12px 34px rgba(20,36,65,.08);
-  --radius:18px;
+  --bg:#f6f1f3;--card:#fff;--text:#2f292b;--muted:#807277;--line:#eadde1;
+  --red:#aa4052;--red2:#7d2d3b;--redSoft:#fff1f4;--gold:#a97727;--goldSoft:#fff7e9;
+  --shadow:0 14px 34px rgba(83,43,53,.09);--radius:19px;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC",Arial,sans-serif}
+body{
+  margin:0;color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC",Arial,sans-serif;
+  background:
+    radial-gradient(circle at 7% 2%,rgba(170,64,82,.13),transparent 27%),
+    radial-gradient(circle at 94% 8%,rgba(96,105,138,.08),transparent 25%),
+    linear-gradient(155deg,#f6f1f3,#fbfafb 48%,#f2edef);
+  min-height:100vh;
+}
 button,input,select{font:inherit}
 button{touch-action:manipulation}
-.wrap{max-width:1240px;margin:auto;padding:22px}
-.topbar{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px}
-.brand h1{font-size:29px;margin:0;font-weight:900;letter-spacing:-.4px}
-.brand p{margin:7px 0 0;color:var(--muted);font-size:14px}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-.btn{border:0;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer;background:white;color:var(--text);box-shadow:0 0 0 1px var(--line) inset;transition:.15s}
+.wrap{max-width:1240px;margin:auto;padding:20px}
+.topbar{
+  position:sticky;top:0;z-index:60;
+  margin:-20px -20px 18px;padding:16px 20px;
+  display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;
+  background:linear-gradient(120deg,rgba(103,35,48,.97),rgba(166,59,78,.96) 58%,rgba(195,77,96,.94));
+  color:#fff;box-shadow:0 12px 32px rgba(93,32,45,.20);
+  backdrop-filter:blur(14px);
+}
+.brand h1{margin:0;font-size:28px;font-weight:950}
+.brand p{margin:5px 0 0;font-size:13px;opacity:.82}
+.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{
+  border:0;border-radius:12px;padding:10px 14px;font-weight:850;cursor:pointer;
+  background:#fff;color:var(--text);box-shadow:0 0 0 1px var(--line) inset;transition:.16s;
+}
 .btn:hover{transform:translateY(-1px)}
-.btn.primary{background:var(--blue);color:white;box-shadow:none}
-.btn.success{background:var(--green);color:white;box-shadow:none}
-.btn.danger{background:var(--red2);color:var(--red)}
-.btn.ghost{background:transparent}
-.btn.small{padding:7px 10px;border-radius:9px;font-size:12px}
-.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.hero{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}
-.stat{background:var(--card);border-radius:var(--radius);padding:17px;box-shadow:var(--shadow);position:relative;overflow:hidden}
-.stat:after{content:"";position:absolute;right:-15px;bottom:-25px;width:74px;height:74px;border-radius:50%;background:rgba(37,99,235,.05)}
-.stat .label{font-size:12px;color:var(--muted);font-weight:700}
-.stat .value{font-size:27px;font-weight:900;margin-top:7px;font-variant-numeric:tabular-nums}
-.stat .sub{font-size:12px;color:var(--muted);margin-top:5px}
-.green{color:var(--green)}.amber{color:var(--amber)}.red{color:var(--red)}.blue{color:var(--blue)}
-.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
-.card-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
-.card-title h2{margin:0;font-size:18px}
-.pill{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:900}
-.paid{background:var(--green2);color:var(--green)}.unpaid{background:var(--amber2);color:var(--amber)}
-.short{background:var(--red2);color:var(--red)}.over{background:var(--purple2);color:var(--purple)}
-.progress-wrap{height:15px;border-radius:999px;background:#edf1f6;overflow:hidden}
-.progress{height:100%;width:0;background:linear-gradient(90deg,#10b981,#2563eb);transition:.25s}
-.progress-meta{display:flex;justify-content:space-between;gap:10px;margin-top:8px;color:var(--muted);font-size:13px}
-.admin-panel{display:none}.admin-panel.show{display:block}
-.admin-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:12px;color:var(--muted);font-weight:700}
-input,select{width:100%;border:1px solid var(--line);border-radius:12px;background:white;padding:11px 12px;outline:none;color:var(--text)}
-input:focus,select:focus{border-color:#8bb0ff;box-shadow:0 0 0 3px #edf4ff}
-.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.toolbar{display:grid;grid-template-columns:1.4fr .8fr auto auto;gap:10px;align-items:end}
-.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
-.tab{border:0;border-radius:999px;padding:8px 12px;background:#f3f5f8;color:#556176;font-weight:800;cursor:pointer}
-.tab.active{background:var(--blue);color:#fff}
-.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px}
-table{width:100%;border-collapse:collapse;min-width:980px}
-th,td{padding:12px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
-th{position:sticky;top:0;background:#f8fafc;color:#5f6d82;font-size:12px;z-index:2;white-space:nowrap}
-tbody tr:hover{background:#fafcff}
-.name{font-weight:900}.money{font-weight:900;font-variant-numeric:tabular-nums}
-.muted{color:var(--muted);font-size:12px}
-.admin-cell{display:none}.is-admin .admin-cell{display:table-cell}.admin-only{display:none}.is-admin .admin-only{display:inline-flex}
-.check-col{width:38px}
-.warn-row{background:#fffafb}
-.summary-line{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.summary-chip{background:#f7f9fc;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;color:#526079}
-.mobile-list{display:none}
-.person-card{border:1px solid var(--line);border-radius:15px;padding:14px;margin-bottom:10px;background:#fff}
-.person-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.person-name{font-size:17px;font-weight:900}
-.person-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:11px 0}
-.person-item{background:#f8fafc;border-radius:11px;padding:9px}
-.person-item .k{font-size:11px;color:var(--muted)}.person-item .v{font-size:14px;font-weight:800;margin-top:3px}
-.person-actions{display:flex;gap:8px}.person-actions .btn{flex:1}
-.note{font-size:12px;color:var(--muted);line-height:1.65}
-.empty{text-align:center;padding:34px;color:var(--muted)}
-.modal{position:fixed;inset:0;background:rgba(10,18,30,.48);display:none;align-items:center;justify-content:center;padding:18px;z-index:99}
-.modal.show{display:flex}
-.modal-box{width:min(450px,100%);background:white;border-radius:20px;padding:20px;box-shadow:0 28px 90px rgba(0,0,0,.22)}
-.modal h3{margin:0 0 14px;font-size:20px}.modal-row{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
-.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#172033;color:white;padding:11px 15px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:.2s;z-index:150;box-shadow:0 10px 30px rgba(0,0,0,.18)}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-@media(max-width:900px){
-  .hero{grid-template-columns:repeat(3,1fr)}
-  .admin-grid{grid-template-columns:1fr 1fr}
-  .toolbar{grid-template-columns:1fr 1fr}
+.btn.primary{background:linear-gradient(135deg,#963345,#c65063);color:#fff;box-shadow:none}
+.btn.danger{background:#fff1f3;color:#a33447}
+.btn.small{padding:7px 10px;font-size:12px;border-radius:10px}
+.topbar .btn{background:rgba(255,255,255,.12);color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.20) inset}
+.card{
+  background:rgba(255,255,255,.94);border:1px solid rgba(232,218,222,.95);
+  border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:16px;
 }
-@media(max-width:680px){
-  .wrap{padding:13px}.topbar{flex-direction:column}
-  .brand h1{font-size:24px}.actions{width:100%}.actions .btn{flex:1}
-  .hero{grid-template-columns:1fr 1fr;gap:9px}.stat{padding:14px}.stat .value{font-size:23px}
-  .toolbar{grid-template-columns:1fr}.admin-grid{grid-template-columns:1fr 1fr}
-  .desktop-table{display:none}.mobile-list{display:block}
-  .progress-meta{font-size:12px}
-  .card{padding:14px;border-radius:16px}
-}
-@media(max-width:420px){.admin-grid{grid-template-columns:1fr}.hero{grid-template-columns:1fr 1fr}}
-</style>
-
-<style>
-/* 2026 refined visual system */
-:root{
-  --bg:#f3f6fb;
-  --card:#ffffff;
-  --text:#17233c;
-  --muted:#78859a;
-  --line:#e7ebf2;
-  --blue:#315fbd;
-  --blue2:#edf3ff;
-  --green:#168365;
-  --green2:#eaf7f2;
-  --amber:#b77a18;
-  --amber2:#fff6e6;
-  --red:#c94e5e;
-  --red2:#fff0f2;
-  --shadow:0 8px 28px rgba(30,51,84,.07);
-  --radius:20px;
-}
-body{
-  background:
-    radial-gradient(circle at 8% -5%,rgba(49,95,189,.09),transparent 25%),
-    linear-gradient(180deg,#f8faff 0,#f3f6fb 240px);
-}
-.wrap{max-width:1220px;padding:28px 22px 42px}
-.topbar{
-  background:linear-gradient(135deg,#203c73 0%,#315fbd 100%);
-  color:#fff;border-radius:24px;padding:24px 26px;
-  box-shadow:0 14px 38px rgba(37,68,125,.18);
-  align-items:center;margin-bottom:20px;
-}
-.brand h1{font-size:28px;letter-spacing:.2px}
-.brand p{color:rgba(255,255,255,.76)}
-.topbar .btn{background:rgba(255,255,255,.13);color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset;backdrop-filter:blur(8px)}
-.hero{gap:14px}
-.stat{
-  border:1px solid rgba(225,231,240,.85);
-  box-shadow:var(--shadow);
-  padding:19px 18px;
-}
-.stat:after{width:88px;height:88px;background:rgba(49,95,189,.045)}
-.stat .label{font-size:13px;letter-spacing:.2px}
-.stat .value{font-size:29px;margin-top:9px}
-.card{border:1px solid rgba(225,231,240,.9);box-shadow:var(--shadow);padding:20px}
-.card-title h2{font-size:19px}
-.progress-wrap{height:11px;background:#edf1f6}
-.progress{background:linear-gradient(90deg,#1b9871,#3970d0)}
-.summary-chip{background:#f7f9fc;border-color:#e9edf3}
-.admin-panel{
-  border-top:4px solid #315fbd;
-}
-input,select{
-  min-height:44px;background:#fbfcfe;border-color:#dfe5ee;
-}
-input:focus,select:focus{background:#fff;border-color:#6d91d8;box-shadow:0 0 0 3px rgba(49,95,189,.10)}
-.btn{border-radius:11px;box-shadow:0 0 0 1px #dfe5ee inset}
-.btn.primary{background:#315fbd}
-.btn.success{background:#168365}
-.tabs{
-  padding:4px;background:#f1f4f8;border-radius:14px;width:max-content;max-width:100%;
-}
-.tab{background:transparent;border-radius:10px;padding:8px 16px}
-.tab.active{background:#fff;color:#315fbd;box-shadow:0 2px 8px rgba(30,51,84,.09)}
-.table-wrap{border-color:#e3e8ef}
-th{background:#f7f9fc;color:#68768c;padding-top:13px;padding-bottom:13px}
-td{padding-top:13px;padding-bottom:13px}
-tbody tr:last-child td{border-bottom:0}
-tbody tr:hover{background:#f8faff}
-.pill{padding:6px 10px}
-.paid{background:#e9f7f1;color:#13765c}
-.unpaid{background:#fff4df;color:#a56a0a}
-.money{color:#273956}
-.person-card{box-shadow:0 4px 16px rgba(30,51,84,.05)}
-.person-item{background:#f6f8fb}
-.toast{background:#233451}
-@media(max-width:680px){
-  body{background:#f4f7fb}
-  .wrap{padding:12px 12px 28px}
-  .topbar{border-radius:20px;padding:19px;margin-bottom:13px}
-  .brand h1{font-size:22px}
-  .brand p{font-size:12px;line-height:1.55}
-  .hero{gap:8px;margin:12px 0}
-  .stat{border-radius:15px;padding:13px}
-  .stat .label{font-size:11px}
-  .stat .value{font-size:22px}
-  .card{padding:14px;border-radius:16px;margin-bottom:11px}
-  .tabs{width:100%;display:grid;grid-template-columns:repeat(3,1fr)}
-  .tab{padding:9px 7px}
-  .person-grid{grid-template-columns:1fr 1fr}
-}
-</style>
-
-
-<style>
-/* Premium background & palette */
-:root{
-  --bg:#eef3f9;
-  --card:rgba(255,255,255,.94);
-  --text:#17243b;
-  --muted:#748198;
-  --line:#e1e8f0;
-  --blue:#315fbd;
-  --blue2:#edf3ff;
-  --green:#15775e;
-  --green2:#e9f6f1;
-  --amber:#a96f16;
-  --amber2:#fff4df;
-  --red:#c74a5d;
-  --red2:#fff0f2;
-  --shadow:0 12px 34px rgba(37,55,85,.10);
-}
-body{
-  min-height:100vh;
-  background:
-    radial-gradient(circle at 8% 8%, rgba(85,126,205,.18), transparent 26%),
-    radial-gradient(circle at 92% 0%, rgba(89,176,170,.12), transparent 24%),
-    radial-gradient(circle at 84% 88%, rgba(123,104,197,.09), transparent 28%),
-    linear-gradient(135deg,#edf3fb 0%,#f7f9fc 42%,#eef4f6 100%);
-  background-attachment:fixed;
-}
-body:before{
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  background-image:
-    linear-gradient(rgba(255,255,255,.18) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.18) 1px, transparent 1px);
-  background-size:34px 34px;
-  mask-image:linear-gradient(to bottom,rgba(0,0,0,.22),transparent 42%);
-}
-.topbar{
-  background:
-    linear-gradient(135deg,rgba(28,52,99,.98) 0%,rgba(49,95,189,.96) 55%,rgba(41,112,157,.93) 100%);
-  box-shadow:0 18px 44px rgba(36,61,109,.22);
-  border:1px solid rgba(255,255,255,.12);
-}
-.card,.stat{
-  background:rgba(255,255,255,.91);
-  backdrop-filter:blur(10px);
-  -webkit-backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,.78);
-  box-shadow:0 10px 30px rgba(31,49,77,.085);
-}
-.admin-panel{
-  background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(248,251,255,.94));
-}
-.table-wrap{
-  background:rgba(255,255,255,.75);
-}
-th{
-  background:rgba(246,249,253,.96);
-}
-tbody tr:hover{
-  background:rgba(238,244,255,.72);
-}
-.person-card{
-  background:rgba(255,255,255,.94);
-  box-shadow:0 8px 24px rgba(31,49,77,.08);
-}
-@media(max-width:680px){
-  body{
-    background:
-      radial-gradient(circle at 5% 5%, rgba(85,126,205,.14), transparent 30%),
-      linear-gradient(180deg,#eef3f9 0%,#f6f8fb 100%);
-  }
-  body:before{display:none}
-}
-</style>
-
-
-<style>
-/* 收款 Dashboard Red Edition */
-:root{
-  --blue:#344b73;
-  --blue2:#eef2f7;
-  --green:#c84455;
-  --green2:#fff0f2;
-  --amber:#b7791f;
-  --amber2:#fff6e7;
-  --red:#c84455;
-  --red2:#fff0f2;
-}
-body{
-  background:
-    radial-gradient(circle at 8% 5%,rgba(196,68,85,.13),transparent 27%),
-    radial-gradient(circle at 93% 2%,rgba(87,111,150,.12),transparent 25%),
-    linear-gradient(145deg,#f3f5f9 0%,#fafbfc 46%,#f5f1f2 100%);
-}
-.topbar{
-  background:linear-gradient(135deg,#702c38 0%,#a83c4c 48%,#c84b5d 100%);
-  box-shadow:0 18px 44px rgba(111,43,55,.20);
-}
-.btn.primary{background:#bd4354}
-.progress{background:linear-gradient(90deg,#a93849,#d85b6b)}
-.paid{background:#fff0f2;color:#b6384a}
-.stat .green,.green{color:#bd4354}
-.tabs .tab.active{color:#b6384a}
-.admin-panel{border-top-color:#bd4354}
-input:focus,select:focus{border-color:#d58a95;box-shadow:0 0 0 3px rgba(196,68,85,.10)}
-</style>
-
-
-<style>
-.hero{grid-template-columns:repeat(4,1fr)}
-.stat:nth-child(2){background:linear-gradient(145deg,#fff,#fff5f6)}
-.stat:nth-child(3){background:linear-gradient(145deg,#fff,#fffbf3)}
-.stat:nth-child(4){background:linear-gradient(145deg,#fff,#f7f8fb)}
-.summary-line{margin-top:14px}
-.summary-chip{
-  background:rgba(248,249,252,.92);
-  padding:9px 12px;
-  border-radius:11px;
-}
-.summary-chip strong{color:#293852;margin-left:4px}
-.card-title h2{letter-spacing:.1px}
-#receivedMoney{color:#b6384a}
-@media(max-width:900px){.hero{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:680px){
-  .hero{grid-template-columns:repeat(2,1fr)}
-  .summary-line{display:grid;grid-template-columns:1fr 1fr}
-  .summary-chip{display:flex;justify-content:space-between}
-}
-</style>
-
-
-<style>
-@media(min-width:901px){
-  #projectName{font-weight:800;color:#7f2f3c}
-}
-</style>
-
-
-<style>
-#cloudStatus{min-width:118px;text-align:center}
-#cloudStatus.cloud-ok{background:rgba(255,255,255,.18);color:#fff}
-#cloudStatus.cloud-error{background:rgba(100,12,26,.34);color:#fff}
-#cloudStatus.cloud-sync{background:rgba(255,255,255,.10);color:#fff}
-</style>
-
-
-<style>
-/* Premium red dashboard refinement */
-:root{--bg:#f5f2f3;--surface:#fff;--line:#eadfe2;--text:#2d2a2b;--muted:#7f7578;--primary:#a83e50;--primary-dark:#7d2b3a;--primary-soft:#fff1f4;--warning:#b8842f;--warning-soft:#fff7e8;--shadow:0 18px 48px rgba(88,48,56,.10);--shadow-sm:0 8px 24px rgba(88,48,56,.07);}
-html{scroll-behavior:smooth}
-body{color:var(--text);background:radial-gradient(circle at 7% 2%,rgba(168,62,80,.13),transparent 26%),radial-gradient(circle at 96% 10%,rgba(95,111,145,.09),transparent 24%),linear-gradient(155deg,#f6f2f3 0%,#fafafa 48%,#f2eef0 100%);min-height:100vh}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.22;background-image:linear-gradient(rgba(120,90,100,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(120,90,100,.05) 1px,transparent 1px);background-size:28px 28px;mask-image:linear-gradient(to bottom,black,transparent 72%)}
-.topbar{position:sticky;top:0;z-index:50;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);background:linear-gradient(120deg,rgba(102,38,49,.97),rgba(164,57,75,.96) 55%,rgba(193,72,90,.94));border-bottom:1px solid rgba(255,255,255,.18);box-shadow:0 12px 34px rgba(90,30,42,.20)}
-.topbar h1{font-size:clamp(22px,2.2vw,31px);font-weight:900;letter-spacing:.2px}.topbar .sub{opacity:.84;font-size:13px}.topbar .actions{gap:8px}.topbar .btn{border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.11);color:#fff}.topbar .btn:hover{background:rgba(255,255,255,.18);transform:translateY(-1px)}
-main,.container,.wrap{max-width:1240px;margin-left:auto;margin-right:auto}.hero{gap:14px;margin-top:20px}.stat{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.72);background:linear-gradient(145deg,rgba(255,255,255,.94),rgba(255,250,251,.87));box-shadow:var(--shadow-sm);border-radius:18px;padding:18px 18px 17px}.stat:after{content:"";position:absolute;width:82px;height:82px;right:-24px;top:-26px;border-radius:50%;background:radial-gradient(circle,rgba(168,62,80,.10),transparent 68%)}.stat .label{color:var(--muted);font-size:13px;font-weight:800;letter-spacing:.25px}.stat .value{font-size:clamp(27px,3vw,38px);line-height:1.12;margin-top:8px;font-weight:950;letter-spacing:-.5px}.stat .sub{margin-top:5px;color:#9b8e92}.stat:nth-child(2){border-color:#efd7dd;background:linear-gradient(145deg,#fff,#fff4f6)}.stat:nth-child(2) .value{color:#a83e50}.stat:nth-child(3){border-color:#efdfbe;background:linear-gradient(145deg,#fff,#fff9ee)}.stat:nth-child(3) .value{color:#a97525}.stat:nth-child(4) .value{color:#7d2b3a}
-.card{border:1px solid rgba(230,216,220,.9);border-radius:20px;box-shadow:var(--shadow-sm);background:rgba(255,255,255,.91);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}.card:hover{box-shadow:var(--shadow)}.card-title{gap:10px}.card-title h2{font-size:18px;font-weight:900;letter-spacing:.1px}.note{color:var(--muted);line-height:1.7}.summary-line{gap:8px}.summary-chip{border:1px solid #eee2e5;background:linear-gradient(180deg,#fff,#fbf7f8);color:#685e61;box-shadow:0 4px 14px rgba(86,51,58,.04)}.summary-chip strong{color:#7d2b3a}.progress{background:linear-gradient(90deg,#8f3142,#c14f62 60%,#dc7080);box-shadow:0 0 18px rgba(168,62,80,.18)}
-.tabs{background:#f5eff1;padding:5px;border-radius:14px;gap:5px}.tabs .tab{border-radius:10px;font-weight:800;color:#7a6f72}.tabs .tab.active{background:#fff;color:#9c3648;box-shadow:0 4px 12px rgba(93,51,60,.08)}
-input,select,textarea{border:1px solid #e4d9dc!important;border-radius:12px!important;background:#fff!important;color:#302d2e}input:hover,select:hover,textarea:hover{border-color:#d5bec4!important}input:focus,select:focus,textarea:focus{outline:none!important;border-color:#c66b7a!important;box-shadow:0 0 0 4px rgba(168,62,80,.09)!important}label{font-weight:800;color:#695e61}.btn{border-radius:12px;font-weight:850;transition:.18s ease}.btn:hover{transform:translateY(-1px)}.btn.primary{background:linear-gradient(135deg,#963345,#c44f62);color:#fff;border:none;box-shadow:0 7px 18px rgba(168,62,80,.19)}.btn.danger{background:#fff4f5;color:#a13244;border:1px solid #efd7dc}
-table{border-collapse:separate;border-spacing:0}thead th{position:sticky;top:0;z-index:2;background:#f7f2f4;color:#695e61;font-size:12px;font-weight:900;letter-spacing:.2px;border-bottom:1px solid #e9dde0}tbody tr{background:rgba(255,255,255,.88);transition:.15s ease}tbody tr:hover{background:#fff8f9}tbody td{border-bottom:1px solid #f0e7e9}.pill,.status{font-weight:900;border-radius:999px}.paid{background:#fff0f3!important;color:#a4384b!important;border:1px solid #efd2d8}.unpaid{background:#fff7e8!important;color:#9b6d20!important;border:1px solid #f0dfb8}
-.person-card{border-radius:17px;background:linear-gradient(145deg,#fff,#fcf8f9);border:1px solid #eadfe2;box-shadow:0 8px 20px rgba(91,53,62,.06)}.person-card:hover{box-shadow:0 12px 28px rgba(91,53,62,.09)}.person-card .name{font-size:17px;font-weight:950}.admin-panel{border:1px solid #e9dadd;background:linear-gradient(145deg,rgba(255,248,250,.98),rgba(255,255,255,.95));box-shadow:0 14px 34px rgba(102,48,59,.08)}.admin-panel .card-title{border-bottom:1px dashed #ead9dd;padding-bottom:12px;margin-bottom:12px}#cloudStatus{border-radius:999px!important;font-weight:900;letter-spacing:.1px}.toast{border-radius:14px!important;box-shadow:0 12px 30px rgba(70,35,42,.20)!important}
-@media(max-width:700px){body:before{display:none}.topbar{padding-top:max(10px,env(safe-area-inset-top))}.topbar h1{font-size:22px}.topbar .sub{font-size:12px}.topbar .actions{width:100%;justify-content:space-between;margin-top:10px}#cloudStatus{flex:1;min-width:0}.hero{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px;margin-top:12px}.stat{padding:14px 13px;border-radius:15px}.stat .value{font-size:26px}.card{border-radius:17px;padding:15px}.summary-line{grid-template-columns:1fr 1fr!important}.summary-chip{font-size:12px;padding:8px 9px}.tabs{position:sticky;top:88px;z-index:12;box-shadow:0 8px 20px rgba(77,47,54,.06)}.person-card{padding:14px}.btn{min-height:42px}}
-@media(max-width:410px){.stat .label{font-size:12px}.stat .value{font-size:23px}.summary-line{grid-template-columns:1fr!important}}
-</style>
-
-
-<style>
-/* ===== 精品儀表板強化版 ===== */
 .project-banner{
-  padding:22px;
-  background:
-    radial-gradient(circle at 0% 0%, rgba(255,255,255,.48), transparent 30%),
-    linear-gradient(135deg, rgba(99,33,45,.98) 0%, rgba(167,62,80,.97) 55%, rgba(199,83,102,.94) 100%);
-  color:#fff;
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 18px 42px rgba(91,31,43,.18);
+  background:linear-gradient(135deg,#6f2937 0%,#a83e50 55%,#c95b6d 100%);
+  color:#fff;border:none;padding:22px;
 }
-.project-banner-main{
-  display:grid;
-  grid-template-columns:1.65fr .95fr;
-  gap:20px;
-  align-items:center;
+.project-main{display:grid;grid-template-columns:1.65fr .9fr;gap:20px;align-items:center}
+.eyebrow{font-size:11px;letter-spacing:1.25px;font-weight:900;opacity:.72;margin-bottom:7px}
+.project-banner h2{font-size:30px;margin:0 0 12px;font-weight:950}
+.hero-money{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.money-box{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.13);border-radius:15px;padding:13px}
+.money-box .k{font-size:12px;opacity:.75}.money-box .v{font-size:26px;font-weight:950;margin-top:5px}
+.hero-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.meta{background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.14);padding:7px 11px;border-radius:999px;font-size:12px;font-weight:850}
+.ring-area{display:flex;flex-direction:column;align-items:center;gap:10px}
+.ring{width:184px;height:184px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#fff 0deg,#f0d9df 0deg 360deg)}
+.ring-in{width:140px;height:140px;border-radius:50%;background:#fff8fa;color:var(--red2);display:grid;place-items:center;text-align:center}
+.ring-in b{font-size:34px;display:block}.ring-in span{font-size:12px;color:#90777e;font-weight:800}
+.ring-caption{font-size:14px;font-weight:900;text-align:center}
+.hero{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:16px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:17px;padding:16px;box-shadow:0 7px 20px rgba(83,43,53,.05)}
+.stat .label{font-size:12px;color:var(--muted);font-weight:800}
+.stat .value{font-size:27px;font-weight:950;margin-top:7px}.stat .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.red{color:var(--red)}.gold{color:var(--gold)}
+.card-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+.card-title h2{margin:0;font-size:18px;font-weight:950}
+.pill{display:inline-flex;align-items:center;padding:6px 9px;border-radius:999px;font-size:12px;font-weight:900}
+.paid{background:var(--redSoft);color:#a53a4d;border:1px solid #efd4da}
+.unpaid{background:var(--goldSoft);color:#986b22;border:1px solid #eeddb8}
+.progress-wrap{height:13px;background:#eee3e6;border-radius:999px;overflow:hidden}
+.progress{height:100%;width:0;background:linear-gradient(90deg,#8f3041,#c25062,#dd7181);border-radius:999px;transition:.25s}
+.progress-meta{display:flex;justify-content:space-between;gap:10px;margin-top:9px;font-size:12px;color:var(--muted)}
+.summary-line{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+.summary-chip{background:#fbf7f8;border:1px solid #eee2e5;padding:8px 11px;border-radius:11px;font-size:12px}
+.summary-chip strong{color:var(--red2);margin-left:4px}
+.admin-panel{display:none}.admin-panel.show{display:block}
+.admin-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.2fr auto;gap:10px;align-items:end}
+.field label{display:block;font-size:12px;color:#6f6266;font-weight:850;margin-bottom:6px}
+input,select{
+  width:100%;border:1px solid #e3d7da;border-radius:12px;padding:11px 12px;background:#fff;color:var(--text);outline:none
 }
-.eyebrow{
-  font-size:11px;
-  font-weight:800;
-  letter-spacing:1.3px;
-  opacity:.74;
-  margin-bottom:8px;
+input:focus,select:focus{border-color:#c66c7b;box-shadow:0 0 0 4px rgba(170,64,82,.08)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.note{font-size:12px;color:var(--muted);line-height:1.65}
+.sticky-zone{
+  position:sticky;top:75px;z-index:30;padding:8px 0 11px;
+  background:linear-gradient(180deg,rgba(246,241,243,.98),rgba(246,241,243,.92));
+  backdrop-filter:blur(9px)
 }
-.project-copy h2{
-  margin:0 0 12px;
-  font-size:30px;
-  font-weight:950;
-  letter-spacing:.2px;
+.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.tab{border:0;border-radius:999px;padding:8px 12px;background:#f1e9ec;color:#75686c;font-weight:850;cursor:pointer}
+.tab.active{background:#fff;color:#9d3749;box-shadow:0 5px 14px rgba(83,43,53,.08)}
+.toolbar{display:grid;grid-template-columns:1.4fr .8fr auto auto;gap:9px;align-items:end;background:rgba(255,255,255,.78);border:1px solid #ecdee2;border-radius:15px;padding:11px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px}
+table{width:100%;min-width:1080px;border-collapse:collapse}
+th,td{padding:11px 9px;border-bottom:1px solid #efe5e8;text-align:left;vertical-align:middle}
+th{position:sticky;top:0;background:#f8f3f5;color:#685d61;font-size:12px;z-index:2}
+tbody tr:hover{background:#fff8fa}
+.name{font-weight:950}.money{font-weight:950}
+.muted{font-size:12px;color:var(--muted)}
+.admin-cell{display:none}.is-admin .admin-cell{display:table-cell}
+.mobile-list{display:none}
+.person-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff;margin-bottom:10px}
+.person-top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}
+.person-name{font-weight:950;font-size:17px}
+.person-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.person-item{background:#fbf7f8;border-radius:10px;padding:9px}.person-item .k{font-size:11px;color:var(--muted)}.person-item .v{font-weight:850;margin-top:3px}
+.person-actions{display:flex;gap:8px}
+.empty{text-align:center;padding:28px;color:var(--muted)}
+.modal{position:fixed;inset:0;background:rgba(30,20,24,.48);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal.show{display:flex}.modal-card{width:min(460px,100%);background:#fff;border-radius:19px;padding:18px;box-shadow:0 25px 70px rgba(30,15,20,.25)}
+.modal-card h3{margin:0 0 14px}.modal-row{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;pointer-events:none;background:#3a2b30;color:#fff;padding:10px 14px;border-radius:12px;z-index:150;transition:.2s}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#cloudStatus{white-space:nowrap}
+.dt .m{font-size:13px;font-weight:850}.dt .y{font-size:11px;color:var(--muted);margin-top:3px}
+@media(max-width:980px){
+  .project-main{grid-template-columns:1fr}.ring-area{flex-direction:row;justify-content:flex-start}
+  .hero{grid-template-columns:repeat(2,1fr)}.admin-grid{grid-template-columns:1fr 1fr}.toolbar{grid-template-columns:1fr 1fr}
 }
-.hero-amount-row{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:12px;
-  margin-bottom:14px;
+@media(max-width:720px){
+  .wrap{padding:12px}.topbar{margin:-12px -12px 12px;padding:12px}
+  .brand h1{font-size:22px}.brand p{font-size:12px}.actions{width:100%;justify-content:space-between}
+  .project-banner{padding:15px}.project-banner h2{font-size:24px}.hero-money{grid-template-columns:1fr}
+  .ring{width:142px;height:142px}.ring-in{width:108px;height:108px}.ring-in b{font-size:28px}
+  .hero{grid-template-columns:1fr 1fr}.stat{padding:13px}.stat .value{font-size:24px}
+  .sticky-zone{top:97px}.toolbar{grid-template-columns:1fr}.desktop-table{display:none}.mobile-list{display:block}
+  .admin-grid{grid-template-columns:1fr}.summary-line{display:grid;grid-template-columns:1fr 1fr}
 }
-.hero-amount-box{
-  background:rgba(255,255,255,.12);
-  border:1px solid rgba(255,255,255,.14);
-  border-radius:16px;
-  padding:14px 15px;
-  backdrop-filter:blur(8px);
-  -webkit-backdrop-filter:blur(8px);
-}
-.hero-amount-box .k{
-  font-size:12px;
-  opacity:.75;
-  margin-bottom:6px;
-}
-.hero-amount-box .v{
-  font-size:28px;
-  font-weight:950;
-  line-height:1.08;
-  letter-spacing:-.4px;
-}
-.hero-amount-box .v.subtle{font-size:24px}
-.hero-meta{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-}
-.meta-chip{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  padding:8px 12px;
-  border-radius:999px;
-  background:rgba(255,255,255,.12);
-  border:1px solid rgba(255,255,255,.14);
-  font-size:12px;
-  font-weight:800;
-}
-.progress-ring-card{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:12px;
-}
-.ring-wrap{
-  width:190px;
-  height:190px;
-  border-radius:50%;
-  display:grid;
-  place-items:center;
-  background:conic-gradient(#b24356 0deg, #f0e4e7 0deg 360deg);
-  box-shadow:0 16px 36px rgba(91,31,43,.25);
-}
-.ring-inner{
-  width:146px;
-  height:146px;
-  border-radius:50%;
-  background:linear-gradient(180deg,#fff,#fff8f9);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  color:#7d2b3a;
-}
-.ring-percent{
-  font-size:34px;
-  font-weight:950;
-  line-height:1;
-}
-.ring-label{
-  margin-top:6px;
-  font-size:12px;
-  color:#8a6e75;
-  font-weight:700;
-}
-.ring-meta .big{
-  font-size:16px;
-  font-weight:900;
-  text-align:center;
-}
-.ring-meta .small{
-  font-size:12px;
-  opacity:.82;
-  text-align:center;
-}
-.hero{grid-template-columns:repeat(5,1fr)!important}
-.hero .stat:nth-child(5) .value{color:#7d2b3a}
-.list-sticky-zone{
-  position:sticky;
-  top:84px;
-  z-index:18;
-  background:linear-gradient(180deg, rgba(245,242,243,.98), rgba(245,242,243,.93));
-  padding:8px 0 12px;
-  backdrop-filter:blur(8px);
-  -webkit-backdrop-filter:blur(8px);
-}
-.toolbar{
-  background:rgba(255,255,255,.78);
-  border:1px solid #eee3e6;
-  border-radius:16px;
-  padding:12px;
-  box-shadow:0 8px 22px rgba(88,48,56,.06);
-}
-#cloudStatus{
-  padding:8px 12px!important;
-  min-width:auto!important;
-  border-radius:999px!important;
-}
-.dt-compact .m{
-  font-size:13px;
-  font-weight:800;
-  color:#43373a;
-  line-height:1.15;
-}
-.dt-compact .y{
-  font-size:11px;
-  color:#8b7b80;
-  margin-top:4px;
-}
-.admin-heading{
-  margin-bottom:12px;
-  padding-bottom:12px;
-  border-bottom:1px dashed #ead9dd;
-}
-#adminToggleBtn{min-width:66px}
-@media(max-width:1024px){
-  .project-banner-main{grid-template-columns:1fr}
-  .progress-ring-card{flex-direction:row;justify-content:flex-start}
-}
-@media(max-width:900px){
-  .hero{grid-template-columns:repeat(2,1fr)!important}
-}
-@media(max-width:700px){
-  .project-banner{padding:16px}
-  .project-copy h2{font-size:24px}
-  .hero-amount-row{grid-template-columns:1fr;gap:9px}
-  .hero-amount-box{padding:12px 13px}
-  .hero-amount-box .v,.hero-amount-box .v.subtle{font-size:24px}
-  .ring-wrap{width:146px;height:146px}
-  .ring-inner{width:112px;height:112px}
-  .ring-percent{font-size:28px}
-  .list-sticky-zone{top:73px;padding:6px 0 10px}
-  .toolbar{grid-template-columns:1fr;padding:10px}
-}
+@media(max-width:400px){.summary-line{grid-template-columns:1fr}.hero{gap:8px}.stat .value{font-size:21px}}
 </style>
-
 </head>
 <body>
 <div class="wrap" id="app">
-  <header class="topbar">
-    <div class="brand">
-      <h1>💰 <span id="projectTitle">收費匯款登記表</span></h1>
-      <p>精品酒紅收款儀表板｜未繳名單、雲端同步、一頁掌握</p>
-    </div>
-    <div class="actions">
-      <span id="cloudStatus" class="btn cloud-sync" style="cursor:default">☁️ 雲端連線中</span>
-      <button class="btn" id="adminBtn">🔐 管理者登入</button>
-      <button class="btn" id="logoutBtn" style="display:none">登出管理</button>
-    </div>
-  </header>
+<header class="topbar">
+  <div class="brand"><h1>💰 <span id="projectTitle">收費匯款登記表</span></h1><p>精品酒紅收款儀表板｜跨裝置 Firebase 同步</p></div>
+  <div class="actions">
+    <span id="cloudStatus" class="btn">☁️ 雲端連線中</span>
+    <button class="btn" id="adminBtn">🔐 管理者登入</button>
+    <button class="btn" id="logoutBtn" style="display:none">登出管理</button>
+  </div>
+</header>
 
-  <section class="card project-banner">
-    <div class="project-banner-main">
-      <div class="project-copy">
-        <div class="eyebrow">PROJECT OVERVIEW</div>
-        <h2 id="heroProjectName">收費匯款登記表</h2>
-        <div class="hero-amount-row">
-          <div class="hero-amount-box">
-            <div class="k">已收金額</div>
-            <div class="v" id="heroReceived">$0</div>
-          </div>
-          <div class="hero-amount-box">
-            <div class="k">目標金額</div>
-            <div class="v subtle" id="heroTarget">$0</div>
-          </div>
-          <div class="hero-amount-box">
-            <div class="k">尚差金額</div>
-            <div class="v subtle" id="heroShort">$0</div>
-          </div>
-        </div>
-        <div class="hero-meta">
-          <span class="meta-chip">已繳 <strong id="heroPaidCount">0</strong> 人</span>
-          <span class="meta-chip">未繳 <strong id="heroUnpaidCount">0</strong> 人</span>
-          <span class="meta-chip">每人應繳 <strong id="heroPerPerson">$0</strong></span>
-        </div>
+<section class="card project-banner">
+  <div class="project-main">
+    <div>
+      <div class="eyebrow">PROJECT OVERVIEW</div>
+      <h2 id="heroProjectName">收費匯款登記表</h2>
+      <div class="hero-money">
+        <div class="money-box"><div class="k">已收金額</div><div class="v" id="heroReceived">$0</div></div>
+        <div class="money-box"><div class="k">目標金額</div><div class="v" id="heroTarget">$0</div></div>
+        <div class="money-box"><div class="k">尚差金額</div><div class="v" id="heroShort">$0</div></div>
       </div>
-      <div class="progress-ring-card">
-        <div class="ring-wrap" id="ringWrap">
-          <div class="ring-inner">
-            <div class="ring-percent" id="heroPercent">0%</div>
-            <div class="ring-label">收款完成度</div>
-          </div>
-        </div>
-        <div class="ring-meta">
-          <div class="big" id="heroCountLine">0 / 0 人已完成</div>
-          <div class="small">其他裝置開啟後會自動讀取雲端資料</div>
-        </div>
+      <div class="hero-meta">
+        <span class="meta">已繳 <strong id="heroPaid">0</strong> 人</span>
+        <span class="meta">未繳 <strong id="heroUnpaid">0</strong> 人</span>
+        <span class="meta">每人應繳 <strong id="heroPer">$0</strong></span>
       </div>
     </div>
-  </section>
-
-  <section class="hero">
-    <div class="stat"><div class="label">總人數</div><div class="value" id="totalPeople">0</div><div class="sub">目前名單</div></div>
-    <div class="stat"><div class="label">已繳人數</div><div class="value green" id="paidPeople">0</div><div class="sub" id="paidRate">完成率 0%</div></div>
-    <div class="stat"><div class="label">未繳人數</div><div class="value amber" id="unpaidPeople">0</div><div class="sub">待完成</div></div>
-    <div class="stat"><div class="label">已收金額</div><div class="value blue" id="receivedMoney">$0</div><div class="sub" id="targetMoney">目標 $0</div></div>
-    <div class="stat"><div class="label">尚差金額</div><div class="value" id="shortMoney">$0</div><div class="sub">距離收齊還差</div></div>
-  </section>
-
-  <section class="card">
-    <div class="card-title"><h2>收款進度</h2><span class="pill paid" id="progressBadge">0%</span></div>
-    <div class="progress-wrap"><div class="progress" id="progress"></div></div>
-    <div class="progress-meta"><span id="progressLabel">0 / 0 人已完成</span><span id="moneyGap">尚差 $0</span></div>
-    <div class="summary-line">
-      <span class="summary-chip">目標金額 <strong id="targetChip">$0</strong></span>
-      <span class="summary-chip">每人應繳 <strong id="perPersonChip">$0</strong></span>
-      <span class="summary-chip">分擔人數 <strong id="shareCountChip">0</strong></span>
+    <div class="ring-area">
+      <div class="ring" id="ring"><div class="ring-in"><div><b id="ringPct">0%</b><span>收款完成度</span></div></div></div>
+      <div class="ring-caption" id="ringCaption">0 / 0 人已完成</div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section class="card admin-panel" id="adminPanel">
-    <div class="card-title admin-heading"><div style="display:flex;align-items:center;gap:10px"><h2>管理者控制台</h2><span class="pill paid">管理模式</span></div><button class="btn small" type="button" id="adminToggleBtn">收合</button></div>
-    <div id="adminPanelBody">
-    <div class="summary-line" style="margin-bottom:14px">
-      <span class="summary-chip">新增人員</span>
-      <span class="summary-chip">刪除人員</span>
-      <span class="summary-chip">名單匯入</span>
-      <span class="summary-chip">資料匯入</span>
-      <span class="summary-chip">Excel 匯出</span>
-    </div>
+<section class="hero">
+  <div class="stat"><div class="label">總人數</div><div class="value" id="totalPeople">0</div><div class="sub">目前名單</div></div>
+  <div class="stat"><div class="label">已繳人數</div><div class="value red" id="paidPeople">0</div><div class="sub" id="paidRate">完成率 0%</div></div>
+  <div class="stat"><div class="label">未繳人數</div><div class="value gold" id="unpaidPeople">0</div><div class="sub">待完成</div></div>
+  <div class="stat"><div class="label">已收金額</div><div class="value red" id="receivedMoney">$0</div><div class="sub" id="targetMoney">目標 $0</div></div>
+  <div class="stat"><div class="label">尚差金額</div><div class="value" id="shortMoney">$0</div><div class="sub">距離收齊還差</div></div>
+</section>
+
+<section class="card">
+  <div class="card-title"><h2>收款進度</h2><span class="pill paid" id="progressBadge">0%</span></div>
+  <div class="progress-wrap"><div class="progress" id="progress"></div></div>
+  <div class="progress-meta"><span id="progressLabel">0 / 0 人已完成</span><span id="moneyGap">尚差 $0</span></div>
+  <div class="summary-line">
+    <span class="summary-chip">目標金額 <strong id="targetChip">$0</strong></span>
+    <span class="summary-chip">每人應繳 <strong id="perPersonChip">$0</strong></span>
+    <span class="summary-chip">分擔人數 <strong id="shareCountChip">0</strong></span>
+  </div>
+</section>
+
+<section class="card admin-panel" id="adminPanel">
+  <div class="card-title">
+    <div style="display:flex;align-items:center;gap:8px"><h2>管理者控制台</h2><span class="pill paid">管理模式</span></div>
+    <button class="btn small" id="adminToggleBtn">收合</button>
+  </div>
+  <div id="adminPanelBody">
     <div class="admin-grid">
-      <div class="field"><label>專案名稱</label><input id="projectName" maxlength="40" placeholder="例如：王老師年度訂閱收款"></div>
-      <div class="field"><label>總金額</label><input id="totalAmount" type="number" min="0" step="1" placeholder="例如 168000"></div>
-      <div class="field"><label>分擔人數</label><input id="shareCount" type="number" min="1" step="1" placeholder="例如 120"></div>
+      <div class="field"><label>專案名稱</label><input id="projectName" maxlength="40"></div>
+      <div class="field"><label>總金額</label><input id="totalAmount" type="number" min="0"></div>
+      <div class="field"><label>分擔人數</label><input id="shareCount" type="number" min="1"></div>
       <div class="field"><label>新增姓名</label><input id="newName" placeholder="輸入姓名"></div>
-      <div class="field"><label>操作</label><button class="btn primary" id="addPersonBtn">＋ 新增人員</button></div>
+      <button class="btn primary" id="addPersonBtn">＋ 新增人員</button>
     </div>
     <div class="tools">
       <button class="btn" id="importNamesBtn">匯入人員名單</button>
@@ -645,70 +215,57 @@ table{border-collapse:separate;border-spacing:0}thead th{position:sticky;top:0;z
       <button class="btn" id="backupBtn">備份 JSON</button>
       <button class="btn" id="restoreBtn">還原 JSON</button>
       <button class="btn danger" id="deleteSelectedBtn">刪除勾選</button>
-      <input type="file" id="namesFile" accept=".xlsx,.xls,.csv" hidden>
-      <input type="file" id="detailFile" accept=".xlsx,.xls,.csv" hidden>
-      <input type="file" id="restoreFile" accept=".json" hidden>
     </div>
-    <div class="note" style="margin-top:12px;padding:10px 12px;background:#fff6f7;border:1px solid #f0d9dd;border-radius:10px">雲端節點：<b>paymentRegistry</b>｜資料庫：<b>analyst-277bd-default-rtdb.firebaseio.com</b></div>
-    <div class="note" style="margin-top:8px">資料同步：管理者新增、修改、刪除與資料更新後會自動儲存 Firebase；其他裝置開啟後會讀取雲端資料，每 5 秒檢查一次，切回頁面前景時也會立即同步。網路中斷時保留 localStorage 本機資料。</div>
-    <p class="note">管理者權限：可新增／刪除人員、批次刪除、匯入人員名單、匯入匯款資料、匯出完整人員與匯款明細。一般使用者僅可登記或修改匯款資訊。管理者密碼：16888。</p>
-    </div>
-  </section>
+    <div class="note" style="margin-top:11px">刪除與批次刪除已加入「本機變更鎖定」：Firebase 寫入完成前不會被 5 秒輪詢的舊資料覆蓋。</div>
+    <input type="file" id="namesFile" accept=".xlsx,.xls,.csv" hidden>
+    <input type="file" id="detailFile" accept=".xlsx,.xls,.csv" hidden>
+    <input type="file" id="restoreFile" accept=".json" hidden>
+  </div>
+</section>
 
-  <section class="card">
-    <div class="card-title"><h2>匯款名單</h2><span class="muted" id="resultCount">0 筆</span></div>
-
-    <div class="list-sticky-zone">
+<section class="card">
+  <div class="card-title"><h2>匯款名單</h2><span class="muted" id="resultCount">0 筆</span></div>
+  <div class="sticky-zone">
     <div class="tabs">
       <button class="tab active" data-filter="all">全部</button>
       <button class="tab" data-filter="paid">已繳</button>
       <button class="tab" data-filter="unpaid">未繳</button>
     </div>
-
     <div class="toolbar">
       <div class="field"><label>搜尋姓名／後五碼</label><input id="search" placeholder="輸入姓名或後五碼"></div>
-      <div class="field"><label>排序</label>
-        <select id="sortBy">
-          <option value="unpaidFirst">未繳優先</option><option value="default">原始順序</option>
-          <option value="name">姓名</option>
-          <option value="amountDesc">金額高 → 低</option>
-          <option value="amountAsc">金額低 → 高</option>
-          <option value="updated">最近更新</option>
-        </select>
-      </div>
+      <div class="field"><label>排序</label><select id="sortBy">
+        <option value="unpaidFirst">未繳優先</option><option value="default">原始順序</option>
+        <option value="name">姓名</option><option value="amountDesc">金額高 → 低</option>
+        <option value="amountAsc">金額低 → 高</option><option value="updated">最近更新</option>
+      </select></div>
       <button class="btn" id="copyUnpaidBtn">複製未繳名單</button>
       <button class="btn" id="clearFilter">清除篩選</button>
     </div>
+  </div>
 
-    </div>
-
-    <div class="desktop-table table-wrap" style="margin-top:14px">
-      <table>
-        <thead>
-          <tr>
-            <th class="admin-cell check-col"><input type="checkbox" id="checkAll"></th>
-            <th>#</th><th>姓名</th><th>狀態</th><th>帳號後五碼</th><th>匯款金額</th><th>匯款日期／時間</th><th>備註</th><th>最後更新</th><th>操作</th><th class="admin-cell">管理</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-
-    <div class="mobile-list" id="mobileList"></div>
-  </section>
+  <div class="desktop-table table-wrap">
+    <table>
+      <thead><tr>
+        <th class="admin-cell"><input type="checkbox" id="checkAll"></th>
+        <th>#</th><th>姓名</th><th>狀態</th><th>帳號後五碼</th><th>匯款金額</th><th>匯款日期／時間</th><th>備註</th><th>最後更新</th><th>操作</th><th class="admin-cell">管理</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="mobile-list" id="mobileList"></div>
+</section>
 </div>
 
-<div class="modal" id="loginModal"><div class="modal-box">
+<div class="modal" id="loginModal"><div class="modal-card">
   <h3>管理者登入</h3>
-  <div class="field"><label>管理者密碼</label><input id="adminPassword" type="password" placeholder="請輸入密碼"></div>
+  <div class="field"><label>管理者密碼</label><input id="adminPassword" type="password" placeholder="輸入密碼"></div>
   <div class="modal-row"><button class="btn" data-close="loginModal">取消</button><button class="btn primary" id="loginSubmit">登入</button></div>
 </div></div>
 
-<div class="modal" id="payModal"><div class="modal-box">
-  <h3 id="payTitle">登記匯款</h3>
-  <input id="payId" type="hidden">
+<div class="modal" id="payModal"><div class="modal-card">
+  <h3 id="payTitle">登記匯款</h3><input id="payId" type="hidden">
   <div class="field"><label>帳號後五碼</label><input id="last5" inputmode="numeric" maxlength="5" placeholder="例如 12345"></div>
-  <div class="field" style="margin-top:10px"><label>匯款金額</label><input id="payAmount" type="number" min="0" step="1" placeholder="請輸入金額"></div>
+  <div class="field" style="margin-top:10px"><label>匯款金額</label><input id="payAmount" type="number" min="0"></div>
   <div class="field" style="margin-top:10px"><label>匯款日期／時間</label><input id="paymentDateTime" type="datetime-local"></div>
   <div class="field" style="margin-top:10px"><label>備註</label><input id="note" placeholder="選填"></div>
   <div class="modal-row"><button class="btn" data-close="payModal">取消</button><button class="btn primary" id="savePay">儲存登記</button></div>
@@ -717,167 +274,160 @@ table{border-collapse:separate;border-spacing:0}thead th{position:sticky;top:0;z
 <div class="toast" id="toast"></div>
 
 <script>
-const STORAGE_KEY='payment_registry_v2';
-const FIREBASE_BASE='https://analyst-277bd-default-rtdb.firebaseio.com';
-const FIREBASE_PATH='paymentRegistry';
-const FIREBASE_URL=`${FIREBASE_BASE}/${FIREBASE_PATH}.json`;
-let firebaseReady=false;
-let firebaseSyncTimer=null;
-let isApplyingRemote=false;
-const LEGACY_KEY='payment_registry_v1';
+const STORAGE_KEY='payment_registry_v3';
+const LEGACY_KEYS=['payment_registry_v2','payment_registry_v1'];
 const ADMIN_PASSWORD='16888';
-const clone=o=>JSON.parse(JSON.stringify(o));
-let state=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
-if(!state){
-  const old=JSON.parse(localStorage.getItem(LEGACY_KEY)||'null');
-  state=old||{settings:{totalAmount:0,shareCount:0},people:[]};
+const FIREBASE_BASE='https://analyst-277bd-default-rtdb.firebaseio.com';
+const FIREBASE_URL=`${FIREBASE_BASE}/paymentRegistry.json`;
+
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const money=n=>'$'+Number(n||0).toLocaleString('zh-TW');
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const paid=p=>Number(p.amount)>0 && /^\d{5}$/.test(String(p.last5||''));
+const fmtTime=v=>v?new Date(v).toLocaleString('zh-TW',{hour12:false}):'—';
+const toDateTimeLocal=ts=>{if(!ts)return '';const d=new Date(ts),pad=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const statusLabel=p=>paid(p)?'✓ 已完成':'待匯款';
+const statusClass=p=>paid(p)?'paid':'unpaid';
+
+let state=null;
+for(const key of [STORAGE_KEY,...LEGACY_KEYS]){
+  try{const v=JSON.parse(localStorage.getItem(key)||'null');if(v){state=v;break}}catch{}
 }
-state.settings ||= {totalAmount:0,shareCount:0,projectName:'收費匯款登記表'};
-if(!state.settings.projectName) state.settings.projectName='收費匯款登記表';
+if(!state) state={settings:{projectName:'收費匯款登記表',totalAmount:0,shareCount:0},people:[],modifiedAt:0};
+state.settings ||= {projectName:'收費匯款登記表',totalAmount:0,shareCount:0};
 state.people ||= [];
-state.people=state.people.map(p=>({selected:false,...p}));
+state.modifiedAt ||= 0;
+state.people=state.people.map(p=>({selected:false,paymentAt:null,...p}));
+
 let isAdmin=sessionStorage.getItem('payment_admin')==='1';
 let activeFilter='all';
 let adminPanelOpen=(localStorage.getItem('payment_admin_panel_open')||'1')==='1';
 
-const $=s=>document.querySelector(s);
-const $$=s=>[...document.querySelectorAll(s)];
-const money=n=>'$'+Number(n||0).toLocaleString('zh-TW');
-const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const paid=p=>Number(p.amount)>0 && /^\d{5}$/.test(String(p.last5||''));
-const expected=()=>{const t=Number(state.settings.totalAmount)||0,c=Number(state.settings.shareCount)||0;return c?t/c:0};
-const payState=p=>paid(p)?'paid':'unpaid';
-const statusLabel=p=>paid(p)?'✓ 已完成':'待匯款';
-const statusClass=p=>paid(p)?'paid':'unpaid';
-function fmtTime(v){ return v?new Date(v).toLocaleString('zh-TW',{hour12:false}):'—'; }
-function paymentTimeText(p){ return p?.paymentAt ? fmtTime(p.paymentAt) : '—'; }
-function toDateTimeLocal(ts){
-  if(!ts)return '';
-  const d=new Date(ts), pad=n=>String(n).padStart(2,'0');
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-function fmtCompactDateHTML(ts){
-  if(!ts) return '<span class="muted">—</span>';
-  const d=new Date(ts), pad=n=>String(n).padStart(2,'0');
-  const main=`${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  return `<div class="dt-compact"><div class="m">${main}</div><div class="y">${d.getFullYear()}</div></div>`;
-}
+// ===== Robust cloud sync =====
+let writeTimer=null;
+let queuedSnapshot=null;
+let cloudWriteInFlight=false;
+let suppressRemoteUntil=0;
+let latestLocalRevision=Number(state.modifiedAt)||0;
 
-function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
-function setCloudStatus(type,msg){
-  const el=$('#cloudStatus');
-  if(!el)return;
-  el.classList.remove('cloud-ok','cloud-error','cloud-sync');
-  el.classList.add(type==='ok'?'cloud-ok':type==='error'?'cloud-error':'cloud-sync');
-  el.textContent=msg;
-}
-
-function cleanStateForCloud(data){
+function cleanState(data){
   const copy=JSON.parse(JSON.stringify(data));
   copy.people=(copy.people||[]).map(({selected,...p})=>p);
   return copy;
 }
-
-function firebaseErrorText(err,status){
-  const msg=String(err?.message||err||'');
-  if(status===401||status===403||/permission|denied/i.test(msg)){
-    return '⛔ Firebase 權限被拒絕';
-  }
-  if(/failed to fetch|network/i.test(msg)){
-    return '⚠️ 無法連線 Firebase';
-  }
-  return '⚠️ 離線使用本機資料';
-}
-
-async function loadFromFirebase(){
-  setCloudStatus('sync','☁️ 雲端讀取中');
-  try{
-    const res=await fetch(FIREBASE_URL,{cache:'no-store'});
-    if(!res.ok){
-      const body=await res.text().catch(()=> '');
-      const err=new Error(body || `HTTP ${res.status}`);
-      err.status=res.status;
-      throw err;
-    }
-    const remote=await res.json();
-
-    if(remote && typeof remote==='object'){
-      isApplyingRemote=true;
-      state=remote;
-      state.settings ||= {totalAmount:0,shareCount:0,projectName:'收費匯款登記表'};
-      if(!state.settings.projectName)state.settings.projectName='收費匯款登記表';
-      state.people ||= [];
-      state.people=state.people.map(p=>({selected:false,...p}));
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
-      isApplyingRemote=false;
-      render();
-      firebaseReady=true;
-      setCloudStatus('ok','☁️ 雲端已同步');
-    }else{
-      // 雲端目前沒有資料：保留本機，不自動用空白狀態覆蓋 Firebase。
-      firebaseReady=true;
-      setCloudStatus('ok','☁️ 雲端尚無資料');
-    }
-  }catch(err){
-    console.error('Firebase load error:',err);
-    firebaseReady=false;
-    setCloudStatus('error',firebaseErrorText(err,err.status));
-    render();
-  }
-}
-
-async function syncToFirebase(force=false){
-  if(isApplyingRemote)return;
-
-  const doSync=async()=>{
-    setCloudStatus('sync','☁️ 同步中');
-    try{
-      const payload=cleanStateForCloud(state);
-      payload.modifiedAt=Date.now();
-      const res=await fetch(FIREBASE_URL,{
-        method:'PUT',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(payload)
-      });
-      if(!res.ok){
-        const body=await res.text().catch(()=> '');
-        const err=new Error(body || `HTTP ${res.status}`);
-        err.status=res.status;
-        throw err;
-      }
-      firebaseReady=true;
-      setCloudStatus('ok','☁️ 雲端已同步');
-    }catch(err){
-      console.error('Firebase sync error:',err);
-      firebaseReady=false;
-      setCloudStatus('error',firebaseErrorText(err,err.status));
-      if(isAdmin){
-        toast(err.status===401||err.status===403?'Firebase Rules 尚未允許讀寫':'雲端同步失敗');
-      }
-    }
-  };
-
-  if(firebaseSyncTimer)clearTimeout(firebaseSyncTimer);
-  if(force)await doSync();
-  else firebaseSyncTimer=setTimeout(doSync,350);
-}
-
-function save(){
-  // 先寫入 localStorage，網路中斷時仍可正常保留資料
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900)}
+function setCloud(msg){$('#cloudStatus').textContent=msg}
+function saveLocalOnly(){
   localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
   render();
-  // 有網路時自動同步至 Firebase；失敗不影響本機資料
-  syncToFirebase();
+}
+function persistAndSync(){
+  const now=Date.now();
+  latestLocalRevision=Math.max(now,latestLocalRevision+1);
+  state.modifiedAt=latestLocalRevision;
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+  render();
+
+  // 捕捉「此刻」快照，避免輪詢回來的舊 state 被上傳。
+  queuedSnapshot=cleanState(state);
+  suppressRemoteUntil=Date.now()+4000;
+  if(writeTimer)clearTimeout(writeTimer);
+  writeTimer=setTimeout(flushCloudWrite,180);
+}
+async function flushCloudWrite(){
+  if(cloudWriteInFlight||!queuedSnapshot)return;
+  const snapshot=queuedSnapshot;
+  queuedSnapshot=null;
+  cloudWriteInFlight=true;
+  setCloud('☁️ 同步中');
+  try{
+    const res=await fetch(FIREBASE_URL,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(snapshot)
+    });
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    setCloud('☁️ 雲端已同步');
+  }catch(err){
+    console.error(err);
+    setCloud('⚠️ 離線使用本機資料');
+    // 保留最後要寫入的快照，網路恢復時再重送
+    if(!queuedSnapshot || Number(queuedSnapshot.modifiedAt||0)<Number(snapshot.modifiedAt||0)){
+      queuedSnapshot=snapshot;
+    }
+  }finally{
+    cloudWriteInFlight=false;
+    suppressRemoteUntil=Date.now()+1200;
+    if(queuedSnapshot && navigator.onLine)setTimeout(flushCloudWrite,250);
+  }
+}
+async function pullCloud({force=false}={}){
+  // 關鍵修正：有本機待寫資料時，禁止遠端舊資料覆蓋刪除結果。
+  if(!force && (cloudWriteInFlight||queuedSnapshot||Date.now()<suppressRemoteUntil))return;
+  try{
+    const res=await fetch(FIREBASE_URL,{cache:'no-store'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const remote=await res.json();
+    if(!remote||typeof remote!=='object'){
+      setCloud('☁️ 雲端尚無資料');
+      return;
+    }
+    const remoteRevision=Number(remote.modifiedAt)||0;
+    const localRevision=Number(state.modifiedAt)||0;
+
+    if(force || remoteRevision>localRevision || (localRevision===0 && state.people.length===0)){
+      state=remote;
+      state.settings ||= {projectName:'收費匯款登記表',totalAmount:0,shareCount:0};
+      state.people ||= [];
+      state.people=state.people.map(p=>({selected:false,paymentAt:null,...p}));
+      state.modifiedAt=remoteRevision;
+      latestLocalRevision=Math.max(latestLocalRevision,remoteRevision);
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      render();
+    }
+    setCloud('☁️ 雲端已同步');
+  }catch(err){
+    console.warn(err);
+    setCloud('⚠️ 離線使用本機資料');
+  }
+}
+async function initialCloudLoad(){
+  setCloud('☁️ 雲端讀取中');
+  try{
+    const res=await fetch(FIREBASE_URL,{cache:'no-store'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const remote=await res.json();
+    if(remote && typeof remote==='object'){
+      const rr=Number(remote.modifiedAt)||0, lr=Number(state.modifiedAt)||0;
+      if(rr>=lr || state.people.length===0){
+        state=remote;state.settings ||= {};state.people ||= [];
+        state.people=state.people.map(p=>({selected:false,paymentAt:null,...p}));
+        state.modifiedAt=rr;latestLocalRevision=Math.max(latestLocalRevision,rr);
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      }else{
+        queuedSnapshot=cleanState(state);flushCloudWrite();
+      }
+    }else if(state.people.length||state.settings.totalAmount){
+      queuedSnapshot=cleanState(state);flushCloudWrite();
+    }
+    render();setCloud('☁️ 雲端已同步');
+  }catch{
+    render();setCloud('⚠️ 離線使用本機資料');
+  }
 }
 
+function expected(){const n=Number(state.settings.shareCount)||0,t=Number(state.settings.totalAmount)||0;return n?t/n:0}
+function compactDate(ts){
+  if(!ts)return '<span class="muted">—</span>';
+  const d=new Date(ts),p=n=>String(n).padStart(2,'0');
+  return `<div class="dt"><div class="m">${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}</div><div class="y">${d.getFullYear()}</div></div>`;
+}
 function getRows(){
   const q=$('#search').value.trim().toLowerCase();
   let rows=state.people.map((p,i)=>({...p,_index:i})).filter(p=>{
-    const text=(p.name+' '+(p.last5||'')).toLowerCase();
-    if(q&&!text.includes(q))return false;
-    if(activeFilter==='all')return true;
-    return payState(p)===activeFilter;
+    if(q && !(p.name+' '+(p.last5||'')).toLowerCase().includes(q))return false;
+    return activeFilter==='all' ? true : (activeFilter==='paid'?paid(p):!paid(p));
   });
   const sort=$('#sortBy').value;
   if(sort==='unpaidFirst')rows.sort((a,b)=>(paid(a)?1:0)-(paid(b)?1:0));
@@ -887,345 +437,159 @@ function getRows(){
   if(sort==='updated')rows.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
   return rows;
 }
-
 function render(){
   const total=state.people.length;
   const paidN=state.people.filter(paid).length;
   const unpaidN=total-paidN;
   const received=state.people.reduce((s,p)=>s+(Number(p.amount)||0),0);
   const target=Number(state.settings.totalAmount)||0;
-  const e=expected();
-  const completion=total?paidN/total*100:0;
+  const per=expected();
+  const pct=total?paidN/total*100:0;
+  const project=state.settings.projectName||'收費匯款登記表';
 
-  $('#totalPeople').textContent=total;
-  $('#paidPeople').textContent=paidN;
-  $('#unpaidPeople').textContent=unpaidN;
-  $('#receivedMoney').textContent=money(received);
-  $('#shortMoney').textContent=money(Math.max(target-received,0));
-  $('#targetMoney').textContent='目標 '+money(target);
-  $('#targetChip').textContent=money(target);
-  $('#perPersonChip').textContent=e?money(Math.round(e)):'$0';
-  $('#shareCountChip').textContent=state.settings.shareCount||0;
-  $('#paidRate').textContent='完成率 '+Math.round(completion)+'%';
-  $('#progress').style.width=Math.min(completion,100)+'%';
-  $('#progressBadge').textContent=Math.round(completion)+'%';
+  $('#projectTitle').textContent=project;$('#heroProjectName').textContent=project;document.title=project+'｜收款管理';
+  $('#totalPeople').textContent=total;$('#paidPeople').textContent=paidN;$('#unpaidPeople').textContent=unpaidN;
+  $('#receivedMoney').textContent=money(received);$('#shortMoney').textContent=money(Math.max(target-received,0));
+  $('#targetMoney').textContent='目標 '+money(target);$('#paidRate').textContent='完成率 '+Math.round(pct)+'%';
+  $('#heroReceived').textContent=money(received);$('#heroTarget').textContent=money(target);$('#heroShort').textContent=money(Math.max(target-received,0));
+  $('#heroPaid').textContent=paidN;$('#heroUnpaid').textContent=unpaidN;$('#heroPer').textContent=money(Math.round(per||0));
+  $('#ringPct').textContent=Math.round(pct)+'%';$('#ringCaption').textContent=`${paidN} / ${total} 人已完成`;
+  const deg=Math.min(360,Math.max(0,pct*3.6));$('#ring').style.background=`conic-gradient(#fff 0deg ${deg}deg,#efd8de ${deg}deg 360deg)`;
+
+  $('#progress').style.width=Math.min(100,pct)+'%';$('#progressBadge').textContent=Math.round(pct)+'%';
   $('#progressLabel').textContent=`${paidN} / ${total} 人已完成`;
-  $('#moneyGap').textContent=target?(received>=target?`超過目標 ${money(received-target)}`:`尚差 ${money(target-received)}`):'尚未設定總金額';
+  $('#moneyGap').textContent=target?(received>=target?`已達目標 ${money(received-target)}`:`尚差 ${money(target-received)}`):'尚未設定總金額';
+  $('#targetChip').textContent=money(target);$('#perPersonChip').textContent=money(Math.round(per||0));$('#shareCountChip').textContent=state.settings.shareCount||0;
 
-  const projectName=state.settings.projectName||'收費匯款登記表';
-  $('#projectTitle').textContent=projectName;
-  $('#heroProjectName').textContent=projectName;
-  $('#heroReceived').textContent=money(received);
-  $('#heroTarget').textContent=money(target);
-  $('#heroShort').textContent=money(Math.max(target-received,0));
-  $('#heroPaidCount').textContent=paidN;
-  $('#heroUnpaidCount').textContent=unpaidN;
-  $('#heroPerPerson').textContent=e?money(Math.round(e)):'$0';
-  $('#heroPercent').textContent=Math.round(completion)+'%';
-  $('#heroCountLine').textContent=`${paidN} / ${total} 人已完成`;
-  const ringDegree=Math.max(0,Math.min(360,completion*3.6));
-  $('#ringWrap').style.background=`conic-gradient(#b24356 0deg ${ringDegree}deg, #f0e4e7 ${ringDegree}deg 360deg)`;
-  document.title=projectName+'｜收款管理';
-  $('#projectName').value=projectName;
-  $('#totalAmount').value=state.settings.totalAmount||'';
-  $('#shareCount').value=state.settings.shareCount||'';
-  $('#app').classList.toggle('is-admin',isAdmin);
-  $('#adminPanel').classList.toggle('show',isAdmin);
-  const adminBody=$('#adminPanelBody'), adminToggleBtn=$('#adminToggleBtn');
-  if(adminBody) adminBody.style.display=adminPanelOpen?'block':'none';
-  if(adminToggleBtn) adminToggleBtn.textContent=adminPanelOpen?'收合':'展開';
-  $('#adminBtn').style.display=isAdmin?'none':'inline-flex';
-  $('#logoutBtn').style.display=isAdmin?'inline-flex':'none';
+  $('#projectName').value=project;$('#totalAmount').value=state.settings.totalAmount||'';$('#shareCount').value=state.settings.shareCount||'';
+  $('#app').classList.toggle('is-admin',isAdmin);$('#adminPanel').classList.toggle('show',isAdmin);
+  $('#adminBtn').style.display=isAdmin?'none':'inline-flex';$('#logoutBtn').style.display=isAdmin?'inline-flex':'none';
+  $('#adminPanelBody').style.display=adminPanelOpen?'block':'none';$('#adminToggleBtn').textContent=adminPanelOpen?'收合':'展開';
 
-  const rows=getRows();
-  $('#resultCount').textContent=`${rows.length} 筆`;
-  $('#tbody').innerHTML=rows.length?rows.map((p,i)=>{
-    return `<tr style="box-shadow:inset 4px 0 0 ${paid(p)?'#c84455':'#d7a03b'}">
-      <td class="admin-cell"><input type="checkbox" ${p.selected?'checked':''} onchange="toggleSelect('${p.id}',this.checked)"></td>
-      <td>${i+1}</td>
-      <td><div class="name">${esc(p.name)}</div></td>
-      <td><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></td>
-      <td>${esc(p.last5||'—')}</td>
-      <td class="money">${p.amount?money(p.amount):'—'}</td>
-      <td>${fmtCompactDateHTML(p.paymentAt)}</td>
-      <td>${esc(p.note||'—')}</td>
-      <td>${fmtCompactDateHTML(p.updatedAt)}</td>
-      <td><button class="btn small primary" onclick="openPay('${p.id}')">${paid(p)?'修改':'登記'}</button></td>
-      <td class="admin-cell"><button class="btn small danger" onclick="deletePerson('${p.id}')">刪除</button></td>
-    </tr>`;
-  }).join(''):`<tr><td colspan="11" class="empty">目前沒有符合條件的資料</td></tr>`;
+  const rows=getRows();$('#resultCount').textContent=rows.length+' 筆';
+  $('#tbody').innerHTML=rows.length?rows.map((p,i)=>`<tr style="box-shadow:inset 4px 0 0 ${paid(p)?'#c84455':'#d7a03b'}">
+    <td class="admin-cell"><input type="checkbox" ${p.selected?'checked':''} onchange="toggleSelect('${p.id}',this.checked)"></td>
+    <td>${i+1}</td><td><div class="name">${esc(p.name)}</div></td>
+    <td><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></td>
+    <td>${esc(p.last5||'—')}</td><td class="money">${p.amount?money(p.amount):'—'}</td>
+    <td>${compactDate(p.paymentAt)}</td><td>${esc(p.note||'—')}</td><td>${compactDate(p.updatedAt)}</td>
+    <td><button class="btn small primary" onclick="openPay('${p.id}')">${paid(p)?'修改':'登記'}</button></td>
+    <td class="admin-cell"><button class="btn small danger" onclick="deletePerson('${p.id}')">刪除</button></td>
+  </tr>`).join(''):`<tr><td colspan="11" class="empty">目前沒有符合條件的資料</td></tr>`;
 
-  $('#mobileList').innerHTML=rows.length?rows.map(p=>{
-    return `<div class="person-card" style="border-left:4px solid ${paid(p)?'#c84455':'#d7a03b'}">
-      <div class="person-top">
-        <div><div class="person-name">${esc(p.name)}</div></div>
-        <span class="pill ${statusClass(p)}">${statusLabel(p)}</span>
-      </div>
-      <div class="person-grid">
-        <div class="person-item"><div class="k">帳號後五碼</div><div class="v">${esc(p.last5||'—')}</div></div>
-        <div class="person-item"><div class="k">匯款金額</div><div class="v">${p.amount?money(p.amount):'—'}</div></div>
-        <div class="person-item"><div class="k">匯款日期／時間</div><div class="v">${paymentTimeText(p)}</div></div>
-        <div class="person-item"><div class="k">最後更新</div><div class="v">${fmtTime(p.updatedAt)}</div></div>
-      </div>
-      ${p.note?`<div class="note" style="margin-bottom:10px">備註：${esc(p.note)}</div>`:''}
-      <div class="person-actions">
-        <button class="btn primary" onclick="openPay('${p.id}')">${paid(p)?'修改匯款':'登記匯款'}</button>
-        ${isAdmin?`<button class="btn danger" onclick="deletePerson('${p.id}')">刪除</button>`:''}
-      </div>
-    </div>`;
-  }).join(''):`<div class="empty">目前沒有符合條件的資料</div>`;
+  $('#mobileList').innerHTML=rows.length?rows.map(p=>`<div class="person-card" style="border-left:4px solid ${paid(p)?'#c84455':'#d7a03b'}">
+    <div class="person-top"><div class="person-name">${esc(p.name)}</div><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></div>
+    <div class="person-grid">
+      <div class="person-item"><div class="k">帳號後五碼</div><div class="v">${esc(p.last5||'—')}</div></div>
+      <div class="person-item"><div class="k">匯款金額</div><div class="v">${p.amount?money(p.amount):'—'}</div></div>
+      <div class="person-item"><div class="k">匯款時間</div><div class="v">${fmtTime(p.paymentAt)}</div></div>
+      <div class="person-item"><div class="k">最後更新</div><div class="v">${fmtTime(p.updatedAt)}</div></div>
+    </div>
+    ${p.note?`<div class="note" style="margin-bottom:9px">備註：${esc(p.note)}</div>`:''}
+    <div class="person-actions"><button class="btn primary" onclick="openPay('${p.id}')">${paid(p)?'修改匯款':'登記匯款'}</button>${isAdmin?`<button class="btn danger" onclick="deletePerson('${p.id}')">刪除</button>`:''}</div>
+  </div>`).join(''):`<div class="empty">目前沒有符合條件的資料</div>`;
 
-  const all=state.people.length>0&&state.people.every(p=>p.selected);
-  $('#checkAll').checked=all;
+  $('#checkAll').checked=state.people.length>0 && state.people.every(p=>p.selected);
 }
 function openPay(id){
   const p=state.people.find(x=>x.id===id);if(!p)return;
   $('#payId').value=id;$('#payTitle').textContent=`${p.name}｜${paid(p)?'修改匯款':'登記匯款'}`;
-  $('#last5').value=p.last5||'';
-  $('#payAmount').value=p.amount||'';
-  $('#paymentDateTime').value=toDateTimeLocal(p.paymentAt || Date.now());
-  $('#note').value=p.note||'';
+  $('#last5').value=p.last5||'';$('#payAmount').value=p.amount||'';
+  $('#paymentDateTime').value=toDateTimeLocal(p.paymentAt||Date.now());$('#note').value=p.note||'';
   $('#payModal').classList.add('show');
 }
 function deletePerson(id){
   if(!isAdmin)return;
-  const p=state.people.find(x=>x.id===id);
-  if(confirm(`確定刪除「${p?.name||''}」？`)){state.people=state.people.filter(x=>x.id!==id);save()}
+  const p=state.people.find(x=>x.id===id);if(!p)return;
+  if(!confirm(`確定刪除「${p.name}」？\n刪除後會同步到 Firebase，其他裝置也會移除。`))return;
+  state.people=state.people.filter(x=>x.id!==id);
+  persistAndSync();
+  toast(`已刪除 ${p.name}，同步雲端中`);
 }
-function toggleSelect(id,v){const p=state.people.find(x=>x.id===id);if(p){p.selected=v;localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render()}}
+function toggleSelect(id,v){const p=state.people.find(x=>x.id===id);if(p){p.selected=v;saveLocalOnly()}}
 window.openPay=openPay;window.deletePerson=deletePerson;window.toggleSelect=toggleSelect;
 
 $$('[data-close]').forEach(b=>b.onclick=()=>$('#'+b.dataset.close).classList.remove('show'));
 $('#adminBtn').onclick=()=>{$('#adminPassword').value='';$('#loginModal').classList.add('show');setTimeout(()=>$('#adminPassword').focus(),50)};
-$('#adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginSubmit').click()});
 $('#loginSubmit').onclick=()=>{if($('#adminPassword').value===ADMIN_PASSWORD){isAdmin=true;sessionStorage.setItem('payment_admin','1');$('#loginModal').classList.remove('show');render();toast('已進入管理模式')}else alert('密碼錯誤')};
 $('#logoutBtn').onclick=()=>{isAdmin=false;sessionStorage.removeItem('payment_admin');render();toast('已登出管理模式')};
-$('#adminToggleBtn').onclick=()=>{
-  adminPanelOpen=!adminPanelOpen;
-  localStorage.setItem('payment_admin_panel_open',adminPanelOpen?'1':'0');
-  render();
-};
+$('#adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginSubmit').click()});
+$('#adminToggleBtn').onclick=()=>{adminPanelOpen=!adminPanelOpen;localStorage.setItem('payment_admin_panel_open',adminPanelOpen?'1':'0');render()};
 
 $('#savePay').onclick=()=>{
   const p=state.people.find(x=>x.id===$('#payId').value);if(!p)return;
-  const last5=$('#last5').value.trim(),amount=Number($('#payAmount').value);
+  const last5=$('#last5').value.trim(), amount=Number($('#payAmount').value);
   if(!/^\d{5}$/.test(last5))return alert('帳號後五碼必須為 5 位數字');
   if(!(amount>0))return alert('請輸入正確匯款金額');
-  const paymentInput=$('#paymentDateTime').value;
-  const paymentAt=paymentInput ? new Date(paymentInput).getTime() : Date.now();
-  if(!Number.isFinite(paymentAt))return alert('請輸入正確的匯款日期／時間');
-  p.last5=last5;p.amount=amount;p.paymentAt=paymentAt;p.note=$('#note').value.trim();p.updatedAt=Date.now();save();
-  $('#payModal').classList.remove('show');toast('匯款資料已儲存');
+  const paymentAt=new Date($('#paymentDateTime').value||Date.now()).getTime();
+  p.last5=last5;p.amount=amount;p.paymentAt=paymentAt;p.note=$('#note').value.trim();p.updatedAt=Date.now();
+  persistAndSync();$('#payModal').classList.remove('show');toast('匯款資料已儲存');
 };
 
 $('#addPersonBtn').onclick=()=>{
+  if(!isAdmin)return;
   const name=$('#newName').value.trim();if(!name)return alert('請輸入姓名');
   if(state.people.some(p=>p.name===name))return alert('此姓名已存在');
   state.people.push({id:uid(),name,last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false});
-  $('#newName').value='';save();toast('已新增人員');
+  $('#newName').value='';persistAndSync();toast('已新增人員');
 };
-$('#newName').addEventListener('keydown',e=>{if(e.key==='Enter'&&isAdmin)$('#addPersonBtn').click()});
-$('#projectName').onchange=e=>{
-  if(!isAdmin)return;
-  const name=e.target.value.trim();
-  state.settings.projectName=name||'收費匯款登記表';
-  save();
-  toast('專案名稱已更新');
-};
-$('#projectName').addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&isAdmin){e.target.blur()}
-});
-$('#totalAmount').onchange=e=>{if(isAdmin){state.settings.totalAmount=Number(e.target.value)||0;save()}};
-$('#shareCount').onchange=e=>{if(isAdmin){state.settings.shareCount=Number(e.target.value)||0;save()}};
+$('#projectName').onchange=e=>{if(isAdmin){state.settings.projectName=e.target.value.trim()||'收費匯款登記表';persistAndSync()}};
+$('#totalAmount').onchange=e=>{if(isAdmin){state.settings.totalAmount=Number(e.target.value)||0;persistAndSync()}};
+$('#shareCount').onchange=e=>{if(isAdmin){state.settings.shareCount=Number(e.target.value)||0;persistAndSync()}};
 
-$$('.tab').forEach(b=>b.onclick=()=>{
-  activeFilter=b.dataset.filter;$$('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();
-});
+$$('.tab').forEach(b=>b.onclick=()=>{activeFilter=b.dataset.filter;$$('.tab').forEach(x=>x.classList.toggle('active',x===b));render()});
 $('#search').oninput=render;$('#sortBy').onchange=render;
-$('#clearFilter').onclick=()=>{$('#search').value='';$('#sortBy').value='unpaidFirst';activeFilter='all';$$('.tab').forEach(x=>x.classList.toggle('active',x.dataset.filter==='all'));render()};
-$('#copyUnpaidBtn').onclick=async()=>{
-  const names=state.people.filter(p=>!paid(p)).map(p=>p.name);
-  if(!names.length)return toast('目前沒有未繳人員');
-  const text=`未繳名單（${names.length}人）\n`+names.map((n,i)=>`${i+1}. ${n}`).join('\n');
-  try{await navigator.clipboard.writeText(text);toast('未繳名單已複製')}catch{prompt('請複製以下內容',text)}
-};
-$('#checkAll').onchange=e=>{if(!isAdmin)return;state.people.forEach(p=>p.selected=e.target.checked);save()};
+$('#clearFilter').onclick=()=>{$('#search').value='';$('#sortBy').value='unpaidFirst';activeFilter='all';$$('.tab').forEach((x,i)=>x.classList.toggle('active',i===0));render()};
+$('#copyUnpaidBtn').onclick=async()=>{const names=state.people.filter(p=>!paid(p)).map(p=>p.name);await navigator.clipboard.writeText(names.join('\n'));toast(`已複製 ${names.length} 位未繳名單`)};
+$('#checkAll').onchange=e=>{state.people.forEach(p=>p.selected=e.target.checked);saveLocalOnly()};
 $('#deleteSelectedBtn').onclick=()=>{
-  const n=state.people.filter(p=>p.selected).length;if(!n)return alert('尚未勾選人員');
-  if(confirm(`確定刪除已勾選的 ${n} 位人員？`)){state.people=state.people.filter(p=>!p.selected);save();toast('已刪除勾選人員')}
+  if(!isAdmin)return;
+  const selected=state.people.filter(p=>p.selected);
+  if(!selected.length)return alert('請先勾選要刪除的人員');
+  if(!confirm(`確定刪除已勾選的 ${selected.length} 位人員？\n刪除後會同步到 Firebase。`))return;
+  const ids=new Set(selected.map(p=>p.id));
+  state.people=state.people.filter(p=>!ids.has(p.id));
+  persistAndSync();toast(`已刪除 ${selected.length} 位人員，正在同步`);
 };
 
-function readWorkbook(file,cb){
- const r=new FileReader();r.onload=e=>{try{
-  const wb=XLSX.read(e.target.result,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]];
-  cb(XLSX.utils.sheet_to_json(ws,{defval:''}));
- }catch(err){alert('Excel 讀取失敗：'+err.message)}};r.readAsArrayBuffer(file);
+function parseSheet(file,cb){
+  const r=new FileReader();r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];cb(XLSX.utils.sheet_to_json(ws,{defval:''}))}catch(err){alert('Excel 讀取失敗')}};r.readAsArrayBuffer(file)
 }
-$('#importNamesBtn').onclick=()=>$('#namesFile').click();
-$('#importDetailBtn').onclick=()=>$('#detailFile').click();
-$('#namesFile').onchange=e=>{
- const f=e.target.files[0];if(!f)return;
- readWorkbook(f,rows=>{
-  let add=0,skip=0;
-  rows.forEach(r=>{const name=String(r['姓名']||r['name']||Object.values(r)[0]||'').trim();if(!name)return;
-   if(state.people.some(p=>p.name===name)){skip++;return}
-   state.people.push({id:uid(),name,last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false});add++;
-  });
-  save();alert(`匯入完成\n新增：${add} 人\n重複略過：${skip} 人`);e.target.value='';
- });
-};
-$('#detailFile').onchange=e=>{
- const f=e.target.files[0];if(!f)return;
- readWorkbook(f,rows=>{
-  let count=0,newN=0;
-  rows.forEach(r=>{
-   const name=String(r['姓名']||r['name']||'').trim();if(!name)return;
-   let p=state.people.find(x=>x.name===name);
-   if(!p){p={id:uid(),name,last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false};state.people.push(p);newN++}
-   let last5=String(r['帳號後五碼']||r['後五碼']||'').trim().replace(/\D/g,'');
-   const amount=Number(r['匯款金額']||r['金額']||0);
-   if(last5)p.last5=last5.padStart(5,'0').slice(-5);if(amount>0)p.amount=amount;
-   const importedTime=r['匯款日期/時間']||r['匯款日期／時間']||r['匯款時間']||r['匯款日期']||'';
-   if(importedTime){
-     const dt=new Date(importedTime);
-     if(!isNaN(dt))p.paymentAt=dt.getTime();
-   }else if(amount>0 && !p.paymentAt){
-     p.paymentAt=Date.now();
-   }
-   p.note=String(r['備註']||p.note||'');p.updatedAt=Date.now();count++;
-  });
-  save();alert(`匯入完成\n更新：${count} 筆\n新增名單：${newN} 人`);e.target.value='';
- });
-};
+$('#importNamesBtn').onclick=()=>isAdmin&&$('#namesFile').click();
+$('#namesFile').onchange=e=>{const f=e.target.files[0];if(!f)return;parseSheet(f,rows=>{let c=0;rows.forEach(r=>{const name=String(r['姓名']||r['名字']||'').trim();if(name&&!state.people.some(p=>p.name===name)){state.people.push({id:uid(),name,last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false});c++}});persistAndSync();toast(`已匯入 ${c} 人`)})};
+$('#importDetailBtn').onclick=()=>isAdmin&&$('#detailFile').click();
+$('#detailFile').onchange=e=>{const f=e.target.files[0];if(!f)return;parseSheet(f,rows=>{let c=0;rows.forEach(r=>{const name=String(r['姓名']||'').trim();if(!name)return;let p=state.people.find(x=>x.name===name);if(!p){p={id:uid(),name,last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false};state.people.push(p)}p.last5=String(r['帳號後五碼']||p.last5||'').trim();p.amount=Number(r['匯款金額']||p.amount||0);const t=r['匯款日期／時間']||r['匯款日期/時間']||r['匯款時間'];if(t){const d=new Date(t);if(!isNaN(d))p.paymentAt=d.getTime()}p.note=String(r['備註']||p.note||'');p.updatedAt=Date.now();c++});persistAndSync();toast(`已匯入 ${c} 筆資料`)})};
+
 function exportExcel(template=false){
- const e=expected();
- const rows=template?
-  [{'姓名':'王小明','帳號後五碼':'12345','匯款金額':1400,'匯款日期／時間':'2026/09/09 23:00','備註':''}]:
-  state.people.map((p,i)=>({'序號':i+1,'姓名':p.name,'繳款狀態':statusLabel(p),'帳號後五碼':p.last5||'','匯款金額':Number(p.amount)||0,'匯款日期／時間':p.paymentAt?fmtTime(p.paymentAt):'','應繳金額':Math.round(e||0),'備註':p.note||'','最後更新':p.updatedAt?fmtTime(p.updatedAt):''}));
- const ws=XLSX.utils.json_to_sheet(rows);
- ws['!cols']=[{wch:8},{wch:16},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:22},{wch:22}];
- const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,template?'匯入範本':'匯款明細');
- if(!template){
-  const summary=[
-   {'項目':'專案名稱','數值':state.settings.projectName||'收費匯款登記表'},
-   {'項目':'總人數','數值':state.people.length},
-   {'項目':'已繳人數','數值':state.people.filter(paid).length},
-   {'項目':'未繳人數','數值':state.people.filter(p=>!paid(p)).length},
-   {'項目':'已收金額','數值':state.people.reduce((s,p)=>s+(Number(p.amount)||0),0)},
-   {'項目':'設定總金額','數值':Number(state.settings.totalAmount)||0},
-   {'項目':'分擔人數','數值':Number(state.settings.shareCount)||0},
-   {'項目':'每人應繳','數值':e}
-  ];
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),'統計摘要');
- }
- const safeName=(state.settings.projectName||'收費匯款登記表').replace(/[\\/:*?"<>|]/g,'_');
- XLSX.writeFile(wb,template?`${safeName}_匯入範本.xlsx`:`${safeName}_匯款明細.xlsx`);
+  const wb=XLSX.utils.book_new();
+  const rows=template?[{'姓名':'王小明','帳號後五碼':'12345','匯款金額':1400,'匯款日期／時間':'2026/09/23 16:00','備註':''}]:
+    state.people.map((p,i)=>({'序號':i+1,'姓名':p.name,'繳款狀態':paid(p)?'已繳':'未繳','帳號後五碼':p.last5||'','匯款金額':p.amount||0,'匯款日期／時間':p.paymentAt?fmtTime(p.paymentAt):'','備註':p.note||'','最後更新':p.updatedAt?fmtTime(p.updatedAt):''}));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),template?'匯入範本':'匯款明細');
+  if(!template){
+    const total=state.people.length,paidN=state.people.filter(paid).length,received=state.people.reduce((s,p)=>s+(Number(p.amount)||0),0);
+    const summary=[{'項目':'專案名稱','數值':state.settings.projectName},{'項目':'總人數','數值':total},{'項目':'已繳','數值':paidN},{'項目':'未繳','數值':total-paidN},{'項目':'已收金額','數值':received},{'項目':'目標金額','數值':state.settings.totalAmount||0}];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),'統計摘要');
+  }
+  const safe=(state.settings.projectName||'收費匯款登記表').replace(/[\\/:*?"<>|]/g,'_');
+  XLSX.writeFile(wb,template?`${safe}_匯入範本.xlsx`:`${safe}_匯款明細.xlsx`);
 }
 $('#exportBtn').onclick=()=>isAdmin&&exportExcel(false);
-$('#exportPeopleBtn').onclick=()=>{
- if(!isAdmin)return;
- const rows=state.people.map((p,i)=>({'序號':i+1,'姓名':p.name}));
- const ws=XLSX.utils.json_to_sheet(rows);
- ws['!cols']=[{wch:8},{wch:20}];
- const wb=XLSX.utils.book_new();
- XLSX.utils.book_append_sheet(wb,ws,'人員名單');
- const safeName=(state.settings.projectName||'收費匯款登記表').replace(/[\\/:*?"<>|]/g,'_');
- XLSX.writeFile(wb,`${safeName}_人員名單.xlsx`);
-};
 $('#templateBtn').onclick=()=>isAdmin&&exportExcel(true);
+$('#exportPeopleBtn').onclick=()=>{if(!isAdmin)return;const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(state.people.map((p,i)=>({'序號':i+1,'姓名':p.name})));XLSX.utils.book_append_sheet(wb,ws,'人員名單');XLSX.writeFile(wb,(state.settings.projectName||'收費匯款登記表')+'_人員名單.xlsx')};
 
-$('#cloudSyncBtn').onclick=async()=>{
- if(!isAdmin)return;
- await syncToFirebase(true);
- if(firebaseReady)toast('雲端同步完成');
-};
-$('#backupBtn').onclick=()=>{
- const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
- const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=((state.settings.projectName||'收費匯款登記表').replace(/[\\/:*?"<>|]/g,'_'))+'_備份.json';a.click();URL.revokeObjectURL(a.href);
-};
-$('#restoreBtn').onclick=()=>$('#restoreFile').click();
-$('#restoreFile').onchange=e=>{
- const f=e.target.files[0];if(!f)return;
- const r=new FileReader();r.onload=ev=>{try{
-  const data=JSON.parse(ev.target.result);
-  if(!data||!Array.isArray(data.people)||!data.settings)throw new Error('格式不正確');
-  if(confirm(`將還原 ${data.people.length} 筆人員資料，並覆蓋目前資料。確定嗎？`)){
-   state=data;state.people=state.people.map(p=>({selected:false,...p}));save();toast('資料已還原')
-  }
- }catch(err){alert('備份檔讀取失敗：'+err.message)}};r.readAsText(f);e.target.value='';
-};
+$('#backupBtn').onclick=()=>{if(!isAdmin)return;const blob=new Blob([JSON.stringify(cleanState(state),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(state.settings.projectName||'收費匯款登記表')+'_備份.json';a.click();URL.revokeObjectURL(a.href)};
+$('#restoreBtn').onclick=()=>isAdmin&&$('#restoreFile').click();
+$('#restoreFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.people)throw 0;state=d;state.people=state.people.map(p=>({selected:false,paymentAt:null,...p}));persistAndSync();toast('備份已還原')}catch{alert('JSON 格式錯誤')}};r.readAsText(f)};
+$('#cloudSyncBtn').onclick=async()=>{if(!isAdmin)return;queuedSnapshot=cleanState(state);await flushCloudWrite();await pullCloud({force:false});toast('雲端同步完成')};
+
+setInterval(()=>pullCloud(),5000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pullCloud()});
+window.addEventListener('focus',()=>pullCloud());
+window.addEventListener('online',()=>{setCloud('☁️ 重新連線中');if(queuedSnapshot)flushCloudWrite();else pullCloud()});
+window.addEventListener('offline',()=>setCloud('⚠️ 離線使用本機資料'));
 
 render();
-loadFromFirebase();
-
-setInterval(async()=>{
-  try{
-    const res=await fetch(FIREBASE_URL,{cache:'no-store'});
-    if(!res.ok){
-      if(res.status===401||res.status===403)setCloudStatus('error','⛔ Firebase 權限被拒絕');
-      return;
-    }
-    const remote=await res.json();
-    if(!remote || typeof remote!=='object')return;
-
-    const localClean=cleanStateForCloud(state);
-    const remoteClean=cleanStateForCloud(remote);
-
-    if(JSON.stringify(remoteClean)!==JSON.stringify(localClean)){
-      isApplyingRemote=true;
-      state=remote;
-      state.settings ||= {totalAmount:0,shareCount:0,projectName:'收費匯款登記表'};
-      if(!state.settings.projectName)state.settings.projectName='收費匯款登記表';
-      state.people ||= [];
-      state.people=state.people.map(p=>({selected:false,...p}));
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
-      isApplyingRemote=false;
-      render();
-      setCloudStatus('ok','☁️ 已取得最新資料');
-    }
-  }catch(err){
-    console.warn('Firebase refresh failed:',err);
-  }
-},5000);
-
-
-// 回到前景／重新聚焦時，立即重新讀取 Firebase 最新資料
-async function syncWhenForeground(){
-  if(document.visibilityState && document.visibilityState!=='visible') return;
-  try{
-    const res=await fetch(FIREBASE_URL,{cache:'no-store'});
-    if(!res.ok){
-      if(res.status===401||res.status===403)setCloudStatus('error','⛔ Firebase 權限被拒絕');
-      return;
-    }
-    const remote=await res.json();
-    if(!remote || typeof remote!=='object')return;
-
-    const localClean=cleanStateForCloud(state);
-    const remoteClean=cleanStateForCloud(remote);
-
-    if(JSON.stringify(remoteClean)!==JSON.stringify(localClean)){
-      isApplyingRemote=true;
-      state=remote;
-      state.settings ||= {totalAmount:0,shareCount:0,projectName:'收費匯款登記表'};
-      if(!state.settings.projectName)state.settings.projectName='收費匯款登記表';
-      state.people ||= [];
-      state.people=state.people.map(p=>({selected:false,...p}));
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
-      isApplyingRemote=false;
-      render();
-    }
-    setCloudStatus('ok','☁️ 雲端已同步');
-  }catch(err){
-    console.warn('Foreground sync failed:',err);
-    setCloudStatus('error','⚠️ 離線使用本機資料');
-  }
-}
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') syncWhenForeground(); });
-window.addEventListener('focus',syncWhenForeground);
-window.addEventListener('online',syncWhenForeground);
-window.addEventListener('offline',()=>setCloudStatus('error','⚠️ 離線使用本機資料'));
-
+initialCloudLoad();
 </script>
 </body>
 </html>
