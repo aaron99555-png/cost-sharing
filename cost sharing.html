@@ -138,6 +138,69 @@ tbody tr:hover{background:#fff8fa}
 }
 @media(max-width:400px){.summary-line{grid-template-columns:1fr}.hero{gap:8px}.stat .value{font-size:21px}}
 </style>
+
+<style>
+/* Public self-entry + sortable columns */
+.self-entry-card{
+  border:1px solid #ead9de;
+  background:linear-gradient(145deg,#fff,#fff8fa);
+}
+.self-entry-grid{
+  display:grid;
+  grid-template-columns:.7fr 1.3fr .9fr .9fr 1.15fr 1.2fr auto;
+  gap:9px;
+  align-items:end;
+}
+.self-entry-hint{
+  margin-top:10px;
+  padding:9px 11px;
+  border-radius:11px;
+  background:#fbf3f5;
+  color:#76656a;
+  font-size:12px;
+  line-height:1.6;
+}
+.locked-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:6px 9px;
+  border-radius:999px;
+  background:#f5f1f2;
+  color:#817378;
+  border:1px solid #e8dde0;
+  font-size:12px;
+  font-weight:850;
+}
+.sortable-th{
+  cursor:pointer;
+  user-select:none;
+  white-space:nowrap;
+}
+.sortable-th:hover{
+  background:#f2e7ea;
+  color:#8f3042;
+}
+.sort-arrow{
+  display:inline-block;
+  min-width:14px;
+  margin-left:4px;
+  color:#a99096;
+  font-size:11px;
+}
+.sortable-th.active-sort{
+  color:#9d3749;
+  background:#f6eaed;
+}
+@media(max-width:1100px){
+  .self-entry-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:720px){
+  .self-entry-grid{grid-template-columns:1fr}
+  .self-entry-card .btn{width:100%}
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -217,10 +280,51 @@ tbody tr:hover{background:#fff8fa}
       <button class="btn" id="restoreBtn">還原 JSON</button>
       <button class="btn danger" id="deleteSelectedBtn">刪除勾選</button>
     </div>
-    <div class="note" style="margin-top:11px">人員資料欄位：編號＋LINE名稱。舊 Firebase「姓名」資料會自動相容轉為 LINE名稱；刪除與批次刪除仍保留雲端同步鎖定。</div>
+    <div class="note" style="margin-top:11px">管理員可預建人員名單；一般使用者可在下方自行新增或完成自己的紀錄。送出後只有管理員能修改／刪除；Firebase 同步鎖定仍保留。</div>
     <input type="file" id="namesFile" accept=".xlsx,.xls,.csv" hidden>
     <input type="file" id="detailFile" accept=".xlsx,.xls,.csv" hidden>
     <input type="file" id="restoreFile" accept=".json" hidden>
+  </div>
+</section>
+
+
+<section class="card self-entry-card">
+  <div class="card-title">
+    <div>
+      <h2>＋ 新增一筆匯款紀錄</h2>
+      <div class="muted" style="margin-top:4px">所有人都可以自行新增；送出後一般使用者無法再修改。</div>
+    </div>
+    <span class="pill paid">自行登記</span>
+  </div>
+  <div class="self-entry-grid">
+    <div class="field">
+      <label>編號（可留空）</label>
+      <input id="selfMemberNo" placeholder="自動編號">
+    </div>
+    <div class="field">
+      <label>LINE名稱</label>
+      <input id="selfLineName" placeholder="請輸入 LINE 名稱">
+    </div>
+    <div class="field">
+      <label>帳號後五碼</label>
+      <input id="selfLast5" inputmode="numeric" maxlength="5" placeholder="12345">
+    </div>
+    <div class="field">
+      <label>匯款金額</label>
+      <input id="selfAmount" type="number" min="1" placeholder="金額">
+    </div>
+    <div class="field">
+      <label>匯款日期／時間</label>
+      <input id="selfPaymentAt" type="datetime-local">
+    </div>
+    <div class="field">
+      <label>備註</label>
+      <input id="selfNote" placeholder="選填">
+    </div>
+    <button class="btn primary" id="selfAddBtn">送出新增</button>
+  </div>
+  <div class="self-entry-hint">
+    若輸入的「編號」或「LINE名稱」已存在且該筆尚未完成，系統會直接完成原本那一筆；若不存在，會自動新增到清單最下方。已完成的紀錄只有管理員可以修改或刪除。
   </div>
 </section>
 
@@ -248,7 +352,15 @@ tbody tr:hover{background:#fff8fa}
     <table>
       <thead><tr>
         <th class="admin-cell"><input type="checkbox" id="checkAll"></th>
-        <th>編號</th><th>LINE名稱</th><th>狀態</th><th>帳號後五碼</th><th>匯款金額</th><th>匯款日期／時間</th><th>備註</th><th>最後更新</th><th>操作</th><th class="admin-cell">管理</th>
+        <th class="sortable-th" data-sort-key="memberNo">編號<span class="sort-arrow" id="sort-memberNo">↕</span></th>
+        <th class="sortable-th" data-sort-key="lineName">LINE名稱<span class="sort-arrow" id="sort-lineName">↕</span></th>
+        <th class="sortable-th" data-sort-key="status">狀態<span class="sort-arrow" id="sort-status">↕</span></th>
+        <th class="sortable-th" data-sort-key="last5">帳號後五碼<span class="sort-arrow" id="sort-last5">↕</span></th>
+        <th class="sortable-th" data-sort-key="amount">匯款金額<span class="sort-arrow" id="sort-amount">↕</span></th>
+        <th class="sortable-th" data-sort-key="paymentAt">匯款日期／時間<span class="sort-arrow" id="sort-paymentAt">↕</span></th>
+        <th class="sortable-th" data-sort-key="note">備註<span class="sort-arrow" id="sort-note">↕</span></th>
+        <th class="sortable-th" data-sort-key="updatedAt">最後更新<span class="sort-arrow" id="sort-updatedAt">↕</span></th>
+        <th>操作</th><th class="admin-cell">管理</th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -324,6 +436,8 @@ state.people=normalizePeople(state.people);
 
 let isAdmin=sessionStorage.getItem('payment_admin')==='1';
 let activeFilter='all';
+let headerSortKey=null;
+let headerSortDir='asc';
 let adminPanelOpen=(localStorage.getItem('payment_admin_panel_open')||'1')==='1';
 
 // ===== Robust cloud sync =====
@@ -451,6 +565,25 @@ function getRows(){
     if(q && !((p.memberNo||'')+' '+(p.lineName||p.name||'')+' '+(p.last5||'')).toLowerCase().includes(q))return false;
     return activeFilter==='all' ? true : (activeFilter==='paid'?paid(p):!paid(p));
   });
+
+  if(headerSortKey){
+    const dir=headerSortDir==='asc'?1:-1;
+    rows.sort((a,b)=>{
+      let av,bv;
+      if(headerSortKey==='memberNo'){av=String(a.memberNo||'');bv=String(b.memberNo||'');return av.localeCompare(bv,'zh-Hant',{numeric:true})*dir}
+      if(headerSortKey==='lineName'){av=String(a.lineName||a.name||'');bv=String(b.lineName||b.name||'');return av.localeCompare(bv,'zh-Hant')*dir}
+      if(headerSortKey==='status'){av=paid(a)?1:0;bv=paid(b)?1:0}
+      else if(headerSortKey==='last5'){av=String(a.last5||'');bv=String(b.last5||'');return av.localeCompare(bv,'zh-Hant',{numeric:true})*dir}
+      else if(headerSortKey==='amount'){av=Number(a.amount)||0;bv=Number(b.amount)||0}
+      else if(headerSortKey==='paymentAt'){av=Number(a.paymentAt)||0;bv=Number(b.paymentAt)||0}
+      else if(headerSortKey==='note'){av=String(a.note||'');bv=String(b.note||'');return av.localeCompare(bv,'zh-Hant')*dir}
+      else if(headerSortKey==='updatedAt'){av=Number(a.updatedAt)||0;bv=Number(b.updatedAt)||0}
+      else {av=0;bv=0}
+      return (av-bv)*dir;
+    });
+    return rows;
+  }
+
   const sort=$('#sortBy').value;
   if(sort==='unpaidFirst')rows.sort((a,b)=>(paid(a)?1:0)-(paid(b)?1:0));
   if(sort==='memberNo')rows.sort((a,b)=>String(a.memberNo||'').localeCompare(String(b.memberNo||''),'zh-Hant',{numeric:true}));
@@ -460,6 +593,26 @@ function getRows(){
   if(sort==='updated')rows.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
   return rows;
 }
+
+function updateSortIndicators(){
+  $$('.sortable-th').forEach(th=>{
+    const key=th.dataset.sortKey;
+    th.classList.toggle('active-sort',key===headerSortKey);
+    const arrow=th.querySelector('.sort-arrow');
+    if(arrow)arrow.textContent=key===headerSortKey?(headerSortDir==='asc'?'▲':'▼'):'↕';
+  });
+}
+
+function headerSort(key){
+  if(headerSortKey===key)headerSortDir=headerSortDir==='asc'?'desc':'asc';
+  else{
+    headerSortKey=key;
+    headerSortDir=(key==='amount'||key==='paymentAt'||key==='updatedAt')?'desc':'asc';
+  }
+  render();
+}
+window.headerSort=headerSort;
+
 function render(){
   const total=state.people.length;
   const paidN=state.people.filter(paid).length;
@@ -489,14 +642,16 @@ function render(){
   $('#adminBtn').style.display=isAdmin?'none':'inline-flex';$('#logoutBtn').style.display=isAdmin?'inline-flex':'none';
   $('#adminPanelBody').style.display=adminPanelOpen?'block':'none';$('#adminToggleBtn').textContent=adminPanelOpen?'收合':'展開';
 
-  const rows=getRows();$('#resultCount').textContent=rows.length+' 筆';
+  const rows=getRows();updateSortIndicators();$('#resultCount').textContent=rows.length+' 筆';
   $('#tbody').innerHTML=rows.length?rows.map((p,i)=>`<tr style="box-shadow:inset 4px 0 0 ${paid(p)?'#c84455':'#d7a03b'}">
     <td class="admin-cell"><input type="checkbox" ${p.selected?'checked':''} onchange="toggleSelect('${p.id}',this.checked)"></td>
     <td><strong>${esc(p.memberNo||'—')}</strong></td><td><div class="name">${esc(p.lineName||p.name||'')}</div></td>
     <td><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></td>
     <td>${esc(p.last5||'—')}</td><td class="money">${p.amount?money(p.amount):'—'}</td>
     <td>${compactDate(p.paymentAt)}</td><td>${esc(p.note||'—')}</td><td>${compactDate(p.updatedAt)}</td>
-    <td><button class="btn small primary" onclick="openPay('${p.id}')">${paid(p)?'修改':'登記'}</button></td>
+    <td>${isAdmin
+      ? `<button class="btn small primary" onclick="openPay('${p.id}')">修改</button>`
+      : `<span class="locked-chip">🔒 ${paid(p)?'已送出':'待新增'}</span>`}</td>
     <td class="admin-cell"><button class="btn small danger" onclick="deletePerson('${p.id}')">刪除</button></td>
   </tr>`).join(''):`<tr><td colspan="11" class="empty">目前沒有符合條件的資料</td></tr>`;
 
@@ -509,12 +664,15 @@ function render(){
       <div class="person-item"><div class="k">最後更新</div><div class="v">${fmtTime(p.updatedAt)}</div></div>
     </div>
     ${p.note?`<div class="note" style="margin-bottom:9px">備註：${esc(p.note)}</div>`:''}
-    <div class="person-actions"><button class="btn primary" onclick="openPay('${p.id}')">${paid(p)?'修改匯款':'登記匯款'}</button>${isAdmin?`<button class="btn danger" onclick="deletePerson('${p.id}')">刪除</button>`:''}</div>
+    <div class="person-actions">${isAdmin
+      ? `<button class="btn primary" onclick="openPay('${p.id}')">修改匯款</button><button class="btn danger" onclick="deletePerson('${p.id}')">刪除</button>`
+      : `<span class="locked-chip">🔒 ${paid(p)?'送出後已鎖定':'尚未完成'}</span>`}</div>
   </div>`).join(''):`<div class="empty">目前沒有符合條件的資料</div>`;
 
   $('#checkAll').checked=state.people.length>0 && state.people.every(p=>p.selected);
 }
 function openPay(id){
+  if(!isAdmin){toast('送出後只有管理員可以修改');return}
   const p=state.people.find(x=>x.id===id);if(!p)return;
   $('#payId').value=id;$('#payTitle').textContent=`${p.lineName||p.name||''}｜${paid(p)?'修改匯款':'登記匯款'}`;
   $('#last5').value=p.last5||'';$('#payAmount').value=p.amount||'';
@@ -539,7 +697,71 @@ $('#logoutBtn').onclick=()=>{isAdmin=false;sessionStorage.removeItem('payment_ad
 $('#adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginSubmit').click()});
 $('#adminToggleBtn').onclick=()=>{adminPanelOpen=!adminPanelOpen;localStorage.setItem('payment_admin_panel_open',adminPanelOpen?'1':'0');render()};
 
+
+function resetSelfEntry(){
+  $('#selfMemberNo').value='';
+  $('#selfLineName').value='';
+  $('#selfLast5').value='';
+  $('#selfAmount').value='';
+  $('#selfPaymentAt').value=toDateTimeLocal(Date.now());
+  $('#selfNote').value='';
+}
+$('#selfPaymentAt').value=toDateTimeLocal(Date.now());
+
+$('#selfAddBtn').onclick=()=>{
+  const memberNo=$('#selfMemberNo').value.trim();
+  const lineName=$('#selfLineName').value.trim();
+  const last5=$('#selfLast5').value.trim();
+  const amount=Number($('#selfAmount').value);
+  const paymentAt=new Date($('#selfPaymentAt').value||Date.now()).getTime();
+  const note=$('#selfNote').value.trim();
+
+  if(!lineName)return alert('請輸入 LINE 名稱');
+  if(!/^\d{5}$/.test(last5))return alert('帳號後五碼必須為 5 位數字');
+  if(!(amount>0))return alert('請輸入正確匯款金額');
+  if(!Number.isFinite(paymentAt))return alert('請輸入正確的匯款日期／時間');
+
+  // 先找預建但尚未完成的名單：編號優先，其次 LINE 名稱。
+  let existing=null;
+  if(memberNo)existing=state.people.find(p=>String(p.memberNo||'').trim()===memberNo);
+  if(!existing)existing=state.people.find(p=>String(p.lineName||p.name||'').trim()===lineName);
+
+  if(existing){
+    if(paid(existing)){
+      alert('此編號或 LINE名稱已有完成紀錄。送出後僅管理員可以修改。');
+      return;
+    }
+    if(memberNo && String(existing.memberNo||'').trim()!==memberNo){
+      const duplicated=state.people.some(p=>p.id!==existing.id&&String(p.memberNo||'').trim()===memberNo);
+      if(duplicated)return alert('此編號已被其他紀錄使用');
+      existing.memberNo=memberNo;
+    }
+    existing.lineName=lineName;
+    existing.name=lineName;
+    existing.last5=last5;
+    existing.amount=amount;
+    existing.paymentAt=paymentAt;
+    existing.note=note;
+    existing.updatedAt=Date.now();
+    persistAndSync();
+    resetSelfEntry();
+    toast('已完成原有名單紀錄，送出後已鎖定');
+    return;
+  }
+
+  let finalNo=memberNo||nextMemberNo();
+  if(state.people.some(p=>String(p.memberNo||'').trim()===finalNo))return alert('此編號已存在');
+  state.people.push({
+    id:uid(),memberNo:finalNo,lineName,name:lineName,last5,amount,paymentAt,note,
+    updatedAt:Date.now(),selected:false
+  });
+  persistAndSync();
+  resetSelfEntry();
+  toast('已新增一筆紀錄，送出後已鎖定');
+};
+
 $('#savePay').onclick=()=>{
+  if(!isAdmin)return alert('只有管理員可以修改已送出的資料');
   const p=state.people.find(x=>x.id===$('#payId').value);if(!p)return;
   const last5=$('#last5').value.trim(), amount=Number($('#payAmount').value);
   if(!/^\d{5}$/.test(last5))return alert('帳號後五碼必須為 5 位數字');
@@ -567,8 +789,12 @@ $('#totalAmount').onchange=e=>{if(isAdmin){state.settings.totalAmount=Number(e.t
 $('#shareCount').onchange=e=>{if(isAdmin){state.settings.shareCount=Number(e.target.value)||0;persistAndSync()}};
 
 $$('.tab').forEach(b=>b.onclick=()=>{activeFilter=b.dataset.filter;$$('.tab').forEach(x=>x.classList.toggle('active',x===b));render()});
-$('#search').oninput=render;$('#sortBy').onchange=render;
-$('#clearFilter').onclick=()=>{$('#search').value='';$('#sortBy').value='unpaidFirst';activeFilter='all';$$('.tab').forEach((x,i)=>x.classList.toggle('active',i===0));render()};
+$('#search').oninput=render;
+
+$$('.sortable-th').forEach(th=>th.addEventListener('click',()=>headerSort(th.dataset.sortKey)));
+$('#sortBy').addEventListener('change',()=>{headerSortKey=null;headerSortDir='asc';render()});
+
+$('#clearFilter').onclick=()=>{$('#search').value='';$('#sortBy').value='unpaidFirst';headerSortKey=null;headerSortDir='asc';activeFilter='all';$$('.tab').forEach((x,i)=>x.classList.toggle('active',i===0));render()};
 $('#copyUnpaidBtn').onclick=async()=>{const names=state.people.filter(p=>!paid(p)).map(p=>`${p.memberNo||''}｜${p.lineName||p.name||''}`);await navigator.clipboard.writeText(names.join('\n'));toast(`已複製 ${names.length} 位未繳名單`)};
 $('#checkAll').onchange=e=>{state.people.forEach(p=>p.selected=e.target.checked);saveLocalOnly()};
 $('#deleteSelectedBtn').onclick=()=>{
