@@ -243,6 +243,400 @@ tbody tr:hover{background:#fff8fa}
 }
 </style>
 
+
+<style>
+.last5-warning{
+  display:none;
+  margin-top:6px;
+  padding:7px 9px;
+  border-radius:9px;
+  background:#fff1f2;
+  border:1px solid #efcdd4;
+  color:#a53245;
+  font-size:12px;
+  font-weight:800;
+  line-height:1.4;
+}
+.last5-warning.show{display:block}
+input.input-error{
+  border-color:#cf5367 !important;
+  box-shadow:0 0 0 4px rgba(190,58,78,.09) !important;
+  background:#fffafb !important;
+}
+</style>
+
+
+<style>
+/* ===== 全畫面手機自適應強化 ===== */
+html,body{
+  width:100%;
+  max-width:100%;
+  overflow-x:hidden;
+}
+img,svg,canvas,video{
+  max-width:100%;
+  height:auto;
+}
+.wrap{
+  width:100%;
+  max-width:1240px;
+}
+input,select,button,textarea{
+  max-width:100%;
+}
+.modal-card{
+  max-height:calc(100dvh - 32px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+.modal{
+  padding:
+    max(12px,env(safe-area-inset-top))
+    max(12px,env(safe-area-inset-right))
+    max(12px,env(safe-area-inset-bottom))
+    max(12px,env(safe-area-inset-left));
+}
+@media(max-width:720px){
+  body{
+    font-size:14px;
+  }
+  .wrap{
+    padding:
+      10px
+      max(10px,env(safe-area-inset-right))
+      calc(14px + env(safe-area-inset-bottom))
+      max(10px,env(safe-area-inset-left));
+  }
+
+  /* 頂部 */
+  .topbar{
+    margin:-10px -10px 10px;
+    padding:
+      calc(10px + env(safe-area-inset-top))
+      max(10px,env(safe-area-inset-right))
+      10px
+      max(10px,env(safe-area-inset-left));
+    align-items:stretch;
+    gap:9px;
+  }
+  .brand{
+    width:100%;
+    min-width:0;
+  }
+  .brand h1{
+    font-size:clamp(19px,5.7vw,23px);
+    line-height:1.25;
+    word-break:break-word;
+  }
+  .actions{
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .actions .btn,
+  #cloudStatus{
+    width:100%;
+    min-width:0!important;
+    justify-content:center;
+    text-align:center;
+    padding:9px 8px!important;
+    font-size:12px;
+  }
+  #cloudStatus{
+    grid-column:1 / -1;
+  }
+
+  /* 卡片 */
+  .card{
+    width:100%;
+    padding:14px;
+    border-radius:16px;
+    margin-bottom:12px;
+  }
+  .card-title{
+    align-items:flex-start;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .card-title h2{
+    font-size:17px;
+    line-height:1.35;
+  }
+
+  /* 專案總覽 */
+  .project-banner{
+    padding:14px;
+  }
+  .project-main{
+    display:block;
+  }
+  .project-banner h2{
+    font-size:22px;
+    line-height:1.3;
+    word-break:break-word;
+  }
+  .hero-money{
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .money-box{
+    padding:11px 12px;
+  }
+  .money-box .v{
+    font-size:22px;
+    word-break:break-all;
+  }
+  .hero-meta{
+    gap:6px;
+  }
+  .meta{
+    font-size:11px;
+    padding:6px 9px;
+  }
+  .ring-area{
+    margin-top:14px;
+    flex-direction:column;
+    align-items:center;
+  }
+  .ring{
+    width:min(138px,42vw);
+    height:min(138px,42vw);
+  }
+  .ring-in{
+    width:min(104px,31vw);
+    height:min(104px,31vw);
+  }
+  .ring-in b{
+    font-size:27px;
+  }
+
+  /* 統計卡 */
+  .hero{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px;
+  }
+  .stat{
+    padding:12px 11px;
+    min-width:0;
+  }
+  .stat .label{
+    font-size:11px;
+  }
+  .stat .value{
+    font-size:clamp(20px,6vw,25px);
+    word-break:break-word;
+  }
+  .stat .sub{
+    font-size:11px;
+  }
+
+  /* 進度 */
+  .progress-meta{
+    flex-direction:column;
+    gap:4px;
+  }
+  .summary-line{
+    grid-template-columns:1fr!important;
+    gap:7px;
+  }
+  .summary-chip{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    width:100%;
+  }
+
+  /* 自助新增表單 */
+  .self-entry-grid{
+    grid-template-columns:1fr!important;
+    gap:9px;
+  }
+  .field{
+    width:100%;
+    min-width:0;
+  }
+  input,select,textarea{
+    width:100%;
+    font-size:16px; /* 避免 iPhone 自動放大 */
+    min-height:44px;
+    padding:11px 12px;
+  }
+  .self-entry-card .btn,
+  #selfAddBtn{
+    width:100%;
+    min-height:46px;
+  }
+  .self-entry-hint{
+    font-size:12px;
+  }
+
+  /* 管理區 */
+  .admin-grid{
+    grid-template-columns:1fr!important;
+    gap:9px;
+  }
+  .tools{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .tools .btn{
+    width:100%;
+    min-height:44px;
+  }
+
+  /* 篩選 */
+  .sticky-zone{
+    position:static;
+    padding:6px 0 8px;
+    background:transparent;
+    backdrop-filter:none;
+  }
+  .tabs{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:6px;
+  }
+  .tab{
+    width:100%;
+    padding:9px 6px;
+    font-size:12px;
+  }
+  .toolbar{
+    grid-template-columns:1fr!important;
+    gap:8px;
+    padding:9px;
+  }
+  .toolbar .btn{
+    width:100%;
+    min-height:42px;
+  }
+
+  /* 人員卡 */
+  .mobile-list{
+    display:block;
+  }
+  .desktop-table{
+    display:none!important;
+  }
+  .person-card{
+    padding:12px;
+    border-radius:14px;
+  }
+  .person-top{
+    align-items:flex-start;
+  }
+  .person-name{
+    font-size:16px;
+    word-break:break-word;
+  }
+  .person-grid{
+    grid-template-columns:1fr!important;
+    gap:7px;
+  }
+  .person-item{
+    padding:9px 10px;
+  }
+  .person-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .person-actions .btn,
+  .locked-chip{
+    width:100%;
+    justify-content:center;
+    text-align:center;
+    min-height:42px;
+  }
+
+  /* 跳出視窗全面手機化 */
+  .modal{
+    align-items:flex-end;
+    justify-content:center;
+    background:rgba(30,20,24,.52);
+  }
+  .modal-card{
+    width:100%;
+    max-width:none;
+    max-height:calc(100dvh - 18px);
+    border-radius:20px 20px 14px 14px;
+    padding:16px 14px calc(14px + env(safe-area-inset-bottom));
+    margin:0;
+  }
+  .modal-card h3{
+    font-size:18px;
+    line-height:1.35;
+    word-break:break-word;
+  }
+  .modal-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    position:sticky;
+    bottom:0;
+    background:#fff;
+    padding-top:10px;
+    margin-top:12px;
+  }
+  .modal-row .btn{
+    width:100%;
+    min-height:46px;
+  }
+
+  /* 填單完成視窗 */
+  .submit-summary-box{
+    max-width:100%;
+  }
+  .summary-row{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:4px;
+    padding:10px 11px;
+  }
+  .summary-row strong{
+    text-align:left;
+    word-break:break-word;
+    font-size:15px;
+  }
+  .dolly-reminder{
+    font-size:12px;
+    padding:10px;
+  }
+  #copySummaryBtn{
+    min-width:0;
+  }
+
+  /* Toast */
+  .toast{
+    width:calc(100% - 24px);
+    max-width:420px;
+    bottom:calc(14px + env(safe-area-inset-bottom));
+    text-align:center;
+    white-space:normal;
+  }
+}
+@media(max-width:390px){
+  .hero{
+    grid-template-columns:1fr!important;
+  }
+  .actions{
+    grid-template-columns:1fr;
+  }
+  #cloudStatus{
+    grid-column:auto;
+  }
+  .tabs{
+    grid-template-columns:1fr 1fr 1fr;
+  }
+  .modal-row{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -349,6 +743,7 @@ tbody tr:hover{background:#fff8fa}
     <div class="field">
       <label>帳號後五碼</label>
       <input id="selfLast5" inputmode="numeric" maxlength="5" placeholder="12345">
+      <div class="last5-warning" id="selfLast5Warning">⚠️ 帳號後五碼需完整輸入 5 碼</div>
     </div>
     <div class="field">
       <label>匯款金額</label>
@@ -418,7 +813,9 @@ tbody tr:hover{background:#fff8fa}
 
 <div class="modal" id="payModal"><div class="modal-card">
   <h3 id="payTitle">登記匯款</h3><input id="payId" type="hidden">
-  <div class="field"><label>帳號後五碼</label><input id="last5" inputmode="numeric" maxlength="5" placeholder="例如 12345"></div>
+  <div class="field"><label>帳號後五碼</label><input id="last5" inputmode="numeric" maxlength="5" placeholder="例如 12345">
+    <div class="last5-warning" id="last5Warning">⚠️ 帳號後五碼需完整輸入 5 碼</div>
+  </div>
   <div class="field" style="margin-top:10px"><label>匯款金額</label><input id="payAmount" type="number" min="0"></div>
   <div class="field" style="margin-top:10px"><label>匯款日期／時間</label><input id="paymentDateTime" type="datetime-local"></div>
   <div class="field" style="margin-top:10px"><label>備註</label><input id="note" placeholder="選填"></div>
@@ -746,7 +1143,10 @@ function openPay(id){
   if(!isAdmin){toast('送出後只有管理員可以修改');return}
   const p=state.people.find(x=>x.id===id);if(!p)return;
   $('#payId').value=id;$('#payTitle').textContent=`${p.lineName||p.name||''}｜${paid(p)?'修改匯款':'登記匯款'}`;
-  $('#last5').value=p.last5||'';$('#payAmount').value=p.amount||'';
+  $('#last5').value=p.last5||'';
+  $('#last5Warning').classList.remove('show');
+  $('#last5').classList.remove('input-error');
+  $('#payAmount').value=p.amount||'';
   $('#paymentDateTime').value=toDateTimeLocal(p.paymentAt||Date.now());$('#note').value=p.note||'';
   $('#payModal').classList.add('show');
 }
@@ -808,8 +1208,31 @@ $('#copySummaryBtn').onclick=async()=>{
   }
 };
 
+
+function validateLast5Input(inputId, warningId, showEmpty=false){
+  const input=$('#'+inputId);
+  const warning=$('#'+warningId);
+  if(!input||!warning)return true;
+
+  // 只保留數字，且最多 5 碼
+  input.value=input.value.replace(/\D/g,'').slice(0,5);
+  const len=input.value.length;
+  const invalid=(len>0 && len<5) || (showEmpty && len!==5);
+
+  warning.classList.toggle('show',invalid);
+  input.classList.toggle('input-error',invalid);
+  return len===5;
+}
+
+$('#selfLast5').addEventListener('input',()=>validateLast5Input('selfLast5','selfLast5Warning'));
+$('#selfLast5').addEventListener('blur',()=>validateLast5Input('selfLast5','selfLast5Warning',true));
+$('#last5').addEventListener('input',()=>validateLast5Input('last5','last5Warning'));
+$('#last5').addEventListener('blur',()=>validateLast5Input('last5','last5Warning',true));
+
 function resetSelfEntry(){
   $('#selfLineName').value='';
+  $('#selfLast5Warning').classList.remove('show');
+  $('#selfLast5').classList.remove('input-error');
   $('#selfLast5').value='';
   $('#selfAmount').value='';
   $('#selfPaymentAt').value=toDateTimeLocal(Date.now());
@@ -825,7 +1248,11 @@ $('#selfAddBtn').onclick=()=>{
   const note=$('#selfNote').value.trim();
 
   if(!lineName)return alert('請輸入 LINE 名稱');
-  if(!/^\d{5}$/.test(last5))return alert('帳號後五碼必須為 5 位數字');
+  if(!/^\d{5}$/.test(last5)){
+    validateLast5Input('selfLast5','selfLast5Warning',true);
+    $('#selfLast5').focus();
+    return alert('帳號後五碼不足 5 碼，請完整輸入 5 位數字');
+  }
   if(!(amount>0))return alert('請輸入正確匯款金額');
   if(!Number.isFinite(paymentAt))return alert('請輸入正確的匯款日期／時間');
 
@@ -870,7 +1297,11 @@ $('#savePay').onclick=()=>{
   if(!isAdmin)return alert('只有管理員可以修改已送出的資料');
   const p=state.people.find(x=>x.id===$('#payId').value);if(!p)return;
   const last5=$('#last5').value.trim(), amount=Number($('#payAmount').value);
-  if(!/^\d{5}$/.test(last5))return alert('帳號後五碼必須為 5 位數字');
+  if(!/^\d{5}$/.test(last5)){
+    validateLast5Input('last5','last5Warning',true);
+    $('#last5').focus();
+    return alert('帳號後五碼不足 5 碼，請完整輸入 5 位數字');
+  }
   if(!(amount>0))return alert('請輸入正確匯款金額');
   const paymentAt=new Date($('#paymentDateTime').value||Date.now()).getTime();
   p.last5=last5;p.amount=amount;p.paymentAt=paymentAt;p.note=$('#note').value.trim();p.updatedAt=Date.now();
