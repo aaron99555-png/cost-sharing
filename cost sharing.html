@@ -147,7 +147,7 @@ tbody tr:hover{background:#fff8fa}
 }
 .self-entry-grid{
   display:grid;
-  grid-template-columns:.7fr 1.3fr .9fr .9fr 1.15fr 1.2fr auto;
+  grid-template-columns:1.35fr .9fr .9fr 1.15fr 1.2fr auto;
   gap:9px;
   align-items:end;
 }
@@ -198,6 +198,48 @@ tbody tr:hover{background:#fff8fa}
 @media(max-width:720px){
   .self-entry-grid{grid-template-columns:1fr}
   .self-entry-card .btn{width:100%}
+}
+</style>
+
+
+<style>
+.submit-summary-box{
+  border:1px solid #eadde1;
+  border-radius:14px;
+  overflow:hidden;
+  background:#fffafb;
+}
+.summary-row{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  padding:12px 13px;
+  border-bottom:1px solid #efe5e8;
+  align-items:center;
+}
+.summary-row:last-child{border-bottom:0}
+.summary-row span{
+  color:#75686c;
+  font-size:13px;
+  font-weight:800;
+}
+.summary-row strong{
+  color:#7d2d3b;
+  text-align:right;
+  font-size:14px;
+}
+.dolly-reminder{
+  margin-top:13px;
+  padding:11px 12px;
+  border-radius:12px;
+  background:#fff3f5;
+  border:1px solid #efd7dd;
+  color:#7f3543;
+  line-height:1.6;
+  font-size:13px;
+}
+#copySummaryBtn{
+  min-width:130px;
 }
 </style>
 
@@ -292,15 +334,11 @@ tbody tr:hover{background:#fff8fa}
   <div class="card-title">
     <div>
       <h2>＋ 新增一筆匯款紀錄</h2>
-      <div class="muted" style="margin-top:4px">所有人都可以自行新增；送出後一般使用者無法再修改。</div>
+      <div class="muted" style="margin-top:4px">所有人都可以自行新增，編號由系統自動產生；送出後一般使用者無法再修改。</div>
     </div>
     <span class="pill paid">自行登記</span>
   </div>
   <div class="self-entry-grid">
-    <div class="field">
-      <label>編號（可留空）</label>
-      <input id="selfMemberNo" placeholder="自動編號">
-    </div>
     <div class="field">
       <label>LINE名稱</label>
       <input id="selfLineName" placeholder="請輸入 LINE 名稱">
@@ -324,7 +362,7 @@ tbody tr:hover{background:#fff8fa}
     <button class="btn primary" id="selfAddBtn">送出新增</button>
   </div>
   <div class="self-entry-hint">
-    若輸入的「編號」或「LINE名稱」已存在且該筆尚未完成，系統會直接完成原本那一筆；若不存在，會自動新增到清單最下方。已完成的紀錄只有管理員可以修改或刪除。
+    編號由系統自動產生。若「LINE名稱」已存在且該筆尚未完成，系統會直接完成原本那一筆；若不存在，會自動新增到清單最下方。已完成的紀錄只有管理員可以修改或刪除。
   </div>
 </section>
 
@@ -383,6 +421,36 @@ tbody tr:hover{background:#fff8fa}
   <div class="field" style="margin-top:10px"><label>備註</label><input id="note" placeholder="選填"></div>
   <div class="modal-row"><button class="btn" data-close="payModal">取消</button><button class="btn primary" id="savePay">儲存登記</button></div>
 </div></div>
+
+
+<div class="modal" id="submitSummaryModal">
+  <div class="modal-card">
+    <div class="card-title" style="margin-bottom:12px">
+      <div>
+        <h3 style="margin:0">✅ 填單完成</h3>
+        <div class="muted" style="margin-top:4px">請確認以下內容，並複製傳送給 Dolly。</div>
+      </div>
+      <span class="pill paid">已送出</span>
+    </div>
+
+    <div class="submit-summary-box">
+      <div class="summary-row"><span>1. 編號</span><strong id="summaryMemberNo">—</strong></div>
+      <div class="summary-row"><span>2. LINE名稱</span><strong id="summaryLineName">—</strong></div>
+      <div class="summary-row"><span>3. 帳號後五碼</span><strong id="summaryLast5">—</strong></div>
+      <div class="summary-row"><span>4. 匯款金額</span><strong id="summaryAmount">—</strong></div>
+      <div class="summary-row"><span>5. 匯款日期／時間</span><strong id="summaryPaymentAt">—</strong></div>
+    </div>
+
+    <div class="dolly-reminder">
+      📌 請點選下方「複製內容」，並將資料傳送給 <strong>Dolly</strong>。
+    </div>
+
+    <div class="modal-row">
+      <button class="btn" data-close="submitSummaryModal">關閉</button>
+      <button class="btn primary" id="copySummaryBtn">📋 複製內容</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -698,8 +766,48 @@ $('#adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginS
 $('#adminToggleBtn').onclick=()=>{adminPanelOpen=!adminPanelOpen;localStorage.setItem('payment_admin_panel_open',adminPanelOpen?'1':'0');render()};
 
 
+
+let lastSubmittedSummaryText='';
+
+function showSubmitSummary(p){
+  const paymentText=fmtTime(p.paymentAt);
+  $('#summaryMemberNo').textContent=p.memberNo||'—';
+  $('#summaryLineName').textContent=p.lineName||p.name||'—';
+  $('#summaryLast5').textContent=p.last5||'—';
+  $('#summaryAmount').textContent=money(p.amount||0);
+  $('#summaryPaymentAt').textContent=paymentText;
+
+  lastSubmittedSummaryText=
+`匯款填單內容
+1. 編號：${p.memberNo||'—'}
+2. LINE名稱：${p.lineName||p.name||'—'}
+3. 帳號後五碼：${p.last5||'—'}
+4. 匯款金額：${money(p.amount||0)}
+5. 匯款日期／時間：${paymentText}
+
+請傳送給 Dolly`;
+
+  $('#submitSummaryModal').classList.add('show');
+}
+
+$('#copySummaryBtn').onclick=async()=>{
+  try{
+    await navigator.clipboard.writeText(lastSubmittedSummaryText);
+    toast('已複製，請傳送給 Dolly');
+    $('#copySummaryBtn').textContent='✅ 已複製';
+    setTimeout(()=>$('#copySummaryBtn').textContent='📋 複製內容',1600);
+  }catch(err){
+    const ta=document.createElement('textarea');
+    ta.value=lastSubmittedSummaryText;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    toast('已複製，請傳送給 Dolly');
+  }
+};
+
 function resetSelfEntry(){
-  $('#selfMemberNo').value='';
   $('#selfLineName').value='';
   $('#selfLast5').value='';
   $('#selfAmount').value='';
@@ -709,7 +817,6 @@ function resetSelfEntry(){
 $('#selfPaymentAt').value=toDateTimeLocal(Date.now());
 
 $('#selfAddBtn').onclick=()=>{
-  const memberNo=$('#selfMemberNo').value.trim();
   const lineName=$('#selfLineName').value.trim();
   const last5=$('#selfLast5').value.trim();
   const amount=Number($('#selfAmount').value);
@@ -721,20 +828,13 @@ $('#selfAddBtn').onclick=()=>{
   if(!(amount>0))return alert('請輸入正確匯款金額');
   if(!Number.isFinite(paymentAt))return alert('請輸入正確的匯款日期／時間');
 
-  // 先找預建但尚未完成的名單：編號優先，其次 LINE 名稱。
-  let existing=null;
-  if(memberNo)existing=state.people.find(p=>String(p.memberNo||'').trim()===memberNo);
-  if(!existing)existing=state.people.find(p=>String(p.lineName||p.name||'').trim()===lineName);
+  // 只以 LINE 名稱比對預建且尚未完成的名單
+  const existing=state.people.find(p=>String(p.lineName||p.name||'').trim()===lineName);
 
   if(existing){
     if(paid(existing)){
-      alert('此編號或 LINE名稱已有完成紀錄。送出後僅管理員可以修改。');
+      alert('此 LINE 名稱已有完成紀錄。送出後僅管理員可以修改。');
       return;
-    }
-    if(memberNo && String(existing.memberNo||'').trim()!==memberNo){
-      const duplicated=state.people.some(p=>p.id!==existing.id&&String(p.memberNo||'').trim()===memberNo);
-      if(duplicated)return alert('此編號已被其他紀錄使用');
-      existing.memberNo=memberNo;
     }
     existing.lineName=lineName;
     existing.name=lineName;
@@ -743,21 +843,26 @@ $('#selfAddBtn').onclick=()=>{
     existing.paymentAt=paymentAt;
     existing.note=note;
     existing.updatedAt=Date.now();
+    if(!existing.memberNo)existing.memberNo=nextMemberNo();
     persistAndSync();
+    const submitted={...existing};
     resetSelfEntry();
-    toast('已完成原有名單紀錄，送出後已鎖定');
+    showSubmitSummary(submitted);
+    toast(`已完成紀錄，編號 ${existing.memberNo}`);
     return;
   }
 
-  let finalNo=memberNo||nextMemberNo();
-  if(state.people.some(p=>String(p.memberNo||'').trim()===finalNo))return alert('此編號已存在');
+  const finalNo=nextMemberNo();
   state.people.push({
     id:uid(),memberNo:finalNo,lineName,name:lineName,last5,amount,paymentAt,note,
     updatedAt:Date.now(),selected:false
   });
+  const submitted=state.people[state.people.length-1];
   persistAndSync();
+  const submittedSnapshot={...submitted};
   resetSelfEntry();
-  toast('已新增一筆紀錄，送出後已鎖定');
+  showSubmitSummary(submittedSnapshot);
+  toast(`新增完成，系統編號 ${finalNo}`);
 };
 
 $('#savePay').onclick=()=>{
