@@ -83,7 +83,7 @@ button{touch-action:manipulation}
 .summary-chip{background:#fbf7f8;border:1px solid #eee2e5;padding:8px 11px;border-radius:11px;font-size:12px}
 .summary-chip strong{color:var(--red2);margin-left:4px}
 .admin-panel{display:none}.admin-panel.show{display:block}
-.admin-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1.2fr auto;gap:10px;align-items:end}
+.admin-grid{display:grid;grid-template-columns:1.35fr .85fr .85fr .7fr 1.15fr auto;gap:10px;align-items:end}
 .field label{display:block;font-size:12px;color:#6f6266;font-weight:850;margin-bottom:6px}
 input,select{
   width:100%;border:1px solid #e3d7da;border-radius:12px;padding:11px 12px;background:#fff;color:var(--text);outline:none
@@ -202,7 +202,8 @@ tbody tr:hover{background:#fff8fa}
       <div class="field"><label>專案名稱</label><input id="projectName" maxlength="40"></div>
       <div class="field"><label>總金額</label><input id="totalAmount" type="number" min="0"></div>
       <div class="field"><label>分擔人數</label><input id="shareCount" type="number" min="1"></div>
-      <div class="field"><label>新增姓名</label><input id="newName" placeholder="輸入姓名"></div>
+      <div class="field"><label>編號</label><input id="newMemberNo" placeholder="例如 001"></div>
+      <div class="field"><label>LINE名稱</label><input id="newLineName" placeholder="輸入 LINE 名稱"></div>
       <button class="btn primary" id="addPersonBtn">＋ 新增人員</button>
     </div>
     <div class="tools">
@@ -216,7 +217,7 @@ tbody tr:hover{background:#fff8fa}
       <button class="btn" id="restoreBtn">還原 JSON</button>
       <button class="btn danger" id="deleteSelectedBtn">刪除勾選</button>
     </div>
-    <div class="note" style="margin-top:11px">刪除與批次刪除已加入「本機變更鎖定」：Firebase 寫入完成前不會被 5 秒輪詢的舊資料覆蓋。</div>
+    <div class="note" style="margin-top:11px">人員資料欄位：編號＋LINE名稱。舊 Firebase「姓名」資料會自動相容轉為 LINE名稱；刪除與批次刪除仍保留雲端同步鎖定。</div>
     <input type="file" id="namesFile" accept=".xlsx,.xls,.csv" hidden>
     <input type="file" id="detailFile" accept=".xlsx,.xls,.csv" hidden>
     <input type="file" id="restoreFile" accept=".json" hidden>
@@ -232,10 +233,10 @@ tbody tr:hover{background:#fff8fa}
       <button class="tab" data-filter="unpaid">未繳</button>
     </div>
     <div class="toolbar">
-      <div class="field"><label>搜尋姓名／後五碼</label><input id="search" placeholder="輸入姓名或後五碼"></div>
+      <div class="field"><label>搜尋編號／LINE名稱／後五碼</label><input id="search" placeholder="輸入編號、LINE名稱或後五碼"></div>
       <div class="field"><label>排序</label><select id="sortBy">
         <option value="unpaidFirst">未繳優先</option><option value="default">原始順序</option>
-        <option value="name">姓名</option><option value="amountDesc">金額高 → 低</option>
+        <option value="memberNo">編號</option><option value="name">LINE名稱</option><option value="amountDesc">金額高 → 低</option>
         <option value="amountAsc">金額低 → 高</option><option value="updated">最近更新</option>
       </select></div>
       <button class="btn" id="copyUnpaidBtn">複製未繳名單</button>
@@ -247,7 +248,7 @@ tbody tr:hover{background:#fff8fa}
     <table>
       <thead><tr>
         <th class="admin-cell"><input type="checkbox" id="checkAll"></th>
-        <th>#</th><th>姓名</th><th>狀態</th><th>帳號後五碼</th><th>匯款金額</th><th>匯款日期／時間</th><th>備註</th><th>最後更新</th><th>操作</th><th class="admin-cell">管理</th>
+        <th>編號</th><th>LINE名稱</th><th>狀態</th><th>帳號後五碼</th><th>匯款金額</th><th>匯款日期／時間</th><th>備註</th><th>最後更新</th><th>操作</th><th class="admin-cell">管理</th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -290,6 +291,27 @@ const toDateTimeLocal=ts=>{if(!ts)return '';const d=new Date(ts),pad=n=>String(n
 const statusLabel=p=>paid(p)?'✓ 已完成':'待匯款';
 const statusClass=p=>paid(p)?'paid':'unpaid';
 
+function nextMemberNo(list=state?.people||[]){
+  const used=new Set((list||[]).map(p=>String(p.memberNo||'').trim()).filter(Boolean));
+  let n=1;
+  while(used.has(String(n).padStart(3,'0')) || used.has(String(n))) n++;
+  return String(n).padStart(3,'0');
+}
+function normalizePeople(list=[]){
+  const used=new Set();
+  let n=1;
+  return (list||[]).map(p=>{
+    const lineName=String(p.lineName||p.name||'').trim();
+    let memberNo=String(p.memberNo||p.no||'').trim();
+    if(!memberNo){
+      while(used.has(String(n).padStart(3,'0')) || used.has(String(n))) n++;
+      memberNo=String(n++).padStart(3,'0');
+    }
+    used.add(memberNo);
+    return {selected:false,paymentAt:null,...p,memberNo,lineName,name:lineName};
+  });
+}
+
 let state=null;
 for(const key of [STORAGE_KEY,...LEGACY_KEYS]){
   try{const v=JSON.parse(localStorage.getItem(key)||'null');if(v){state=v;break}}catch{}
@@ -298,7 +320,7 @@ if(!state) state={settings:{projectName:'收費匯款登記表',totalAmount:0,sh
 state.settings ||= {projectName:'收費匯款登記表',totalAmount:0,shareCount:0};
 state.people ||= [];
 state.modifiedAt ||= 0;
-state.people=state.people.map(p=>({selected:false,paymentAt:null,...p}));
+state.people=normalizePeople(state.people);
 
 let isAdmin=sessionStorage.getItem('payment_admin')==='1';
 let activeFilter='all';
@@ -380,7 +402,7 @@ async function pullCloud({force=false}={}){
       state=remote;
       state.settings ||= {projectName:'收費匯款登記表',totalAmount:0,shareCount:0};
       state.people ||= [];
-      state.people=state.people.map(p=>({selected:false,paymentAt:null,...p}));
+      state.people=normalizePeople(state.people);
       state.modifiedAt=remoteRevision;
       latestLocalRevision=Math.max(latestLocalRevision,remoteRevision);
       localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
@@ -402,7 +424,7 @@ async function initialCloudLoad(){
       const rr=Number(remote.modifiedAt)||0, lr=Number(state.modifiedAt)||0;
       if(rr>=lr || state.people.length===0){
         state=remote;state.settings ||= {};state.people ||= [];
-        state.people=state.people.map(p=>({selected:false,paymentAt:null,...p}));
+        state.people=normalizePeople(state.people);
         state.modifiedAt=rr;latestLocalRevision=Math.max(latestLocalRevision,rr);
         localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
       }else{
@@ -426,12 +448,13 @@ function compactDate(ts){
 function getRows(){
   const q=$('#search').value.trim().toLowerCase();
   let rows=state.people.map((p,i)=>({...p,_index:i})).filter(p=>{
-    if(q && !(p.name+' '+(p.last5||'')).toLowerCase().includes(q))return false;
+    if(q && !((p.memberNo||'')+' '+(p.lineName||p.name||'')+' '+(p.last5||'')).toLowerCase().includes(q))return false;
     return activeFilter==='all' ? true : (activeFilter==='paid'?paid(p):!paid(p));
   });
   const sort=$('#sortBy').value;
   if(sort==='unpaidFirst')rows.sort((a,b)=>(paid(a)?1:0)-(paid(b)?1:0));
-  if(sort==='name')rows.sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant'));
+  if(sort==='memberNo')rows.sort((a,b)=>String(a.memberNo||'').localeCompare(String(b.memberNo||''),'zh-Hant',{numeric:true}));
+  if(sort==='name')rows.sort((a,b)=>String(a.lineName||a.name||'').localeCompare(String(b.lineName||b.name||''),'zh-Hant'));
   if(sort==='amountDesc')rows.sort((a,b)=>(b.amount||0)-(a.amount||0));
   if(sort==='amountAsc')rows.sort((a,b)=>(a.amount||0)-(b.amount||0));
   if(sort==='updated')rows.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
@@ -461,7 +484,7 @@ function render(){
   $('#moneyGap').textContent=target?(received>=target?`已達目標 ${money(received-target)}`:`尚差 ${money(target-received)}`):'尚未設定總金額';
   $('#targetChip').textContent=money(target);$('#perPersonChip').textContent=money(Math.round(per||0));$('#shareCountChip').textContent=state.settings.shareCount||0;
 
-  $('#projectName').value=project;$('#totalAmount').value=state.settings.totalAmount||'';$('#shareCount').value=state.settings.shareCount||'';
+  $('#projectName').value=project;$('#totalAmount').value=state.settings.totalAmount||'';$('#shareCount').value=state.settings.shareCount||'';if($('#newMemberNo')&&!$('#newMemberNo').value)$('#newMemberNo').value=nextMemberNo();
   $('#app').classList.toggle('is-admin',isAdmin);$('#adminPanel').classList.toggle('show',isAdmin);
   $('#adminBtn').style.display=isAdmin?'none':'inline-flex';$('#logoutBtn').style.display=isAdmin?'inline-flex':'none';
   $('#adminPanelBody').style.display=adminPanelOpen?'block':'none';$('#adminToggleBtn').textContent=adminPanelOpen?'收合':'展開';
@@ -469,7 +492,7 @@ function render(){
   const rows=getRows();$('#resultCount').textContent=rows.length+' 筆';
   $('#tbody').innerHTML=rows.length?rows.map((p,i)=>`<tr style="box-shadow:inset 4px 0 0 ${paid(p)?'#c84455':'#d7a03b'}">
     <td class="admin-cell"><input type="checkbox" ${p.selected?'checked':''} onchange="toggleSelect('${p.id}',this.checked)"></td>
-    <td>${i+1}</td><td><div class="name">${esc(p.name)}</div></td>
+    <td><strong>${esc(p.memberNo||'—')}</strong></td><td><div class="name">${esc(p.lineName||p.name||'')}</div></td>
     <td><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></td>
     <td>${esc(p.last5||'—')}</td><td class="money">${p.amount?money(p.amount):'—'}</td>
     <td>${compactDate(p.paymentAt)}</td><td>${esc(p.note||'—')}</td><td>${compactDate(p.updatedAt)}</td>
@@ -478,7 +501,7 @@ function render(){
   </tr>`).join(''):`<tr><td colspan="11" class="empty">目前沒有符合條件的資料</td></tr>`;
 
   $('#mobileList').innerHTML=rows.length?rows.map(p=>`<div class="person-card" style="border-left:4px solid ${paid(p)?'#c84455':'#d7a03b'}">
-    <div class="person-top"><div class="person-name">${esc(p.name)}</div><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></div>
+    <div class="person-top"><div><div class="person-name">${esc(p.lineName||p.name||'')}</div><div class="muted">編號 ${esc(p.memberNo||'—')}</div></div><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></div>
     <div class="person-grid">
       <div class="person-item"><div class="k">帳號後五碼</div><div class="v">${esc(p.last5||'—')}</div></div>
       <div class="person-item"><div class="k">匯款金額</div><div class="v">${p.amount?money(p.amount):'—'}</div></div>
@@ -493,7 +516,7 @@ function render(){
 }
 function openPay(id){
   const p=state.people.find(x=>x.id===id);if(!p)return;
-  $('#payId').value=id;$('#payTitle').textContent=`${p.name}｜${paid(p)?'修改匯款':'登記匯款'}`;
+  $('#payId').value=id;$('#payTitle').textContent=`${p.lineName||p.name||''}｜${paid(p)?'修改匯款':'登記匯款'}`;
   $('#last5').value=p.last5||'';$('#payAmount').value=p.amount||'';
   $('#paymentDateTime').value=toDateTimeLocal(p.paymentAt||Date.now());$('#note').value=p.note||'';
   $('#payModal').classList.add('show');
@@ -501,10 +524,10 @@ function openPay(id){
 function deletePerson(id){
   if(!isAdmin)return;
   const p=state.people.find(x=>x.id===id);if(!p)return;
-  if(!confirm(`確定刪除「${p.name}」？\n刪除後會同步到 Firebase，其他裝置也會移除。`))return;
+  if(!confirm(`確定刪除「${p.memberNo||''}｜${p.lineName||p.name||''}」？\n刪除後會同步到 Firebase，其他裝置也會移除。`))return;
   state.people=state.people.filter(x=>x.id!==id);
   persistAndSync();
-  toast(`已刪除 ${p.name}，同步雲端中`);
+  toast(`已刪除 ${p.lineName||p.name||''}，同步雲端中`);
 }
 function toggleSelect(id,v){const p=state.people.find(x=>x.id===id);if(p){p.selected=v;saveLocalOnly()}}
 window.openPay=openPay;window.deletePerson=deletePerson;window.toggleSelect=toggleSelect;
@@ -528,10 +551,16 @@ $('#savePay').onclick=()=>{
 
 $('#addPersonBtn').onclick=()=>{
   if(!isAdmin)return;
-  const name=$('#newName').value.trim();if(!name)return alert('請輸入姓名');
-  if(state.people.some(p=>p.name===name))return alert('此姓名已存在');
-  state.people.push({id:uid(),name,last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false});
-  $('#newName').value='';persistAndSync();toast('已新增人員');
+  const memberNo=$('#newMemberNo').value.trim();
+  const lineName=$('#newLineName').value.trim();
+  if(!memberNo)return alert('請輸入編號');
+  if(!lineName)return alert('請輸入 LINE 名稱');
+  if(state.people.some(p=>String(p.memberNo||'').trim()===memberNo))return alert('此編號已存在');
+  if(state.people.some(p=>String(p.lineName||p.name||'').trim()===lineName))return alert('此 LINE 名稱已存在');
+  state.people.push({id:uid(),memberNo,lineName,name:lineName,last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false});
+  $('#newMemberNo').value=nextMemberNo();
+  $('#newLineName').value='';
+  persistAndSync();toast('已新增人員');
 };
 $('#projectName').onchange=e=>{if(isAdmin){state.settings.projectName=e.target.value.trim()||'收費匯款登記表';persistAndSync()}};
 $('#totalAmount').onchange=e=>{if(isAdmin){state.settings.totalAmount=Number(e.target.value)||0;persistAndSync()}};
@@ -540,7 +569,7 @@ $('#shareCount').onchange=e=>{if(isAdmin){state.settings.shareCount=Number(e.tar
 $$('.tab').forEach(b=>b.onclick=()=>{activeFilter=b.dataset.filter;$$('.tab').forEach(x=>x.classList.toggle('active',x===b));render()});
 $('#search').oninput=render;$('#sortBy').onchange=render;
 $('#clearFilter').onclick=()=>{$('#search').value='';$('#sortBy').value='unpaidFirst';activeFilter='all';$$('.tab').forEach((x,i)=>x.classList.toggle('active',i===0));render()};
-$('#copyUnpaidBtn').onclick=async()=>{const names=state.people.filter(p=>!paid(p)).map(p=>p.name);await navigator.clipboard.writeText(names.join('\n'));toast(`已複製 ${names.length} 位未繳名單`)};
+$('#copyUnpaidBtn').onclick=async()=>{const names=state.people.filter(p=>!paid(p)).map(p=>`${p.memberNo||''}｜${p.lineName||p.name||''}`);await navigator.clipboard.writeText(names.join('\n'));toast(`已複製 ${names.length} 位未繳名單`)};
 $('#checkAll').onchange=e=>{state.people.forEach(p=>p.selected=e.target.checked);saveLocalOnly()};
 $('#deleteSelectedBtn').onclick=()=>{
   if(!isAdmin)return;
@@ -556,14 +585,33 @@ function parseSheet(file,cb){
   const r=new FileReader();r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];cb(XLSX.utils.sheet_to_json(ws,{defval:''}))}catch(err){alert('Excel 讀取失敗')}};r.readAsArrayBuffer(file)
 }
 $('#importNamesBtn').onclick=()=>isAdmin&&$('#namesFile').click();
-$('#namesFile').onchange=e=>{const f=e.target.files[0];if(!f)return;parseSheet(f,rows=>{let c=0;rows.forEach(r=>{const name=String(r['姓名']||r['名字']||'').trim();if(name&&!state.people.some(p=>p.name===name)){state.people.push({id:uid(),name,last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false});c++}});persistAndSync();toast(`已匯入 ${c} 人`)})};
+$('#namesFile').onchange=e=>{const f=e.target.files[0];if(!f)return;parseSheet(f,rows=>{let c=0;rows.forEach(r=>{
+  const lineName=String(r['LINE名稱']||r['Line名稱']||r['LINE 名稱']||r['姓名']||r['名字']||'').trim();
+  let memberNo=String(r['編號']||r['No']||r['NO']||'').trim();
+  if(!lineName)return;
+  if(!memberNo)memberNo=nextMemberNo();
+  if(state.people.some(p=>String(p.memberNo||'')===memberNo || String(p.lineName||p.name||'')===lineName))return;
+  state.people.push({id:uid(),memberNo,lineName,name:lineName,last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false});c++;
+});persistAndSync();toast(`已匯入 ${c} 人`)})};
 $('#importDetailBtn').onclick=()=>isAdmin&&$('#detailFile').click();
-$('#detailFile').onchange=e=>{const f=e.target.files[0];if(!f)return;parseSheet(f,rows=>{let c=0;rows.forEach(r=>{const name=String(r['姓名']||'').trim();if(!name)return;let p=state.people.find(x=>x.name===name);if(!p){p={id:uid(),name,last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false};state.people.push(p)}p.last5=String(r['帳號後五碼']||p.last5||'').trim();p.amount=Number(r['匯款金額']||p.amount||0);const t=r['匯款日期／時間']||r['匯款日期/時間']||r['匯款時間'];if(t){const d=new Date(t);if(!isNaN(d))p.paymentAt=d.getTime()}p.note=String(r['備註']||p.note||'');p.updatedAt=Date.now();c++});persistAndSync();toast(`已匯入 ${c} 筆資料`)})};
+$('#detailFile').onchange=e=>{const f=e.target.files[0];if(!f)return;parseSheet(f,rows=>{let c=0;rows.forEach(r=>{
+  const lineName=String(r['LINE名稱']||r['Line名稱']||r['LINE 名稱']||r['姓名']||'').trim();
+  let memberNo=String(r['編號']||r['No']||r['NO']||'').trim();
+  if(!lineName && !memberNo)return;
+  let p=state.people.find(x=>(memberNo && String(x.memberNo||'')===memberNo) || (lineName && String(x.lineName||x.name||'')===lineName));
+  if(!p){
+    if(!memberNo)memberNo=nextMemberNo();
+    p={id:uid(),memberNo,lineName:lineName||('LINE-'+memberNo),name:lineName||('LINE-'+memberNo),last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false};
+    state.people.push(p);
+  }else{
+    if(memberNo)p.memberNo=memberNo;
+    if(lineName){p.lineName=lineName;p.name=lineName;}
+  }p.last5=String(r['帳號後五碼']||p.last5||'').trim();p.amount=Number(r['匯款金額']||p.amount||0);const t=r['匯款日期／時間']||r['匯款日期/時間']||r['匯款時間'];if(t){const d=new Date(t);if(!isNaN(d))p.paymentAt=d.getTime()}p.note=String(r['備註']||p.note||'');p.updatedAt=Date.now();c++});persistAndSync();toast(`已匯入 ${c} 筆資料`)})};
 
 function exportExcel(template=false){
   const wb=XLSX.utils.book_new();
-  const rows=template?[{'姓名':'王小明','帳號後五碼':'12345','匯款金額':1400,'匯款日期／時間':'2026/09/23 16:00','備註':''}]:
-    state.people.map((p,i)=>({'序號':i+1,'姓名':p.name,'繳款狀態':paid(p)?'已繳':'未繳','帳號後五碼':p.last5||'','匯款金額':p.amount||0,'匯款日期／時間':p.paymentAt?fmtTime(p.paymentAt):'','備註':p.note||'','最後更新':p.updatedAt?fmtTime(p.updatedAt):''}));
+  const rows=template?[{'編號':'001','LINE名稱':'Ryan','帳號後五碼':'12345','匯款金額':1400,'匯款日期／時間':'2026/09/23 16:00','備註':''}]:
+    state.people.map((p,i)=>({'編號':p.memberNo||'','LINE名稱':p.lineName||p.name||'','繳款狀態':paid(p)?'已繳':'未繳','帳號後五碼':p.last5||'','匯款金額':p.amount||0,'匯款日期／時間':p.paymentAt?fmtTime(p.paymentAt):'','備註':p.note||'','最後更新':p.updatedAt?fmtTime(p.updatedAt):''}));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),template?'匯入範本':'匯款明細');
   if(!template){
     const total=state.people.length,paidN=state.people.filter(paid).length,received=state.people.reduce((s,p)=>s+(Number(p.amount)||0),0);
@@ -575,11 +623,11 @@ function exportExcel(template=false){
 }
 $('#exportBtn').onclick=()=>isAdmin&&exportExcel(false);
 $('#templateBtn').onclick=()=>isAdmin&&exportExcel(true);
-$('#exportPeopleBtn').onclick=()=>{if(!isAdmin)return;const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(state.people.map((p,i)=>({'序號':i+1,'姓名':p.name})));XLSX.utils.book_append_sheet(wb,ws,'人員名單');XLSX.writeFile(wb,(state.settings.projectName||'收費匯款登記表')+'_人員名單.xlsx')};
+$('#exportPeopleBtn').onclick=()=>{if(!isAdmin)return;const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(state.people.map(p=>({'編號':p.memberNo||'','LINE名稱':p.lineName||p.name||''})));XLSX.utils.book_append_sheet(wb,ws,'人員名單');XLSX.writeFile(wb,(state.settings.projectName||'收費匯款登記表')+'_人員名單.xlsx')};
 
 $('#backupBtn').onclick=()=>{if(!isAdmin)return;const blob=new Blob([JSON.stringify(cleanState(state),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(state.settings.projectName||'收費匯款登記表')+'_備份.json';a.click();URL.revokeObjectURL(a.href)};
 $('#restoreBtn').onclick=()=>isAdmin&&$('#restoreFile').click();
-$('#restoreFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.people)throw 0;state=d;state.people=state.people.map(p=>({selected:false,paymentAt:null,...p}));persistAndSync();toast('備份已還原')}catch{alert('JSON 格式錯誤')}};r.readAsText(f)};
+$('#restoreFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.people)throw 0;state=d;state.people=normalizePeople(state.people);persistAndSync();toast('備份已還原')}catch{alert('JSON 格式錯誤')}};r.readAsText(f)};
 $('#cloudSyncBtn').onclick=async()=>{if(!isAdmin)return;queuedSnapshot=cleanState(state);await flushCloudWrite();await pullCloud({force:false});toast('雲端同步完成')};
 
 setInterval(()=>pullCloud(),5000);
