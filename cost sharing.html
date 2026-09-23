@@ -247,7 +247,7 @@ tbody tr:hover{background:#fff8fa}
 <body>
 <div class="wrap" id="app">
 <header class="topbar">
-  <div class="brand"><h1>💰 <span id="projectTitle">收費匯款登記表</span></h1><p>精品酒紅收款儀表板｜跨裝置 Firebase 同步</p></div>
+  <div class="brand"><h1>💰 <span id="projectTitle">收費匯款登記表</span></h1></div>
   <div class="actions">
     <span id="cloudStatus" class="btn">☁️ 雲端連線中</span>
     <button class="btn" id="adminBtn">🔐 管理者登入</button>
@@ -305,11 +305,14 @@ tbody tr:hover{background:#fff8fa}
   <div id="adminPanelBody">
     <div class="admin-grid">
       <div class="field"><label>專案名稱</label><input id="projectName" maxlength="40"></div>
-      <div class="field"><label>總金額</label><input id="totalAmount" type="number" min="0"></div>
-      <div class="field"><label>分擔人數</label><input id="shareCount" type="number" min="1"></div>
+      <div class="field"><label>總金額（管理員設定）</label><input id="totalAmount" type="number" min="0" step="1" placeholder="例如 168000"></div>
+      <div class="field"><label>分擔人數（管理員設定）</label><input id="shareCount" type="number" min="1" step="1" placeholder="例如 120"></div>
       <div class="field"><label>編號</label><input id="newMemberNo" placeholder="例如 001"></div>
       <div class="field"><label>LINE名稱</label><input id="newLineName" placeholder="輸入 LINE 名稱"></div>
       <button class="btn primary" id="addPersonBtn">＋ 新增人員</button>
+    </div>
+    <div class="note" style="margin-top:8px;padding:10px 12px;background:#fff6f7;border:1px solid #efd9de;border-radius:11px">
+      管理員可設定「總金額」與「分擔人數」，系統會自動計算每人應繳金額，並同步更新收款進度與 Firebase。
     </div>
     <div class="tools">
       <button class="btn" id="importNamesBtn">匯入人員名單</button>
@@ -890,8 +893,8 @@ $('#addPersonBtn').onclick=()=>{
   persistAndSync();toast('已新增人員');
 };
 $('#projectName').onchange=e=>{if(isAdmin){state.settings.projectName=e.target.value.trim()||'收費匯款登記表';persistAndSync()}};
-$('#totalAmount').onchange=e=>{if(isAdmin){state.settings.totalAmount=Number(e.target.value)||0;persistAndSync()}};
-$('#shareCount').onchange=e=>{if(isAdmin){state.settings.shareCount=Number(e.target.value)||0;persistAndSync()}};
+$('#totalAmount').onchange=e=>{if(isAdmin){state.settings.totalAmount=Number(e.target.value)||0;persistAndSync();toast('總金額已更新')}};
+$('#shareCount').onchange=e=>{if(isAdmin){state.settings.shareCount=Number(e.target.value)||0;persistAndSync();toast('分擔人數已更新')}};
 
 $$('.tab').forEach(b=>b.onclick=()=>{activeFilter=b.dataset.filter;$$('.tab').forEach(x=>x.classList.toggle('active',x===b));render()});
 $('#search').oninput=render;
