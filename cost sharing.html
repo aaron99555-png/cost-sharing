@@ -2532,6 +2532,53 @@ a{
 }
 </style>
 
+
+<style>
+/* ===== 分組收款統計：每組固定顯示約 5 人高度 ===== */
+#groupCollectionStats .group-name-items{
+  min-height:460px;
+  max-height:460px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding-right:4px;
+  scrollbar-gutter:stable;
+}
+
+#groupCollectionStats .group-name-person{
+  min-height:82px;
+  box-sizing:border-box;
+}
+
+#groupCollectionStats .group-name-items::-webkit-scrollbar{
+  width:8px;
+}
+#groupCollectionStats .group-name-items::-webkit-scrollbar-track{
+  background:#f7ecef;
+  border-radius:999px;
+}
+#groupCollectionStats .group-name-items::-webkit-scrollbar-thumb{
+  background:#c69aa6;
+  border-radius:999px;
+  border:2px solid #f7ecef;
+}
+
+#groupCollectionStats .group-name-box{
+  display:flex;
+  flex-direction:column;
+}
+
+#groupCollectionStats .group-name-head{
+  flex:0 0 auto;
+}
+
+@media(max-width:720px){
+  #groupCollectionStats .group-name-items{
+    min-height:440px;
+    max-height:440px;
+  }
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
