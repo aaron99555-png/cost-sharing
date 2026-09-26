@@ -1504,6 +1504,19 @@ body.resizing-column *{
 }
 </style>
 
+
+<style>
+.verification-section{
+  display:block !important;
+}
+.verification-section .empty{
+  min-height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -1762,7 +1775,7 @@ body.resizing-column *{
   <div class="card-title table-title-row">
     <div>
       <h2>匯款回報核對狀態</h2>
-      <div class="table-use-hint">一般使用者可查看核對狀態並修改備註｜管理員確認收款後，資料會由「未核對區」移至「已核對區」</div>
+      <div class="table-use-hint">一般使用者可查看核對狀態並修改備註｜資料永遠保留在下方清單，只會在「未核對區」與「已核對區」之間移動</div>
     </div>
     <div class="table-title-actions">
       <span class="muted" id="resultCount">0 筆回報</span>
@@ -1790,7 +1803,7 @@ body.resizing-column *{
     <div class="verification-section-head">
       <div>
         <h3>⏳ 未核對區</h3>
-        <div class="muted">已回報匯款資料，但尚未經管理員確認收款。</div>
+        <div class="muted">已回報匯款資料，但尚未經管理員確認收款。即使目前沒有資料，本區仍會保留顯示。</div>
       </div>
       <span class="pill pending" id="pendingCount">0 筆待核對</span>
     </div>
@@ -1819,7 +1832,7 @@ body.resizing-column *{
     <div class="verification-section-head">
       <div>
         <h3>✅ 已核對區</h3>
-        <div class="muted">管理員已確認款項入帳的匯款紀錄。</div>
+        <div class="muted">管理員已確認款項入帳的匯款紀錄；若核對錯誤，可恢復為未核對，資料不會刪除。</div>
       </div>
       <span class="pill paid" id="verifiedCount">0 筆已核對</span>
     </div>
@@ -1866,7 +1879,7 @@ body.resizing-column *{
       <input id="verifyReceived" type="checkbox">
       <span>
         <strong>收款核對完成</strong>
-        <small>管理員確認實際收到款項後再勾選。勾選後才會顯示「✅ 已核對」。</small>
+        <small>管理員確認實際收到款項後再勾選。若之後發現核對錯誤，可取消勾選恢復為未核對；匯款資料仍會完整保留。</small>
       </span>
     </label>
     <div class="verify-meta" id="verifyMeta">尚未核對</div>
@@ -2669,7 +2682,7 @@ function renderPaymentRows(rows,verifiedSection=false){
     <td>${compactDate(p.updatedAt)}</td>
     <td>${isAdmin
       ? `<div class="verify-action-row">
-          <button class="btn small ${verifiedSection?'':'primary'}" onclick="toggleVerification('${p.id}',${verifiedSection?'false':'true'})">${verifiedSection?'取消核對':'✅ 確認收款'}</button>
+          <button class="btn small ${verifiedSection?'':'primary'}" onclick="toggleVerification('${p.id}',${verifiedSection?'false':'true'})">${verifiedSection?'↩ 恢復未核對':'✅ 確認收款'}</button>
           <button class="btn small" onclick="openPay('${p.id}')">修改</button>
         </div>`
       : `<div>
@@ -2698,7 +2711,7 @@ function renderPaymentRows(rows,verifiedSection=false){
     ${p.note?`<div class="note" style="margin-bottom:9px">備註：${esc(p.note)}</div>`:''}
     ${isAdmin
       ? `<div class="person-actions">
-          <button class="btn ${verifiedSection?'':'primary'}" onclick="toggleVerification('${p.id}',${verifiedSection?'false':'true'})">${verifiedSection?'取消核對':'✅ 確認收款'}</button>
+          <button class="btn ${verifiedSection?'':'primary'}" onclick="toggleVerification('${p.id}',${verifiedSection?'false':'true'})">${verifiedSection?'↩ 恢復未核對':'✅ 確認收款'}</button>
           <button class="btn" onclick="openPay('${p.id}')">修改匯款</button>
           <button class="btn danger" onclick="deletePerson('${p.id}')">刪除</button>
         </div>`
@@ -2787,11 +2800,24 @@ function toggleVerification(id,verified){
   if(!isAdmin)return;
   const p=state.people.find(x=>x.id===id);if(!p)return;
   if(!reported(p))return alert('此筆匯款資料尚未完整，無法核對');
+
+  if(verified===false && p.verified===true){
+    const ok=confirm(`確定將「${p.memberNo||''}｜${p.lineName||p.name||''}」恢復為未核對？\n\n匯款金額、帳號後五碼、匯款時間與備註都會完整保留，只會將核對狀態改回「未核對」。`);
+    if(!ok)return;
+  }
+
   p.verified=!!verified;
   p.verifiedAt=p.verified?Date.now():null;
   p.updatedAt=Date.now();
+
+  // 僅修改核對狀態，不刪除、不清空任何匯款回報內容
   persistAndSync();
-  toast(p.verified?'已確認收款，資料移至已核對區':'已取消核對，資料移回未核對區');
+
+  if(p.verified){
+    toast('已確認收款，資料已移至「已核對區」');
+  }else{
+    toast('已恢復為未核對，資料已移回「未核對區」並完整保留');
+  }
 }
 window.toggleVerification=toggleVerification;
 
@@ -2985,7 +3011,7 @@ $('#savePay').onclick=()=>{
   const rosterMember=state.roster.find(r=>String(r.memberNo||'')===String(oldMemberNo) || String(r.lineName||r.name||'').trim()===String(p.lineName||p.name||'').trim());
   if(rosterMember)rosterMember.memberNo=memberNo;
   state.roster=normalizeRoster(state.roster);
-  persistAndSync();$('#payModal').classList.remove('show');toast(verified?'已儲存並完成收款核對':'已儲存，狀態為待核對');
+  persistAndSync();$('#payModal').classList.remove('show');toast(verified?'已儲存並移至已核對區':'已儲存並恢復至未核對區，匯款資料仍保留');
 };
 
 $('#addPersonBtn').onclick=()=>{
