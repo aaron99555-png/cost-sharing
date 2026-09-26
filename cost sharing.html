@@ -2005,7 +2005,7 @@ body.resizing-column *{
       <div>
         <h3>📋 所有名單總覽</h3>
         <div class="muted">匯入名冊的所有人都會顯示在這裡，可直接查看「未匯款／已匯款」與核對結果。</div>
-        <div class="admin-inline-hint" id="adminInlineHint" style="display:none">管理模式：直接點欄位即可修改，離開欄位後自動儲存。</div>
+        <div class="admin-inline-hint" id="adminInlineHint" style="display:none">管理模式：直接點欄位即可修改；按 Enter 會儲存並往右跳到下一個可編輯欄位。</div>
       </div>
       <span class="pill" id="publicResultCount">0 人</span>
     </div>
@@ -3109,22 +3109,22 @@ function renderPublicPaymentRows(rows){
     const paymentId=p.paymentId||'';
 
     if(isAdmin){
-      return `<tr style="box-shadow:inset 4px 0 0 ${isVerified?'#c84455':(hasPayment?'#d7a03b':'#cfc3c7')}">
-        <td><input class="inline-edit" value="${esc(p.memberNo||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','memberNo',this.value)" aria-label="編號"></td>
+      return `<tr data-roster-id="${esc(rosterId)}" style="box-shadow:inset 4px 0 0 ${isVerified?'#c84455':(hasPayment?'#d7a03b':'#cfc3c7')}">
+        <td><input class="inline-edit" data-roster-id="${esc(rosterId)}" data-field-index="0" value="${esc(p.memberNo||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','memberNo',this.value)" aria-label="編號"></td>
         <td>
-          <input class="inline-edit" value="${esc(p.lineName||p.name||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','lineName',this.value)" aria-label="LINE名稱">
+          <input class="inline-edit" data-roster-id="${esc(rosterId)}" data-field-index="1" value="${esc(p.lineName||p.name||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','lineName',this.value)" aria-label="LINE名稱">
           ${state.settings.showBankInList!==false && paymentGroupForNo(p.memberNo)?`<div class="list-bank-info">應匯款：${esc(paymentGroupForNo(p.memberNo).bank)}｜收款人：${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}
         </td>
-        <td><input class="inline-edit" inputmode="numeric" maxlength="5" value="${esc(p.last5||'')}" placeholder="未匯款" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','last5',this.value)" aria-label="帳號後五碼"></td>
-        <td><input class="inline-edit money-input" type="number" min="0" value="${p.amount||''}" placeholder="0" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','amount',this.value)" aria-label="匯款金額"></td>
-        <td><input class="inline-edit" type="datetime-local" value="${p.paymentAt?toDateTimeLocal(p.paymentAt):''}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','paymentAt',this.value)" aria-label="匯款日期時間"></td>
-        <td><input class="inline-edit" value="${esc(p.note||'')}" placeholder="備註" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','note',this.value)" aria-label="備註"></td>
+        <td><input class="inline-edit" data-roster-id="${esc(rosterId)}" data-field-index="2" inputmode="numeric" maxlength="5" value="${esc(p.last5||'')}" placeholder="未匯款" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','last5',this.value)" aria-label="帳號後五碼"></td>
+        <td><input class="inline-edit money-input" data-roster-id="${esc(rosterId)}" data-field-index="3" type="number" min="0" value="${p.amount||''}" placeholder="0" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','amount',this.value)" aria-label="匯款金額"></td>
+        <td><input class="inline-edit" data-roster-id="${esc(rosterId)}" data-field-index="4" type="datetime-local" value="${p.paymentAt?toDateTimeLocal(p.paymentAt):''}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','paymentAt',this.value)" aria-label="匯款日期時間"></td>
+        <td><input class="inline-edit" data-roster-id="${esc(rosterId)}" data-field-index="5" value="${esc(p.note||'')}" placeholder="備註" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','note',this.value)" aria-label="備註"></td>
         <td><span class="inline-readonly">${p.updatedAt?fmtTime(p.updatedAt):'—'}</span></td>
         <td><span class="pill ${hasPayment?'paid':'unpaid'}">${hasPayment?'💰 已匯款':'— 未匯款'}</span></td>
         <td><button class="btn small danger admin-row-delete" onclick="deleteRosterMember('${rosterId}','${paymentId}')">刪除</button></td>
         <td>
           ${hasPayment
-            ? `<select class="inline-edit-status" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','verified',this.value)">
+            ? `<select class="inline-edit-status" data-roster-id="${esc(rosterId)}" data-field-index="6" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','verified',this.value)">
                 <option value="pending" ${!isVerified?'selected':''}>⏳ 待核對</option>
                 <option value="verified" ${isVerified?'selected':''}>✅ 已核對</option>
               </select>
@@ -3210,6 +3210,83 @@ function renderPublicPaymentRows(rows){
       ${hasPayment?`<button class="btn note-edit-btn" style="width:100%" onclick="openPublicNote('${p.paymentId||p.id}')">✏️ 修改備註</button>`:''}
     </div>`;
   }).join(''):`<div class="empty">目前尚無名冊資料</div>`;
+}
+
+
+function moveToNextInlineField(current){
+  if(!isAdmin||!current)return;
+
+  const table=current.closest('#paymentTablePublic');
+  if(!table)return;
+
+  const fields=[...table.querySelectorAll('tbody .inline-edit, tbody .inline-edit-status')]
+    .filter(el=>!el.disabled && el.offsetParent!==null);
+
+  const index=fields.indexOf(current);
+  if(index<0)return;
+
+  const next=fields[index+1];
+  if(next){
+    next.focus();
+    if(typeof next.select==='function' && next.tagName!=='SELECT'){
+      try{next.select()}catch{}
+    }
+  }
+}
+
+function bindInlineEnterNavigation(){
+  const table=$('#paymentTablePublic');
+  if(!table || table.dataset.enterNavBound==='1')return;
+
+  table.addEventListener('keydown',e=>{
+    if(!isAdmin)return;
+    const field=e.target.closest('.inline-edit, .inline-edit-status');
+    if(!field)return;
+
+    if(e.key==='Enter'){
+      e.preventDefault();
+
+      // 先觸發原本 onchange 儲存，再往右一格
+      field.blur();
+
+      requestAnimationFrame(()=>{
+        // render() 可能已重建表格，所以用欄位座標找下一格
+        const rosterId=field.dataset.rosterId;
+        const fieldIndex=Number(field.dataset.fieldIndex);
+
+        const freshTable=$('#paymentTablePublic');
+        if(!freshTable)return;
+
+        let next=null;
+        if(rosterId && Number.isFinite(fieldIndex)){
+          next=freshTable.querySelector(
+            `[data-roster-id="${CSS.escape(rosterId)}"][data-field-index="${fieldIndex+1}"]`
+          );
+
+          if(!next){
+            const currentRow=freshTable.querySelector(`tr[data-roster-id="${CSS.escape(rosterId)}"]`);
+            const nextRow=currentRow?.nextElementSibling;
+            next=nextRow?.querySelector('.inline-edit, .inline-edit-status')||null;
+          }
+        }
+
+        if(!next){
+          const visibleFields=[...freshTable.querySelectorAll('tbody .inline-edit, tbody .inline-edit-status')]
+            .filter(el=>!el.disabled && el.offsetParent!==null);
+          next=visibleFields[0]||null;
+        }
+
+        if(next){
+          next.focus();
+          if(typeof next.select==='function' && next.tagName!=='SELECT'){
+            try{next.select()}catch{}
+          }
+        }
+      });
+    }
+  });
+
+  table.dataset.enterNavBound='1';
 }
 
 function render(){
@@ -3314,6 +3391,7 @@ function render(){
   // 「所有名單總覽」固定顯示：匯入多少人就顯示多少人。
   publicSection.style.display='block';
   renderPublicPaymentRows(rows);
+  bindInlineEnterNavigation();
 
   if(isAdmin){
     pendingSection.style.display='block';
