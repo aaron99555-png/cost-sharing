@@ -2738,6 +2738,144 @@ textarea:focus{
 }
 </style>
 
+
+<style>
+/* ===== 上方三個紅色金額卡片：文字高對比強化 ===== */
+.project-banner .money-box{
+  background:linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.06)) !important;
+  border:1px solid rgba(255,255,255,.22) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+}
+
+.project-banner .money-box .k{
+  color:rgba(255,255,255,.90) !important;
+  font-size:14px !important;
+  font-weight:800 !important;
+  letter-spacing:.4px;
+}
+
+.project-banner .money-box .v{
+  color:#ffffff !important;
+  font-size:42px !important;
+  font-weight:950 !important;
+  line-height:1.05 !important;
+  text-shadow:0 2px 8px rgba(93,10,24,.28);
+}
+
+.project-banner .money-box .sub,
+.project-banner .money-box small,
+.project-banner .money-box .hint{
+  color:rgba(255,255,255,.84) !important;
+}
+
+@media(max-width:720px){
+  .project-banner .money-box .k{
+    font-size:13px !important;
+  }
+  .project-banner .money-box .v{
+    font-size:34px !important;
+  }
+}
+</style>
+
+
+<style>
+/* ===== 圓形收款進度：高對比強化 ===== */
+#ring{
+  position:relative !important;
+  box-shadow:
+    0 10px 22px rgba(80,8,22,.22),
+    inset 0 0 0 10px rgba(255,255,255,.06) !important;
+  background:conic-gradient(#ffffff 0deg 300deg, rgba(255,255,255,.22) 300deg 360deg) !important;
+}
+
+#ring::before{
+  content:"";
+  position:absolute;
+  inset:20px;
+  border-radius:50%;
+  background:rgba(255,255,255,.96);
+  box-shadow:inset 0 2px 10px rgba(112,18,36,.10);
+}
+
+#ringPct{
+  position:relative;
+  z-index:1;
+  color:#b3172f !important;
+  font-size:52px !important;
+  font-weight:1000 !important;
+  line-height:1 !important;
+  letter-spacing:-1px;
+  text-shadow:none !important;
+}
+
+#ringCaption{
+  position:relative;
+  z-index:1;
+  color:#8d2033 !important;
+  font-size:15px !important;
+  font-weight:900 !important;
+  line-height:1.35 !important;
+  opacity:1 !important;
+  text-shadow:none !important;
+}
+
+.project-banner #ringWrap,
+.project-banner .ring-wrap,
+.project-banner .ring-card{
+  color:#fff !important;
+}
+
+.project-banner .ring-meta,
+.project-banner .ring-note{
+  color:#fff !important;
+}
+
+.project-banner .ring-bottom,
+.project-banner .ring-footer,
+.project-banner .ring-stat{
+  color:#fff !important;
+}
+
+.project-banner .ring-bottom strong,
+.project-banner .ring-footer strong,
+.project-banner .ring-stat strong{
+  color:#fff !important;
+}
+
+.project-banner #ringCaptionText,
+.project-banner .ring-subline{
+  color:rgba(255,255,255,.96) !important;
+}
+
+/* 下方「已繳 95 / 應繳 106 人」 */
+#ringCaptionLine,
+.ring-caption,
+.project-banner .ring-caption{
+  color:#ffffff !important;
+  font-size:24px !important;
+  font-weight:950 !important;
+  text-shadow:0 2px 8px rgba(93,10,24,.20);
+}
+
+@media(max-width:720px){
+  #ring::before{
+    inset:18px;
+  }
+  #ringPct{
+    font-size:44px !important;
+  }
+  #ringCaption{
+    font-size:14px !important;
+  }
+  #ringCaptionLine,
+  .ring-caption,
+  .project-banner .ring-caption{
+    font-size:19px !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
