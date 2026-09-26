@@ -1964,8 +1964,8 @@ body.resizing-column *{
     </div>
     <div class="field">
       <label>匯款日期／時間（24小時制）</label>
-      <input id="selfPaymentAt" type="text" inputmode="numeric" placeholder="2026-09-26 18:05">
-      <div class="muted" style="margin-top:4px;font-size:11px">格式：YYYY-MM-DD HH:mm，例如 2026-09-26 18:05</div>
+      <input id="selfPaymentAt" type="text" inputmode="numeric" maxlength="16" autocomplete="off" placeholder="直接輸入 202609261805">
+      <div class="muted" style="margin-top:4px;font-size:11px">直接連續輸入 12 碼數字，例如 202609261805，系統會自動轉成 2026-09-26 18:05</div>
     </div>
     <div class="field">
       <label>備註</label>
@@ -2030,7 +2030,7 @@ body.resizing-column *{
       <div>
         <h3>📋 所有名單總覽</h3>
         <div class="muted">匯入名冊的所有人都會顯示在這裡，可直接查看「未匯款／已匯款」與核對結果。</div>
-        <div class="admin-inline-hint" id="adminInlineHint" style="display:none">管理模式：直接點欄位即可修改；按 Enter 會儲存並往右跳。所有時間一律使用 24 小時制 YYYY-MM-DD HH:mm，分鐘需完整 2 碼。</div>
+        <div class="admin-inline-hint" id="adminInlineHint" style="display:none">管理模式：直接點欄位即可修改；日期時間直接輸入 12 碼數字即可，例如 202609261805，系統會自動排成 2026-09-26 18:05；按 Enter 儲存並往右跳。</div>
       </div>
       <span class="pill" id="publicResultCount">0 人</span>
     </div>
@@ -2128,8 +2128,8 @@ body.resizing-column *{
     <div class="last5-warning" id="last5Warning">⚠️ 帳號後五碼需完整輸入 5 碼</div>
   </div>
   <div class="field" style="margin-top:10px"><label>匯款金額</label><input id="payAmount" type="number" min="0"></div>
-  <div class="field" style="margin-top:10px"><label>匯款日期／時間（24小時制）</label><input id="paymentDateTime" type="text" inputmode="numeric" placeholder="2026-09-26 18:05">
-    <div class="muted" style="margin-top:4px;font-size:11px">格式：YYYY-MM-DD HH:mm，例如 2026-09-26 18:05</div>
+  <div class="field" style="margin-top:10px"><label>匯款日期／時間（24小時制）</label><input id="paymentDateTime" type="text" inputmode="numeric" maxlength="16" autocomplete="off" placeholder="直接輸入 202609261805">
+    <div class="muted" style="margin-top:4px;font-size:11px">直接連續輸入 12 碼數字，例如 202609261805，系統會自動轉成 2026-09-26 18:05</div>
   </div>
   <div class="field" style="margin-top:10px"><label>備註</label><input id="note" placeholder="選填"></div>
   <div class="verify-box">
@@ -3046,6 +3046,25 @@ function ensurePaymentForRoster(rosterMember,paymentId=null){
   return p;
 }
 
+
+function formatDateTimeDigitsInput(value){
+  const digits=String(value||'').replace(/\D/g,'').slice(0,12);
+  let out='';
+  if(digits.length<=4)return digits;
+  out=digits.slice(0,4);
+  if(digits.length>4)out+='-'+digits.slice(4,6);
+  if(digits.length>6)out+='-'+digits.slice(6,8);
+  if(digits.length>8)out+=' '+digits.slice(8,10);
+  if(digits.length>10)out+=':'+digits.slice(10,12);
+  return out;
+}
+function normalizeDateTimeTyping(input){
+  if(!input)return;
+  const formatted=formatDateTimeDigitsInput(input.value);
+  if(input.value!==formatted)input.value=formatted;
+  input.classList.remove('input-error');
+}
+
 function formatDateTimeText(ts){
   if(!ts)return '';
   const d=new Date(ts);
@@ -3059,7 +3078,7 @@ function parseDateTimeTextStrict(value){
 
   // 嚴格要求分鐘兩碼：YYYY-MM-DD HH:mm
   const m=s.match(/^(\d{4})[-\/](\d{2})[-\/](\d{2})\s+(\d{2}):(\d{2})$/);
-  if(!m)return {ok:false,message:'時間格式請完整輸入 YYYY-MM-DD HH:mm，例如 2026-09-26 14:05；分鐘一定要兩碼。'};
+  if(!m)return {ok:false,message:'日期時間請完整輸入 12 碼數字，例如 202609261405；系統會自動轉成 2026-09-26 14:05，分鐘一定要兩碼。'};
 
   const y=Number(m[1]),mo=Number(m[2]),day=Number(m[3]),h=Number(m[4]),min=Number(m[5]);
   if(mo<1||mo>12||day<1||day>31||h<0||h>23||min<0||min>59){
@@ -3190,7 +3209,7 @@ function renderPublicPaymentRows(rows){
         </td>
         <td><input class="inline-edit" data-roster-id="${esc(rosterId)}" data-field-index="2" inputmode="numeric" maxlength="5" value="${esc(p.last5||'')}" placeholder="未匯款" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','last5',this.value)" aria-label="帳號後五碼"></td>
         <td><input class="inline-edit money-input" data-roster-id="${esc(rosterId)}" data-field-index="3" type="number" min="0" value="${p.amount||''}" placeholder="0" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','amount',this.value)" aria-label="匯款金額"></td>
-        <td><input class="inline-edit inline-datetime-text" data-datetime-strict="1" data-roster-id="${esc(rosterId)}" data-field-index="4" type="text" inputmode="numeric" value="${p.paymentAt?formatDateTimeText(p.paymentAt):''}" placeholder="2026-09-26 14:05" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','paymentAt',this.value)" aria-label="匯款日期時間"></td>
+        <td><input class="inline-edit inline-datetime-text" data-datetime-strict="1" data-roster-id="${esc(rosterId)}" data-field-index="4" type="text" inputmode="numeric" maxlength="16" autocomplete="off" value="${p.paymentAt?formatDateTimeText(p.paymentAt):''}" placeholder="202609261805" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','paymentAt',this.value)" aria-label="匯款日期時間"></td>
         <td><input class="inline-edit" data-roster-id="${esc(rosterId)}" data-field-index="5" value="${esc(p.note||'')}" placeholder="備註" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','note',this.value)" aria-label="備註"></td>
         <td><span class="inline-readonly">${p.updatedAt?fmtTime(p.updatedAt):'—'}</span></td>
         <td><span class="pill ${hasPayment?'paid':'unpaid'}">${hasPayment?'💰 已匯款':'— 未匯款'}</span></td>
@@ -3248,7 +3267,7 @@ function renderPublicPaymentRows(rows){
         <div class="person-grid">
           <div class="person-item"><div class="k">帳號後五碼</div><input class="inline-edit" inputmode="numeric" maxlength="5" value="${esc(p.last5||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','last5',this.value)"></div>
           <div class="person-item"><div class="k">匯款金額</div><input class="inline-edit money-input" type="number" min="0" value="${p.amount||''}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','amount',this.value)"></div>
-          <div class="person-item"><div class="k">匯款時間</div><input class="inline-edit inline-datetime-text" data-datetime-strict="1" type="text" inputmode="numeric" value="${p.paymentAt?formatDateTimeText(p.paymentAt):''}" placeholder="2026-09-26 14:05" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','paymentAt',this.value)"></div>
+          <div class="person-item"><div class="k">匯款時間</div><input class="inline-edit inline-datetime-text" data-datetime-strict="1" type="text" inputmode="numeric" maxlength="16" autocomplete="off" value="${p.paymentAt?formatDateTimeText(p.paymentAt):''}" placeholder="202609261805" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','paymentAt',this.value)"></div>
           <div class="person-item"><div class="k">備註</div><input class="inline-edit" value="${esc(p.note||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','note',this.value)"></div>
         </div>
         <div class="person-grid">
@@ -3639,6 +3658,16 @@ function validate24hTextInput(id){
 }
 $('#selfPaymentAt').addEventListener('blur',()=>validate24hTextInput('selfPaymentAt'));
 $('#paymentDateTime').addEventListener('blur',()=>validate24hTextInput('paymentDateTime'));
+
+$('#selfPaymentAt').addEventListener('input',e=>normalizeDateTimeTyping(e.target));
+$('#paymentDateTime').addEventListener('input',e=>normalizeDateTimeTyping(e.target));
+
+// 所有名單總覽的時間欄位為動態產生，使用事件委派處理。
+document.addEventListener('input',e=>{
+  const input=e.target.closest?.('.inline-datetime-text');
+  if(input)normalizeDateTimeTyping(input);
+});
+
 
 
 function resetSelfEntry(){
