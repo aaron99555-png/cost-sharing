@@ -637,6 +637,374 @@ input,select,button,textarea{
 }
 </style>
 
+
+<style>
+/* ===== 分組收款帳號 ===== */
+.payment-group-admin{
+  margin-top:14px;
+  padding:14px;
+  border:1px solid #ead9de;
+  border-radius:15px;
+  background:linear-gradient(145deg,#fffafb,#fff);
+}
+.group-form{
+  display:grid;
+  grid-template-columns:.65fr .65fr .65fr 1fr 1fr 1.2fr auto;
+  gap:9px;
+  align-items:end;
+}
+.group-list{
+  display:grid;
+  gap:8px;
+  margin-top:12px;
+}
+.group-row{
+  display:grid;
+  grid-template-columns:.8fr .65fr 1fr 1fr 1.3fr auto;
+  gap:8px;
+  align-items:center;
+  padding:10px 11px;
+  border-radius:12px;
+  background:#fff;
+  border:1px solid #eee1e5;
+}
+.group-range{
+  font-weight:950;
+  color:#8f3042;
+}
+.bank-lookup-box{
+  margin:12px 0 2px;
+  padding:13px;
+  border-radius:14px;
+  border:1px solid #ead9de;
+  background:linear-gradient(145deg,#fff8fa,#fff);
+  display:none;
+}
+.bank-lookup-box.show{display:block}
+.bank-lookup-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  margin-bottom:10px;
+}
+.bank-lookup-title{
+  font-size:14px;
+  font-weight:950;
+  color:#7d2d3b;
+}
+.bank-detail-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+}
+.bank-detail{
+  background:#fff;
+  border:1px solid #eee1e5;
+  border-radius:11px;
+  padding:10px;
+}
+.bank-detail .k{
+  font-size:11px;
+  color:#85757a;
+  margin-bottom:4px;
+  font-weight:800;
+}
+.bank-detail .v{
+  font-size:14px;
+  font-weight:950;
+  color:#3b3033;
+  word-break:break-all;
+}
+.bank-lookup-note{
+  margin-top:9px;
+  color:#7c6e72;
+  font-size:12px;
+  line-height:1.5;
+}
+.bank-lookup-missing{
+  color:#9c6b1e;
+  background:#fff8e9;
+  border-color:#eeddb7;
+}
+@media(max-width:900px){
+  .group-form{grid-template-columns:1fr 1fr}
+  .group-row{grid-template-columns:1fr 1fr}
+}
+@media(max-width:720px){
+  .group-form{grid-template-columns:1fr!important}
+  .group-row{grid-template-columns:1fr!important}
+  .group-row .btn{width:100%}
+  .bank-detail-grid{grid-template-columns:1fr!important}
+  .bank-lookup-head{align-items:flex-start;flex-direction:column}
+}
+</style>
+
+
+<style>
+.quick-import-box{
+  margin-top:14px;
+  padding:14px;
+  border:1px solid #e9d9de;
+  border-radius:15px;
+  background:linear-gradient(145deg,#fff,#fff9fa);
+}
+.quick-import-box textarea{
+  width:100%;
+  min-height:190px;
+  resize:vertical;
+  border:1px solid #e3d7da;
+  border-radius:12px;
+  padding:12px;
+  background:#fff;
+  color:#2f292b;
+  font:inherit;
+  line-height:1.6;
+  outline:none;
+}
+.quick-import-box textarea:focus{
+  border-color:#c66c7b;
+  box-shadow:0 0 0 4px rgba(170,64,82,.08);
+}
+.quick-import-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.quick-import-result{
+  margin-top:9px;
+  font-size:12px;
+  color:#76666b;
+  line-height:1.6;
+}
+@media(max-width:720px){
+  .quick-import-actions{display:grid;grid-template-columns:1fr}
+  .quick-import-actions .btn{width:100%}
+  .quick-import-box textarea{min-height:230px;font-size:16px}
+}
+</style>
+
+
+<style>
+.public-bank-card{
+  border:1px solid #ead9de;
+  background:linear-gradient(145deg,#fff8fa,#fff);
+}
+.public-bank-search{
+  max-width:520px;
+}
+.public-bank-result{
+  margin-top:13px;
+}
+.public-bank-empty{
+  padding:14px;
+  border-radius:12px;
+  background:#faf6f7;
+  border:1px dashed #e4d5da;
+  color:#806f74;
+  font-size:13px;
+}
+.public-account-panel{
+  border:1px solid #ead6dc;
+  border-radius:16px;
+  overflow:hidden;
+  background:#fff;
+  box-shadow:0 8px 22px rgba(86,45,55,.06);
+}
+.public-account-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  padding:13px 14px;
+  background:linear-gradient(135deg,#8c3142,#b84a5d);
+  color:#fff;
+}
+.public-account-head .title{
+  font-weight:950;
+  font-size:16px;
+}
+.public-account-head .sub{
+  font-size:12px;
+  opacity:.84;
+  margin-top:3px;
+}
+.public-account-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:0;
+}
+.public-account-item{
+  padding:14px;
+  border-right:1px solid #eee1e5;
+}
+.public-account-item:last-child{border-right:0}
+.public-account-item .k{
+  font-size:11px;
+  color:#86767b;
+  margin-bottom:5px;
+  font-weight:850;
+}
+.public-account-item .v{
+  font-size:16px;
+  font-weight:950;
+  color:#3a3033;
+  word-break:break-all;
+}
+.public-account-actions{
+  padding:12px 14px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  border-top:1px solid #eee1e5;
+  background:#fffafb;
+}
+.public-account-error{
+  padding:13px;
+  border-radius:12px;
+  background:#fff7e8;
+  border:1px solid #eeddb7;
+  color:#91651f;
+  line-height:1.6;
+  font-size:13px;
+}
+@media(max-width:720px){
+  .public-bank-search{max-width:none}
+  .public-account-head{align-items:flex-start;flex-direction:column}
+  .public-account-grid{grid-template-columns:1fr}
+  .public-account-item{
+    border-right:0;
+    border-bottom:1px solid #eee1e5;
+    padding:11px 12px;
+  }
+  .public-account-item:last-child{border-bottom:0}
+  .public-account-actions{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  .public-account-actions .btn{width:100%}
+}
+</style>
+
+
+<style>
+/* ===== 一般使用者匯款步驟 ===== */
+.user-steps{
+  margin-bottom:14px;
+  padding:15px;
+  border-radius:17px;
+  border:1px solid #ead9de;
+  background:linear-gradient(145deg,#fff,#fff7f9);
+  box-shadow:0 7px 20px rgba(89,47,57,.05);
+}
+.steps-title{
+  font-size:14px;
+  font-weight:950;
+  color:#77303e;
+  margin-bottom:10px;
+}
+.steps-track{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  gap:10px;
+  align-items:center;
+}
+.step-item{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  min-width:0;
+  padding:12px 13px;
+  border-radius:14px;
+  border:1px solid #ead9de;
+  background:#fff;
+  text-decoration:none;
+  color:#3d3034;
+  transition:.18s ease;
+}
+.step-item:hover{
+  transform:translateY(-1px);
+  border-color:#cf8996;
+  box-shadow:0 7px 16px rgba(123,52,66,.07);
+}
+.step-item.active{
+  background:linear-gradient(145deg,#fff3f6,#fff);
+  border-color:#dba4ae;
+}
+.step-no{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 34px;
+  background:linear-gradient(135deg,#8e3143,#b64b5e);
+  color:#fff;
+  font-weight:950;
+  font-size:16px;
+  box-shadow:0 5px 12px rgba(142,49,67,.18);
+}
+.step-copy{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.step-copy strong{
+  font-size:14px;
+  color:#4a343a;
+  line-height:1.35;
+}
+.step-copy small{
+  color:#88767b;
+  font-size:11px;
+  line-height:1.35;
+}
+.step-arrow{
+  color:#b26a78;
+  font-weight:950;
+  font-size:22px;
+}
+.step-section-label{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:58px;
+  padding:4px 9px;
+  margin-bottom:5px;
+  border-radius:999px;
+  background:#962f45;
+  color:#fff;
+  font-size:10px;
+  font-weight:950;
+  letter-spacing:.08em;
+}
+#step1Bank,#step2Report{
+  scroll-margin-top:12px;
+}
+@media(max-width:720px){
+  .user-steps{padding:12px}
+  .steps-track{
+    grid-template-columns:1fr;
+    gap:7px;
+  }
+  .step-arrow{
+    transform:rotate(90deg);
+    text-align:center;
+    line-height:1;
+    font-size:20px;
+  }
+  .step-item{
+    width:100%;
+    padding:12px;
+  }
+  .step-copy strong{font-size:14px}
+  .step-copy small{font-size:11px}
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -708,6 +1076,45 @@ input,select,button,textarea{
     <div class="note" style="margin-top:8px;padding:10px 12px;background:#fff6f7;border:1px solid #efd9de;border-radius:11px">
       管理員可設定「總金額」與「分擔人數」。未繳人數＝分擔人數－已繳人數；系統會自動更新每人應繳、收款完成率與 Firebase。
     </div>
+    <div class="payment-group-admin">
+      <div class="card-title" style="margin-bottom:10px">
+        <div>
+          <h2 style="font-size:16px">🏦 分組收款帳號設定</h2>
+          <div class="muted" style="margin-top:4px">依人員編號區間指定銀行、收款人與匯款帳號。</div>
+        </div>
+      </div>
+      <input id="editGroupId" type="hidden">
+      <div class="group-form">
+        <div class="field"><label>編號起</label><input id="groupStart" inputmode="numeric" placeholder="001"></div>
+        <div class="field"><label>編號迄</label><input id="groupEnd" inputmode="numeric" placeholder="050"></div>
+        <div class="field"><label>銀行代碼</label><input id="groupBankCode" inputmode="numeric" maxlength="4" placeholder="例如 822"></div>
+        <div class="field"><label>指定銀行</label><input id="groupBank" placeholder="例如 中國信託"></div>
+        <div class="field"><label>收款人</label><input id="groupRecipient" placeholder="例如 Dolly"></div>
+        <div class="field"><label>匯款帳號</label><input id="groupAccount" inputmode="numeric" placeholder="請輸入收款帳號"></div>
+        <button class="btn primary" id="saveGroupBtn">＋ 新增分組</button>
+      </div>
+      <div class="group-list" id="groupList"></div>
+    </div>
+    <div class="quick-import-box">
+      <div class="card-title" style="margin-bottom:10px">
+        <div>
+          <h2 style="font-size:16px">⚡ 快速貼上人員名單</h2>
+          <div class="muted" style="margin-top:4px">直接貼上「1.Angela」「2.Candy (妤庭)」這類格式；沒有句點如「104Hsin」也能辨識。</div>
+        </div>
+      </div>
+      <textarea id="quickListInput" placeholder="例如：
+1.Angela
+2.Candy ( 妤庭)
+3.caran
+...
+104Hsin"></textarea>
+      <div class="quick-import-actions">
+        <button class="btn primary" id="quickImportBtn">＋ 解析並新增名單</button>
+        <button class="btn" id="quickPreviewBtn">預覽解析結果</button>
+        <button class="btn" id="quickClearBtn">清除</button>
+      </div>
+      <div class="quick-import-result" id="quickImportResult">尚未解析。</div>
+    </div>
     <div class="tools">
       <button class="btn" id="importNamesBtn">匯入人員名單</button>
       <button class="btn" id="importDetailBtn">匯入匯款資料</button>
@@ -727,10 +1134,58 @@ input,select,button,textarea{
 </section>
 
 
-<section class="card self-entry-card">
+
+
+<section class="user-steps">
+  <div class="steps-title">匯款登記步驟</div>
+  <div class="steps-track">
+    <a class="step-item active" href="#step1Bank">
+      <span class="step-no">1</span>
+      <span class="step-copy">
+        <strong>查詢我的匯款帳戶</strong>
+        <small>先確認指定銀行與收款帳號</small>
+      </span>
+    </a>
+    <div class="step-arrow">→</div>
+    <a class="step-item" href="#step2Report">
+      <span class="step-no">2</span>
+      <span class="step-copy">
+        <strong>回報匯款紀錄</strong>
+        <small>匯款完成後填寫回報資料</small>
+      </span>
+    </a>
+  </div>
+</section>
+
+<section class="card public-bank-card" id="step1Bank">
   <div class="card-title">
     <div>
-      <h2>＋ 新增一筆匯款紀錄</h2>
+      <div class="step-section-label">STEP 1</div>
+      <h2>🏦 查詢我的匯款帳戶</h2>
+      <div class="muted" style="margin-top:4px">請先選擇自己的 LINE 名稱，確認您應匯款的指定銀行、收款人與帳號。</div>
+    </div>
+    <span class="pill paid">所有人可查詢</span>
+  </div>
+
+  <div class="public-bank-search">
+    <div class="field">
+      <label>我的 LINE 名稱</label>
+      <select id="publicLineLookup">
+        <option value="">請選擇 LINE 名稱</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="public-bank-result" id="publicBankResult">
+    <div class="public-bank-empty">請先選擇自己的 LINE 名稱</div>
+  </div>
+</section>
+
+<section class="card self-entry-card" id="step2Report">
+  <div class="card-title">
+    <div>
+      <div class="step-section-label">STEP 2</div>
+      <h2>＋ 回報匯款紀錄</h2>
       <div class="muted" style="margin-top:4px">所有人都可以自行新增，編號由系統自動產生；送出後一般使用者無法再修改。</div>
     </div>
     <span class="pill paid">自行登記</span>
@@ -738,7 +1193,7 @@ input,select,button,textarea{
   <div class="self-entry-grid">
     <div class="field">
       <label>LINE名稱</label>
-      <input id="selfLineName" placeholder="請輸入 LINE 名稱">
+      <input id="selfLineName" list="lineNameOptions" autocomplete="off" placeholder="請輸入或選擇 LINE 名稱"><datalist id="lineNameOptions"></datalist>
     </div>
     <div class="field">
       <label>帳號後五碼</label>
@@ -759,8 +1214,26 @@ input,select,button,textarea{
     </div>
     <button class="btn primary" id="selfAddBtn">送出新增</button>
   </div>
+
+  <div class="bank-lookup-box" id="bankLookupBox">
+    <div class="bank-lookup-head">
+      <div>
+        <div class="bank-lookup-title" id="bankLookupTitle">您的指定匯款帳號</div>
+        <div class="muted" id="bankLookupMember">請先輸入 LINE 名稱</div>
+      </div>
+      <button class="btn small" id="copyBankAccountBtn" type="button" style="display:none">📋 複製帳號</button>
+    </div>
+    <div class="bank-detail-grid" id="bankDetailGrid">
+      <div class="bank-detail"><div class="k">銀行代碼</div><div class="v" id="bankLookupBankCode">—</div></div>
+      <div class="bank-detail"><div class="k">指定銀行</div><div class="v" id="bankLookupBank">—</div></div>
+      <div class="bank-detail"><div class="k">收款人</div><div class="v" id="bankLookupRecipient">—</div></div>
+      <div class="bank-detail"><div class="k">匯款帳號</div><div class="v" id="bankLookupAccount">—</div></div>
+    </div>
+    <div class="bank-lookup-note" id="bankLookupNote"></div>
+  </div>
+
   <div class="self-entry-hint">
-    編號由系統自動產生。若「LINE名稱」已存在且該筆尚未完成，系統會直接完成原本那一筆；若不存在，會自動新增到清單最下方。已完成的紀錄只有管理員可以修改或刪除。
+    編號由系統自動產生。先輸入或選擇 LINE 名稱，系統會依您的編號顯示指定收款銀行與帳號。若「LINE名稱」已存在且該筆尚未完成，系統會直接完成原本那一筆；已完成的紀錄只有管理員可以修改或刪除。
   </div>
 </section>
 
@@ -897,8 +1370,9 @@ let state=null;
 for(const key of [STORAGE_KEY,...LEGACY_KEYS]){
   try{const v=JSON.parse(localStorage.getItem(key)||'null');if(v){state=v;break}}catch{}
 }
-if(!state) state={settings:{projectName:'收費匯款登記表',totalAmount:0,shareCount:0},people:[],modifiedAt:0};
-state.settings ||= {projectName:'收費匯款登記表',totalAmount:0,shareCount:0};
+if(!state) state={settings:{projectName:'收費匯款登記表',totalAmount:0,shareCount:0,paymentGroups:[]},people:[],modifiedAt:0};
+state.settings ||= {projectName:'收費匯款登記表',totalAmount:0,shareCount:0,paymentGroups:[]};
+state.settings.paymentGroups ||= [];
 state.people ||= [];
 state.modifiedAt ||= 0;
 state.people=normalizePeople(state.people);
@@ -983,7 +1457,8 @@ async function pullCloud({force=false}={}){
 
     if(force || remoteRevision>localRevision || (localRevision===0 && state.people.length===0)){
       state=remote;
-      state.settings ||= {projectName:'收費匯款登記表',totalAmount:0,shareCount:0};
+      state.settings ||= {projectName:'收費匯款登記表',totalAmount:0,shareCount:0,paymentGroups:[]};
+      state.settings.paymentGroups ||= [];
       state.people ||= [];
       state.people=normalizePeople(state.people);
       state.modifiedAt=remoteRevision;
@@ -1006,7 +1481,7 @@ async function initialCloudLoad(){
     if(remote && typeof remote==='object'){
       const rr=Number(remote.modifiedAt)||0, lr=Number(state.modifiedAt)||0;
       if(rr>=lr || state.people.length===0){
-        state=remote;state.settings ||= {};state.people ||= [];
+        state=remote;state.settings ||= {};state.settings.paymentGroups ||= [];state.people ||= [];
         state.people=normalizePeople(state.people);
         state.modifiedAt=rr;latestLocalRevision=Math.max(latestLocalRevision,rr);
         localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
@@ -1028,6 +1503,190 @@ function compactDate(ts){
   const d=new Date(ts),p=n=>String(n).padStart(2,'0');
   return `<div class="dt"><div class="m">${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}</div><div class="y">${d.getFullYear()}</div></div>`;
 }
+
+function memberNoValue(v){
+  const n=parseInt(String(v||'').replace(/\D/g,''),10);
+  return Number.isFinite(n)?n:null;
+}
+function paymentGroupForNo(memberNo){
+  const n=memberNoValue(memberNo);
+  if(n===null)return null;
+  const groups=state.settings.paymentGroups||[];
+  return groups.find(g=>{
+    const s=memberNoValue(g.start),e=memberNoValue(g.end);
+    return s!==null&&e!==null&&n>=s&&n<=e;
+  })||null;
+}
+function renderPaymentGroups(){
+  const box=$('#groupList');
+  if(!box)return;
+  const groups=[...(state.settings.paymentGroups||[])].sort((a,b)=>(memberNoValue(a.start)||0)-(memberNoValue(b.start)||0));
+  box.innerHTML=groups.length?groups.map(g=>`
+    <div class="group-row">
+      <div><div class="muted">編號區間</div><div class="group-range">${esc(g.start)} ～ ${esc(g.end)}</div></div>
+      <div><div class="muted">銀行代碼</div><strong>${esc(g.bankCode||'—')}</strong></div>
+      <div><div class="muted">銀行</div><strong>${esc(g.bank)}</strong></div>
+      <div><div class="muted">收款人</div><strong>${esc(g.recipient)}</strong></div>
+      <div><div class="muted">匯款帳號</div><strong>${esc(g.account)}</strong></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn small" onclick="editPaymentGroup('${g.id}')">修改</button>
+        <button class="btn small danger" onclick="deletePaymentGroup('${g.id}')">刪除</button>
+      </div>
+    </div>`).join(''):'<div class="note">尚未設定分組收款帳號。</div>';
+}
+function clearGroupForm(){
+  $('#editGroupId').value='';
+  $('#groupStart').value='';
+  $('#groupEnd').value='';
+  $('#groupBankCode').value='';
+  $('#groupBank').value='';
+  $('#groupRecipient').value='';
+  $('#groupAccount').value='';
+  $('#saveGroupBtn').textContent='＋ 新增分組';
+}
+function editPaymentGroup(id){
+  if(!isAdmin)return;
+  const g=(state.settings.paymentGroups||[]).find(x=>x.id===id);if(!g)return;
+  $('#editGroupId').value=g.id;
+  $('#groupStart').value=g.start;
+  $('#groupEnd').value=g.end;
+  $('#groupBankCode').value=g.bankCode||'';
+  $('#groupBank').value=g.bank;
+  $('#groupRecipient').value=g.recipient;
+  $('#groupAccount').value=g.account;
+  $('#saveGroupBtn').textContent='儲存修改';
+  $('#groupStart').focus();
+}
+function deletePaymentGroup(id){
+  if(!isAdmin)return;
+  const g=(state.settings.paymentGroups||[]).find(x=>x.id===id);if(!g)return;
+  if(!confirm(`確定刪除編號 ${g.start}～${g.end} 的收款設定？`))return;
+  state.settings.paymentGroups=(state.settings.paymentGroups||[]).filter(x=>x.id!==id);
+  persistAndSync();clearGroupForm();toast('分組收款設定已刪除');
+}
+window.editPaymentGroup=editPaymentGroup;
+window.deletePaymentGroup=deletePaymentGroup;
+
+function updateLineNameOptions(){
+  const dl=$('#lineNameOptions');if(!dl)return;
+  dl.innerHTML=state.people
+    .slice()
+    .sort((a,b)=>String(a.memberNo||'').localeCompare(String(b.memberNo||''),'zh-Hant',{numeric:true}))
+    .map(p=>`<option value="${esc(p.lineName||p.name||'')}">${esc(p.memberNo||'')}</option>`)
+    .join('');
+}
+function updateBankLookup(){
+  const box=$('#bankLookupBox');if(!box)return;
+  const q=$('#selfLineName').value.trim();
+  if(!q){
+    box.classList.remove('show','bank-lookup-missing');
+    return;
+  }
+  const p=state.people.find(x=>String(x.lineName||x.name||'').trim()===q);
+  let memberNo=p?.memberNo||'';
+  let tentative=false;
+  if(!memberNo){
+    memberNo=nextMemberNo();
+    tentative=true;
+  }
+  const g=paymentGroupForNo(memberNo);
+  box.classList.add('show');
+  box.classList.toggle('bank-lookup-missing',!g);
+  $('#bankLookupMember').textContent=p
+    ? `編號 ${memberNo}｜${p.lineName||p.name||''}`
+    : `新加入預計編號 ${memberNo}｜${q}`;
+  if(g){
+    $('#bankLookupTitle').textContent='您的指定匯款帳號';
+    $('#bankLookupBankCode').textContent=g.bankCode||'—';
+    $('#bankLookupBank').textContent=g.bank||'—';
+    $('#bankLookupRecipient').textContent=g.recipient||'—';
+    $('#bankLookupAccount').textContent=g.account||'—';
+    $('#bankLookupNote').textContent=`此帳號適用編號 ${g.start}～${g.end}${tentative?'（新加入編號為目前預估）':''}`;
+    $('#copyBankAccountBtn').style.display='inline-flex';
+    $('#copyBankAccountBtn').dataset.account=g.account||'';
+  }else{
+    $('#bankLookupTitle').textContent='尚未設定此編號的收款帳號';
+    $('#bankLookupBankCode').textContent='—';
+    $('#bankLookupBank').textContent='—';
+    $('#bankLookupRecipient').textContent='—';
+    $('#bankLookupAccount').textContent='—';
+    $('#bankLookupNote').textContent=`編號 ${memberNo} 目前沒有對應的分組收款設定，請聯絡管理員確認。`;
+    $('#copyBankAccountBtn').style.display='none';
+    $('#copyBankAccountBtn').dataset.account='';
+  }
+}
+
+
+function renderPublicLookupOptions(){
+  const sel=$('#publicLineLookup');
+  if(!sel)return;
+  const current=sel.value;
+  const people=state.people.slice().sort((a,b)=>
+    String(a.memberNo||'').localeCompare(String(b.memberNo||''),'zh-Hant',{numeric:true})
+  );
+  sel.innerHTML='<option value="">請選擇 LINE 名稱</option>'+
+    people.map(p=>`<option value="${esc(p.id)}">${esc(p.memberNo||'—')}｜${esc(p.lineName||p.name||'')}</option>`).join('');
+  if(people.some(p=>p.id===current))sel.value=current;
+}
+function showPublicBankResult(){
+  const result=$('#publicBankResult');
+  const sel=$('#publicLineLookup');
+  if(!result||!sel)return;
+  const id=sel.value;
+  if(!id){
+    result.innerHTML='<div class="public-bank-empty">請先選擇自己的 LINE 名稱</div>';
+    return;
+  }
+  const p=state.people.find(x=>x.id===id);
+  if(!p){
+    result.innerHTML='<div class="public-account-error">找不到此人員資料，請重新選擇。</div>';
+    return;
+  }
+  const g=paymentGroupForNo(p.memberNo);
+  if(!g){
+    result.innerHTML=`<div class="public-account-error">
+      <strong>${esc(p.memberNo||'—')}｜${esc(p.lineName||p.name||'')}</strong><br>
+      目前沒有設定此編號對應的收款帳戶，請聯絡管理員確認。
+    </div>`;
+    return;
+  }
+  result.innerHTML=`<div class="public-account-panel">
+    <div class="public-account-head">
+      <div>
+        <div class="title">${esc(p.lineName||p.name||'')} 的指定匯款帳戶</div>
+        <div class="sub">編號 ${esc(p.memberNo||'—')}｜適用區間 ${esc(g.start)}～${esc(g.end)}</div>
+      </div>
+      <span class="pill" style="background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.22)">請匯此帳戶</span>
+    </div>
+    <div class="public-account-grid">
+      <div class="public-account-item"><div class="k">銀行代碼</div><div class="v">${esc(g.bankCode||'—')}</div></div>
+      <div class="public-account-item"><div class="k">指定銀行</div><div class="v">${esc(g.bank||'—')}</div></div>
+      <div class="public-account-item"><div class="k">收款人</div><div class="v">${esc(g.recipient||'—')}</div></div>
+      <div class="public-account-item"><div class="k">匯款帳號</div><div class="v">${esc(g.account||'—')}</div></div>
+    </div>
+    <div class="public-account-actions">
+      <button class="btn primary" type="button" onclick="copyPublicAccount('${esc(g.account||'')}')">📋 複製匯款帳號</button>
+      <button class="btn" type="button" onclick="copyPublicBankInfo('${esc(g.bankCode||'')}','${esc(g.bank||'')}','${esc(g.recipient||'')}','${esc(g.account||'')}')">複製完整收款資訊</button>
+    </div>
+  </div>`;
+}
+async function copyTextSafe(t,msg){
+  try{
+    await navigator.clipboard.writeText(t);
+  }catch{
+    const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
+  }
+  toast(msg);
+}
+function copyPublicAccount(account){
+  if(account)copyTextSafe(account,'匯款帳號已複製');
+}
+function copyPublicBankInfo(code,bank,recipient,account){
+  copyTextSafe(`銀行代碼：${code}\n銀行：${bank}\n收款人：${recipient}\n匯款帳號：${account}`,'完整收款資訊已複製');
+}
+window.copyPublicAccount=copyPublicAccount;
+window.copyPublicBankInfo=copyPublicBankInfo;
+
 function getRows(){
   const q=$('#search').value.trim().toLowerCase();
   let rows=state.people.map((p,i)=>({...p,_index:i})).filter(p=>{
@@ -1112,10 +1771,11 @@ function render(){
   $('#adminBtn').style.display=isAdmin?'none':'inline-flex';$('#logoutBtn').style.display=isAdmin?'inline-flex':'none';
   $('#adminPanelBody').style.display=adminPanelOpen?'block':'none';$('#adminToggleBtn').textContent=adminPanelOpen?'收合':'展開';
 
+  renderPaymentGroups();updateLineNameOptions();renderPublicLookupOptions();showPublicBankResult();updateBankLookup();
   const rows=getRows();updateSortIndicators();$('#resultCount').textContent=rows.length+' 筆';
   $('#tbody').innerHTML=rows.length?rows.map((p,i)=>`<tr style="box-shadow:inset 4px 0 0 ${paid(p)?'#c84455':'#d7a03b'}">
     <td class="admin-cell"><input type="checkbox" ${p.selected?'checked':''} onchange="toggleSelect('${p.id}',this.checked)"></td>
-    <td><strong>${esc(p.memberNo||'—')}</strong></td><td><div class="name">${esc(p.lineName||p.name||'')}</div></td>
+    <td><strong>${esc(p.memberNo||'—')}</strong></td><td><div class="name">${esc(p.lineName||p.name||'')}</div>${paymentGroupForNo(p.memberNo)?`<div class="muted">${esc(paymentGroupForNo(p.memberNo).bank)}｜${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}</td>
     <td><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></td>
     <td>${esc(p.last5||'—')}</td><td class="money">${p.amount?money(p.amount):'—'}</td>
     <td>${compactDate(p.paymentAt)}</td><td>${esc(p.note||'—')}</td><td>${compactDate(p.updatedAt)}</td>
@@ -1126,7 +1786,7 @@ function render(){
   </tr>`).join(''):`<tr><td colspan="11" class="empty">目前沒有符合條件的資料</td></tr>`;
 
   $('#mobileList').innerHTML=rows.length?rows.map(p=>`<div class="person-card" style="border-left:4px solid ${paid(p)?'#c84455':'#d7a03b'}">
-    <div class="person-top"><div><div class="person-name">${esc(p.lineName||p.name||'')}</div><div class="muted">編號 ${esc(p.memberNo||'—')}</div></div><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></div>
+    <div class="person-top"><div><div class="person-name">${esc(p.lineName||p.name||'')}</div><div class="muted">編號 ${esc(p.memberNo||'—')}</div>${paymentGroupForNo(p.memberNo)?`<div class="muted" style="margin-top:3px">🏦 ${esc(paymentGroupForNo(p.memberNo).bank)}｜${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}</div><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></div>
     <div class="person-grid">
       <div class="person-item"><div class="k">帳號後五碼</div><div class="v">${esc(p.last5||'—')}</div></div>
       <div class="person-item"><div class="k">匯款金額</div><div class="v">${p.amount?money(p.amount):'—'}</div></div>
@@ -1332,6 +1992,136 @@ $('#addPersonBtn').onclick=()=>{
   $('#newLineName').value='';
   persistAndSync();toast('已新增人員');
 };
+
+
+function parseQuickList(raw){
+  const lines=String(raw||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const parsed=[];
+  const invalid=[];
+  for(const line of lines){
+    // 支援 1.Angela / 1．Angela / 1、Angela / 1 Angela / 104Hsin
+    const m=line.match(/^(\d+)\s*(?:[.．、:：\-]\s*)?(.*)$/);
+    if(!m || !m[2].trim()){
+      invalid.push(line);
+      continue;
+    }
+    const num=parseInt(m[1],10);
+    if(!Number.isFinite(num)){
+      invalid.push(line);
+      continue;
+    }
+    parsed.push({
+      memberNo:String(num).padStart(3,'0'),
+      lineName:m[2].trim()
+    });
+  }
+  return {parsed,invalid};
+}
+function quickListPreviewText(result){
+  const first=result.parsed.slice(0,8).map(x=>`${x.memberNo}｜${x.lineName}`).join('、');
+  let s=`成功辨識 ${result.parsed.length} 筆`;
+  if(first)s+=`：${first}${result.parsed.length>8?'…':''}`;
+  if(result.invalid.length)s+=`；無法辨識 ${result.invalid.length} 行：${result.invalid.slice(0,3).join(' / ')}`;
+  return s;
+}
+$('#quickPreviewBtn').onclick=()=>{
+  if(!isAdmin)return;
+  const result=parseQuickList($('#quickListInput').value);
+  $('#quickImportResult').textContent=quickListPreviewText(result);
+};
+$('#quickClearBtn').onclick=()=>{
+  $('#quickListInput').value='';
+  $('#quickImportResult').textContent='尚未解析。';
+};
+$('#quickImportBtn').onclick=()=>{
+  if(!isAdmin)return;
+  const result=parseQuickList($('#quickListInput').value);
+  if(!result.parsed.length)return alert('沒有辨識到可新增的名單');
+
+  let added=0,updated=0,conflict=0;
+  for(const item of result.parsed){
+    const byNo=state.people.find(p=>String(p.memberNo||'')===item.memberNo);
+    const byName=state.people.find(p=>String(p.lineName||p.name||'').trim()===item.lineName);
+
+    if(byNo){
+      // 編號相同：保留匯款資料，只更新 LINE 名稱
+      byNo.lineName=item.lineName;
+      byNo.name=item.lineName;
+      updated++;
+      continue;
+    }
+
+    if(byName){
+      const numberUsed=state.people.some(p=>p.id!==byName.id&&String(p.memberNo||'')===item.memberNo);
+      if(numberUsed){conflict++;continue}
+      byName.memberNo=item.memberNo;
+      byName.lineName=item.lineName;
+      byName.name=item.lineName;
+      updated++;
+      continue;
+    }
+
+    state.people.push({
+      id:uid(),memberNo:item.memberNo,lineName:item.lineName,name:item.lineName,
+      last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false
+    });
+    added++;
+  }
+
+  state.people=normalizePeople(state.people);
+  persistAndSync();
+  $('#quickImportResult').textContent=
+    `完成：新增 ${added} 筆、更新 ${updated} 筆${conflict?`、衝突略過 ${conflict} 筆`:''}${result.invalid.length?`、無法辨識 ${result.invalid.length} 行`:''}。`;
+  toast(`名單處理完成：新增 ${added}、更新 ${updated}`);
+};
+
+$('#groupBankCode').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,4)});
+$('#saveGroupBtn').onclick=()=>{
+  if(!isAdmin)return;
+  const editId=$('#editGroupId').value;
+  const start=$('#groupStart').value.trim();
+  const end=$('#groupEnd').value.trim();
+  const bankCode=$('#groupBankCode').value.trim();
+  const bank=$('#groupBank').value.trim();
+  const recipient=$('#groupRecipient').value.trim();
+  const account=$('#groupAccount').value.trim();
+  const s=memberNoValue(start),e=memberNoValue(end);
+  if(s===null||e===null)return alert('請輸入正確的編號起訖');
+  if(s>e)return alert('編號起不可大於編號迄');
+  if(!bankCode)return alert('請輸入銀行代碼');
+  if(!/^\d{3,4}$/.test(bankCode))return alert('銀行代碼請輸入 3～4 位數字');
+  if(!bank)return alert('請輸入指定銀行');
+  if(!recipient)return alert('請輸入收款人');
+  if(!account)return alert('請輸入匯款帳號');
+
+  const overlap=(state.settings.paymentGroups||[]).some(g=>{
+    if(g.id===editId)return false;
+    const gs=memberNoValue(g.start),ge=memberNoValue(g.end);
+    return gs!==null&&ge!==null&&Math.max(s,gs)<=Math.min(e,ge);
+  });
+  if(overlap)return alert('此編號區間與既有分組重疊，請重新設定');
+
+  const normalizedStart=String(s).padStart(3,'0');
+  const normalizedEnd=String(e).padStart(3,'0');
+  if(editId){
+    const g=state.settings.paymentGroups.find(x=>x.id===editId);
+    if(g)Object.assign(g,{start:normalizedStart,end:normalizedEnd,bankCode,bank,recipient,account});
+  }else{
+    state.settings.paymentGroups.push({id:uid(),start:normalizedStart,end:normalizedEnd,bankCode,bank,recipient,account});
+  }
+  persistAndSync();clearGroupForm();toast(editId?'分組收款設定已更新':'分組收款設定已新增');
+};
+$('#copyBankAccountBtn').onclick=async()=>{
+  const account=$('#copyBankAccountBtn').dataset.account||'';
+  if(!account)return;
+  try{await navigator.clipboard.writeText(account);toast('匯款帳號已複製')}
+  catch{const ta=document.createElement('textarea');ta.value=account;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('匯款帳號已複製')}
+};
+$('#publicLineLookup').addEventListener('change',showPublicBankResult);
+$('#selfLineName').addEventListener('input',updateBankLookup);
+$('#selfLineName').addEventListener('change',updateBankLookup);
+$('#selfLineName').addEventListener('blur',()=>setTimeout(updateBankLookup,80));
+
 $('#projectName').onchange=e=>{if(isAdmin){state.settings.projectName=e.target.value.trim()||'收費匯款登記表';persistAndSync()}};
 $('#totalAmount').onchange=e=>{if(isAdmin){state.settings.totalAmount=Number(e.target.value)||0;persistAndSync();toast('總金額已更新')}};
 $('#shareCount').onchange=e=>{if(isAdmin){state.settings.shareCount=Number(e.target.value)||0;persistAndSync();toast('分擔人數已更新')}};
@@ -1391,6 +2181,10 @@ function exportExcel(template=false){
     const total=Number(state.settings.shareCount)||0,paidN=state.people.filter(paid).length,received=state.people.reduce((s,p)=>s+(Number(p.amount)||0),0);
     const summary=[{'項目':'專案名稱','數值':state.settings.projectName},{'項目':'分擔人數','數值':total},{'項目':'已繳','數值':paidN},{'項目':'未繳','數值':Math.max(total-paidN,0)},{'項目':'已收金額','數值':received},{'項目':'目標金額','數值':state.settings.totalAmount||0}];
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),'統計摘要');
+    const groupRows=(state.settings.paymentGroups||[]).map(g=>({
+      '編號起':g.start,'編號迄':g.end,'銀行代碼':g.bankCode||'','指定銀行':g.bank,'收款人':g.recipient,'匯款帳號':g.account
+    }));
+    if(groupRows.length)XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(groupRows),'分組收款帳號');
   }
   const safe=(state.settings.projectName||'收費匯款登記表').replace(/[\\/:*?"<>|]/g,'_');
   XLSX.writeFile(wb,template?`${safe}_匯入範本.xlsx`:`${safe}_匯款明細.xlsx`);
@@ -1401,7 +2195,7 @@ $('#exportPeopleBtn').onclick=()=>{if(!isAdmin)return;const wb=XLSX.utils.book_n
 
 $('#backupBtn').onclick=()=>{if(!isAdmin)return;const blob=new Blob([JSON.stringify(cleanState(state),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(state.settings.projectName||'收費匯款登記表')+'_備份.json';a.click();URL.revokeObjectURL(a.href)};
 $('#restoreBtn').onclick=()=>isAdmin&&$('#restoreFile').click();
-$('#restoreFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.people)throw 0;state=d;state.people=normalizePeople(state.people);persistAndSync();toast('備份已還原')}catch{alert('JSON 格式錯誤')}};r.readAsText(f)};
+$('#restoreFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.people)throw 0;state=d;state.settings ||= {};state.settings.paymentGroups ||= [];state.people=normalizePeople(state.people);persistAndSync();toast('備份已還原')}catch{alert('JSON 格式錯誤')}};r.readAsText(f)};
 $('#cloudSyncBtn').onclick=async()=>{if(!isAdmin)return;queuedSnapshot=cleanState(state);await flushCloudWrite();await pullCloud({force:false});toast('雲端同步完成')};
 
 setInterval(()=>pullCloud(),5000);
