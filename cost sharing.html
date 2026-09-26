@@ -1159,6 +1159,87 @@ input,select,button,textarea{
 }
 </style>
 
+
+<style>
+.list-display-setting{
+  margin-top:10px;
+  padding:12px 13px;
+  border:1px solid #ead9de;
+  border-radius:13px;
+  background:#fffafb;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.list-display-title{
+  font-size:13px;
+  font-weight:950;
+  color:#713641;
+}
+.switch-control{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  cursor:pointer;
+  flex:0 0 auto;
+  user-select:none;
+}
+.switch-control input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+.switch-slider{
+  position:relative;
+  width:46px;
+  height:26px;
+  border-radius:999px;
+  background:#d9cdd0;
+  transition:.2s ease;
+}
+.switch-slider::after{
+  content:"";
+  position:absolute;
+  top:3px;
+  left:3px;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 2px 6px rgba(0,0,0,.16);
+  transition:.2s ease;
+}
+.switch-control input:checked + .switch-slider{
+  background:#9c384b;
+}
+.switch-control input:checked + .switch-slider::after{
+  transform:translateX(20px);
+}
+.switch-text{
+  min-width:38px;
+  font-size:12px;
+  font-weight:900;
+  color:#6f5960;
+}
+.list-bank-info{
+  margin-top:4px;
+  font-size:11px;
+  color:#8a737a;
+  line-height:1.4;
+}
+@media(max-width:720px){
+  .list-display-setting{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .switch-control{
+    width:100%;
+    justify-content:flex-end;
+  }
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -1229,6 +1310,17 @@ input,select,button,textarea{
     </div>
     <div class="note" style="margin-top:8px;padding:10px 12px;background:#fff6f7;border:1px solid #efd9de;border-radius:11px">
       管理員可設定「總金額」與「分擔人數」。未繳人數＝分擔人數－已繳人數；系統會自動更新每人應繳、收款完成率與 Firebase。
+    </div>
+    <div class="list-display-setting">
+      <div>
+        <div class="list-display-title">👁️ 下方名單顯示設定</div>
+        <div class="muted" style="margin-top:3px">控制 LINE 名稱旁是否顯示「應匯款銀行／收款人」。此設定會同步所有裝置。</div>
+      </div>
+      <label class="switch-control">
+        <input type="checkbox" id="showBankInList">
+        <span class="switch-slider"></span>
+        <span class="switch-text" id="showBankInListText">顯示</span>
+      </label>
     </div>
     <div class="payment-group-admin">
       <div class="card-title" style="margin-bottom:10px">
@@ -1538,6 +1630,7 @@ for(const key of [STORAGE_KEY,...LEGACY_KEYS]){
 if(!state) state={settings:{projectName:'收費匯款登記表',totalAmount:0,shareCount:0,paymentGroups:[]},people:[],modifiedAt:0};
 state.settings ||= {projectName:'收費匯款登記表',totalAmount:0,shareCount:0,paymentGroups:[]};
 state.settings.paymentGroups ||= [];
+state.settings.showBankInList = typeof state.settings.showBankInList==='boolean' ? state.settings.showBankInList : true;
 state.people ||= [];
 state.modifiedAt ||= 0;
 state.people=normalizePeople(state.people);
@@ -1624,6 +1717,7 @@ async function pullCloud({force=false}={}){
       state=remote;
       state.settings ||= {projectName:'收費匯款登記表',totalAmount:0,shareCount:0,paymentGroups:[]};
       state.settings.paymentGroups ||= [];
+      state.settings.showBankInList = typeof state.settings.showBankInList==='boolean' ? state.settings.showBankInList : true;
       state.people ||= [];
       state.people=normalizePeople(state.people);
       state.modifiedAt=remoteRevision;
@@ -1646,7 +1740,7 @@ async function initialCloudLoad(){
     if(remote && typeof remote==='object'){
       const rr=Number(remote.modifiedAt)||0, lr=Number(state.modifiedAt)||0;
       if(rr>=lr || state.people.length===0){
-        state=remote;state.settings ||= {};state.settings.paymentGroups ||= [];state.people ||= [];
+        state=remote;state.settings ||= {};state.settings.paymentGroups ||= [];state.settings.showBankInList = typeof state.settings.showBankInList==='boolean' ? state.settings.showBankInList : true;state.people ||= [];
         state.people=normalizePeople(state.people);
         state.modifiedAt=rr;latestLocalRevision=Math.max(latestLocalRevision,rr);
         localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
@@ -2030,7 +2124,12 @@ function render(){
   $('#moneyGap').textContent=target?(received>=target?`已達目標 ${money(received-target)}`:`尚差 ${money(target-received)}`):'尚未設定總金額';
   $('#targetChip').textContent=money(target);$('#perPersonChip').textContent=money(Math.round(per||0));$('#shareCountChip').textContent=state.settings.shareCount||0;
 
-  $('#projectName').value=project;$('#totalAmount').value=state.settings.totalAmount||'';$('#shareCount').value=state.settings.shareCount||'';if($('#newMemberNo')&&!$('#newMemberNo').value)$('#newMemberNo').value=nextMemberNo();
+  $('#projectName').value=project;$('#totalAmount').value=state.settings.totalAmount||'';$('#shareCount').value=state.settings.shareCount||'';
+  if($('#showBankInList')){
+    $('#showBankInList').checked=state.settings.showBankInList!==false;
+    $('#showBankInListText').textContent=state.settings.showBankInList!==false?'顯示':'不顯示';
+  }
+  if($('#newMemberNo')&&!$('#newMemberNo').value)$('#newMemberNo').value=nextMemberNo();
   $('#app').classList.toggle('is-admin',isAdmin);$('#adminPanel').classList.toggle('show',isAdmin);
   $('#adminBtn').style.display=isAdmin?'none':'inline-flex';$('#logoutBtn').style.display=isAdmin?'inline-flex':'none';
   $('#adminPanelBody').style.display=adminPanelOpen?'block':'none';$('#adminToggleBtn').textContent=adminPanelOpen?'收合':'展開';
@@ -2039,7 +2138,7 @@ function render(){
   const rows=getRows();updateSortIndicators();$('#resultCount').textContent=rows.length+' 筆';
   $('#tbody').innerHTML=rows.length?rows.map((p,i)=>`<tr style="box-shadow:inset 4px 0 0 ${paid(p)?'#c84455':'#d7a03b'}">
     <td class="admin-cell"><input type="checkbox" ${p.selected?'checked':''} onchange="toggleSelect('${p.id}',this.checked)"></td>
-    <td><strong>${esc(p.memberNo||'—')}</strong></td><td><div class="name">${esc(p.lineName||p.name||'')}</div>${paymentGroupForNo(p.memberNo)?`<div class="muted">${esc(paymentGroupForNo(p.memberNo).bank)}｜${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}</td>
+    <td><strong>${esc(p.memberNo||'—')}</strong></td><td><div class="name">${esc(p.lineName||p.name||'')}</div>${state.settings.showBankInList!==false && paymentGroupForNo(p.memberNo)?`<div class="list-bank-info">應匯款：${esc(paymentGroupForNo(p.memberNo).bank)}｜收款人：${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}</td>
     <td><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></td>
     <td>${esc(p.last5||'—')}</td><td class="money">${p.amount?money(p.amount):'—'}</td>
     <td>${compactDate(p.paymentAt)}</td><td>${esc(p.note||'—')}</td><td>${compactDate(p.updatedAt)}</td>
@@ -2050,7 +2149,7 @@ function render(){
   </tr>`).join(''):`<tr><td colspan="11" class="empty">目前沒有符合條件的資料</td></tr>`;
 
   $('#mobileList').innerHTML=rows.length?rows.map(p=>`<div class="person-card" style="border-left:4px solid ${paid(p)?'#c84455':'#d7a03b'}">
-    <div class="person-top"><div><div class="person-name">${esc(p.lineName||p.name||'')}</div><div class="muted">編號 ${esc(p.memberNo||'—')}</div>${paymentGroupForNo(p.memberNo)?`<div class="muted" style="margin-top:3px">🏦 ${esc(paymentGroupForNo(p.memberNo).bank)}｜${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}</div><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></div>
+    <div class="person-top"><div><div class="person-name">${esc(p.lineName||p.name||'')}</div><div class="muted">編號 ${esc(p.memberNo||'—')}</div>${state.settings.showBankInList!==false && paymentGroupForNo(p.memberNo)?`<div class="list-bank-info">🏦 應匯款：${esc(paymentGroupForNo(p.memberNo).bank)}｜收款人：${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}</div><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></div>
     <div class="person-grid">
       <div class="person-item"><div class="k">帳號後五碼</div><div class="v">${esc(p.last5||'—')}</div></div>
       <div class="person-item"><div class="k">匯款金額</div><div class="v">${p.amount?money(p.amount):'—'}</div></div>
@@ -2405,6 +2504,12 @@ $('#selfLineName').addEventListener('blur',()=>setTimeout(updateBankLookup,80));
 $('#projectName').onchange=e=>{if(isAdmin){state.settings.projectName=e.target.value.trim()||'收費匯款登記表';persistAndSync()}};
 $('#totalAmount').onchange=e=>{if(isAdmin){state.settings.totalAmount=Number(e.target.value)||0;persistAndSync();toast('總金額已更新')}};
 $('#shareCount').onchange=e=>{if(isAdmin){state.settings.shareCount=Number(e.target.value)||0;persistAndSync();toast('分擔人數已更新')}};
+$('#showBankInList').onchange=e=>{
+  if(!isAdmin)return;
+  state.settings.showBankInList=!!e.target.checked;
+  persistAndSync();
+  toast(state.settings.showBankInList?'下方名單已顯示應匯款銀行與收款人':'下方名單已隱藏應匯款銀行與收款人');
+};
 
 $$('.tab').forEach(b=>b.onclick=()=>{activeFilter=b.dataset.filter;$$('.tab').forEach(x=>x.classList.toggle('active',x===b));render()});
 $('#search').oninput=render;
