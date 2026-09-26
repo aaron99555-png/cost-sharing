@@ -1890,6 +1890,40 @@ body.resizing-column *{
 }
 </style>
 
+
+<style>
+.group-payment-detail{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px 10px;
+  margin-top:5px;
+  font-size:10px;
+  color:#8b777d;
+}
+.group-payment-detail span{
+  display:inline-flex;
+  gap:4px;
+  align-items:center;
+}
+.group-payment-detail strong{
+  color:#6d4d56;
+  font-weight:900;
+}
+.group-payment-detail.empty{
+  color:#a09095;
+}
+@media(max-width:720px){
+  .group-payment-detail{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:4px 8px;
+  }
+  .group-payment-detail span:last-child{
+    grid-column:1/-1;
+  }
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -2901,17 +2935,26 @@ function groupPersonRows(list,mode='normal'){
             : '<span class="group-quick-status pending">⏳ 待核對</span>');
     }
 
-    const amount=(mode==='verified' && pay)?`<div class="amt">${money(Number(pay.amount)||0)}</div>`:'';
+    const detail = hasPayment ? `
+      <div class="group-payment-detail">
+        <span>後五碼 <strong>${esc(pay.last5||'—')}</strong></span>
+        <span>金額 <strong>${money(Number(pay.amount)||0)}</strong></span>
+        <span>時間 <strong>${fmtTime(pay.paymentAt)}</strong></span>
+      </div>` : `
+      <div class="group-payment-detail empty">
+        <span>尚未匯款</span>
+      </div>`;
 
     return `<div class="group-name-person ${isAdmin&&(mode==='receivable'||mode==='verified')?'actionable':''}">
       <div class="group-person-main">
         <div class="who"><strong>${esc(member.memberNo||'—')}</strong>｜${esc(member.lineName||member.name||'')}</div>
-        ${amount}
+        ${detail}
       </div>
       ${action?`<div class="group-person-action">${action}</div>`:''}
     </div>`;
   }).join('');
 }
+
 function renderGroupCollectionStats(){
   const root=$('#groupCollectionStats');
   if(!root)return;
