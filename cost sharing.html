@@ -1924,6 +1924,275 @@ body.resizing-column *{
 }
 </style>
 
+
+<style>
+/* ===== 整體美化升級 ===== */
+:root{
+  --wine-1:#7f2f40;
+  --wine-2:#a63d54;
+  --wine-3:#c65870;
+  --soft-bg:#fff8fa;
+  --soft-panel:#fffdfd;
+  --line-soft:#ead9df;
+  --shadow-soft:0 10px 28px rgba(103,42,56,.08);
+  --shadow-card:0 12px 30px rgba(115,46,63,.10);
+}
+
+body{
+  background:
+    radial-gradient(circle at top left, rgba(214,110,137,.10), transparent 28%),
+    radial-gradient(circle at top right, rgba(196,88,112,.08), transparent 26%),
+    linear-gradient(180deg, #fffafc 0%, #fff7f9 38%, #fffdfd 100%);
+}
+
+.container, .app, #app{
+  position:relative;
+}
+
+header.topbar,
+.topbar{
+  border:1px solid rgba(234,217,223,.9);
+  box-shadow:var(--shadow-soft);
+  background:linear-gradient(145deg, rgba(255,255,255,.94), rgba(255,248,251,.96));
+  backdrop-filter:blur(14px);
+}
+
+.page-tabs{
+  box-shadow:var(--shadow-soft);
+  border-color:var(--line-soft);
+  background:rgba(255,255,255,.84);
+}
+
+.card,
+.stat,
+.person-card,
+.modal-card,
+.admin-page-heading,
+.public-result-section,
+.payment-list-card,
+.admin-panel,
+.verification-section,
+.group-stat-card{
+  box-shadow:var(--shadow-soft);
+}
+
+.card,
+.payment-list-card,
+.admin-panel,
+.public-result-section,
+.verification-section,
+.group-stat-card{
+  border:1px solid var(--line-soft) !important;
+  background:linear-gradient(180deg, #ffffff 0%, #fffafb 100%);
+}
+
+.hero .stat,
+.stat{
+  border:1px solid #eddde2 !important;
+  background:linear-gradient(145deg, #ffffff 0%, #fff6f8 100%);
+  box-shadow:0 8px 20px rgba(121,43,61,.06);
+}
+
+.stat .value.red,
+.verify-count-box.done .v,
+.public-verify-result.ok,
+.group-quick-status.verified{
+  color:var(--wine-2);
+}
+
+.btn.primary{
+  background:linear-gradient(135deg, var(--wine-1), var(--wine-3));
+  border:none;
+  box-shadow:0 8px 18px rgba(127,47,64,.18);
+}
+.btn.primary:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 22px rgba(127,47,64,.22);
+}
+.btn{
+  transition:.16s ease;
+}
+.btn:hover{
+  transform:translateY(-1px);
+}
+.btn.danger{
+  background:linear-gradient(135deg,#9f4257,#bf5a70);
+  color:#fff;
+  border:none;
+}
+
+.table-wrap,
+.payment-table-wrap,
+.desktop-table{
+  border-radius:16px;
+  overflow:hidden;
+  border:1px solid #eadbe0 !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.4);
+}
+
+.payment-data-table thead th,
+table thead th{
+  background:linear-gradient(180deg, #fff1f5 0%, #fff7f9 100%) !important;
+  color:#6d4050;
+  border-bottom:1px solid #ead9df !important;
+}
+
+.payment-data-table tbody tr:hover{
+  background:#fff8fa;
+}
+
+.person-card{
+  border:1px solid #ead9df !important;
+  background:linear-gradient(180deg,#fff 0%, #fffafb 100%);
+}
+
+.group-stats-admin{
+  margin-top:18px;
+}
+
+.group-stat-card{
+  overflow:hidden;
+  border-radius:18px !important;
+}
+.group-stat-card .group-card-head{
+  background:linear-gradient(135deg, #fff3f6 0%, #fffafc 100%);
+  border-bottom:1px solid #ead9df;
+}
+.group-stat-card .group-card-title{
+  color:#7a3144;
+}
+.group-stat-card .group-metric{
+  border:1px solid #efdce2;
+  background:linear-gradient(145deg,#ffffff 0%, #fff7f9 100%);
+  border-radius:14px;
+  box-shadow:0 6px 16px rgba(123,42,60,.05);
+}
+.group-stat-card .group-metric .v{
+  color:#8f3347;
+}
+.group-name-box{
+  border:1px solid #eddbe1;
+  border-radius:14px;
+  background:linear-gradient(180deg,#fff 0%, #fff9fb 100%);
+  box-shadow:0 6px 16px rgba(121,40,58,.05);
+}
+.group-name-head{
+  background:linear-gradient(180deg,#fff2f6 0%, #fff8fa 100%);
+  border-bottom:1px solid #ecd9df;
+  color:#6c4050;
+}
+.group-name-person{
+  padding:12px 12px;
+  border-bottom:1px dashed #efe0e5;
+}
+.group-name-person:last-child{
+  border-bottom:none;
+}
+.group-name-person .who{
+  color:#5d3945;
+  font-weight:800;
+}
+.group-payment-detail{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px 10px;
+  margin-top:6px;
+  font-size:11px;
+  color:#8b777d;
+}
+.group-payment-detail span{
+  padding:4px 8px;
+  border-radius:999px;
+  background:#fff3f6;
+  border:1px solid #efdde3;
+}
+.group-payment-detail strong{
+  color:#6f3444;
+}
+.group-payment-note{
+  margin-top:7px;
+  padding:8px 10px;
+  border-radius:10px;
+  background:#fff8fa;
+  border:1px solid #f1e1e6;
+  font-size:11px;
+  color:#77565f;
+  line-height:1.45;
+  word-break:break-word;
+}
+.group-payment-note.empty{
+  color:#9a878d;
+  background:#faf6f7;
+}
+.group-quick-btn{
+  box-shadow:0 5px 12px rgba(110,45,61,.08);
+}
+.group-quick-btn.verify{
+  background:linear-gradient(135deg,#fff1f4,#ffe9ef);
+}
+.group-quick-btn.cancel{
+  background:linear-gradient(135deg,#fff8ea,#fff4dd);
+}
+
+.verify-progress-card,
+.payment-progress-card{
+  overflow:hidden;
+}
+.verify-progress-card .card-title,
+.payment-progress-card .card-title{
+  padding-bottom:8px;
+  border-bottom:1px solid #efdee3;
+  margin-bottom:12px;
+}
+
+.progress-wrap{
+  background:#f4e7eb !important;
+  border:1px solid #ebd8df;
+}
+.progress{
+  background:linear-gradient(90deg, #8e3041, #c15a71) !important;
+}
+
+input, select, textarea{
+  border:1px solid #dfccd2 !important;
+  background:#fff !important;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.02);
+}
+input:focus, select:focus, textarea:focus{
+  border-color:#b24b63 !important;
+  box-shadow:0 0 0 3px rgba(178,75,99,.10) !important;
+}
+
+.self-submit-once-note{
+  border-color:#edd9df !important;
+  background:linear-gradient(145deg,#fff6f8,#fffafb) !important;
+}
+
+.modal-card{
+  border:1px solid #ead8de;
+  background:linear-gradient(180deg,#fff 0%, #fff9fb 100%);
+}
+
+.empty{
+  color:#9a878d;
+}
+
+@media(max-width:720px){
+  .card,
+  .payment-list-card,
+  .admin-panel,
+  .public-result-section,
+  .verification-section,
+  .group-stat-card{
+    border-radius:16px !important;
+  }
+  .group-payment-detail{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -2940,9 +3209,15 @@ function groupPersonRows(list,mode='normal'){
         <span>後五碼 <strong>${esc(pay.last5||'—')}</strong></span>
         <span>金額 <strong>${money(Number(pay.amount)||0)}</strong></span>
         <span>時間 <strong>${fmtTime(pay.paymentAt)}</strong></span>
+      </div>
+      <div class="group-payment-note ${pay.note?'':'empty'}">
+        備註：${esc(pay.note||'無')}
       </div>` : `
       <div class="group-payment-detail empty">
         <span>尚未匯款</span>
+      </div>
+      <div class="group-payment-note empty">
+        備註：無
       </div>`;
 
     return `<div class="group-name-person ${isAdmin&&(mode==='receivable'||mode==='verified')?'actionable':''}">
