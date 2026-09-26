@@ -1490,6 +1490,20 @@ body.resizing-column *{
 }
 </style>
 
+
+<style>
+#publicNoteModal textarea{
+  width:100%;
+  min-height:110px;
+  resize:vertical;
+  font-size:16px;
+  line-height:1.55;
+}
+.note-edit-btn{
+  white-space:nowrap;
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -1748,7 +1762,7 @@ body.resizing-column *{
   <div class="card-title table-title-row">
     <div>
       <h2>匯款回報核對狀態</h2>
-      <div class="table-use-hint">一般使用者可查看核對狀態｜管理員確認收款後，資料會由「未核對區」移至「已核對區」</div>
+      <div class="table-use-hint">一般使用者可查看核對狀態並修改備註｜管理員確認收款後，資料會由「未核對區」移至「已核對區」</div>
     </div>
     <div class="table-title-actions">
       <span class="muted" id="resultCount">0 筆回報</span>
@@ -1886,6 +1900,28 @@ body.resizing-column *{
     <div class="modal-row">
       <button class="btn" data-close="submitSummaryModal">關閉</button>
       <button class="btn primary" id="copySummaryBtn">📋 複製內容</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal" id="publicNoteModal">
+  <div class="modal-card">
+    <div class="card-title" style="margin-bottom:12px">
+      <div>
+        <h3 style="margin:0">✏️ 修改備註</h3>
+        <div class="muted" id="publicNoteMember" style="margin-top:4px">—</div>
+      </div>
+      <span class="pill pending">僅修改備註</span>
+    </div>
+    <input id="publicNoteId" type="hidden">
+    <div class="field">
+      <label>備註</label>
+      <textarea id="publicNoteText" rows="4" placeholder="輸入備註內容"></textarea>
+    </div>
+    <div class="modal-row">
+      <button class="btn" data-close="publicNoteModal">取消</button>
+      <button class="btn primary" id="savePublicNote">儲存備註</button>
     </div>
   </div>
 </div>
@@ -2636,7 +2672,10 @@ function renderPaymentRows(rows,verifiedSection=false){
           <button class="btn small ${verifiedSection?'':'primary'}" onclick="toggleVerification('${p.id}',${verifiedSection?'false':'true'})">${verifiedSection?'取消核對':'✅ 確認收款'}</button>
           <button class="btn small" onclick="openPay('${p.id}')">修改</button>
         </div>`
-      : `<div class="verify-status-line ${verifiedSection?'ok':'pending'}">${verifiedSection?'✅ 管理員已核對':'⏳ 等待管理員核對'}</div>`}
+      : `<div>
+          <div class="verify-status-line ${verifiedSection?'ok':'pending'}">${verifiedSection?'✅ 管理員已核對':'⏳ 等待管理員核對'}</div>
+          <button class="btn small note-edit-btn" style="margin-top:6px" onclick="openPublicNote('${p.id}')">✏️ 修改備註</button>
+        </div>`}
     </td>
     <td class="admin-cell"><button class="btn small danger" onclick="deletePerson('${p.id}')">刪除</button></td>
   </tr>`).join(''):`<tr><td colspan="11" class="empty">${verifiedSection?'目前沒有已核對的匯款紀錄':'目前沒有等待核對的匯款紀錄'}</td></tr>`;
@@ -2663,7 +2702,10 @@ function renderPaymentRows(rows,verifiedSection=false){
           <button class="btn" onclick="openPay('${p.id}')">修改匯款</button>
           <button class="btn danger" onclick="deletePerson('${p.id}')">刪除</button>
         </div>`
-      : `<div class="verify-status-line ${verifiedSection?'ok':'pending'}">${verifiedSection?'✅ 此筆匯款已由管理員核對完成':'⏳ 此筆匯款正在等待管理員核對'}</div>`}
+      : `<div>
+          <div class="verify-status-line ${verifiedSection?'ok':'pending'}">${verifiedSection?'✅ 此筆匯款已由管理員核對完成':'⏳ 此筆匯款正在等待管理員核對'}</div>
+          <button class="btn note-edit-btn" style="margin-top:8px;width:100%" onclick="openPublicNote('${p.id}')">✏️ 修改備註</button>
+        </div>`}
   </div>`).join(''):`<div class="empty">${verifiedSection?'目前沒有已核對的匯款紀錄':'目前沒有等待核對的匯款紀錄'}</div>`;
 }
 
@@ -2752,6 +2794,27 @@ function toggleVerification(id,verified){
   toast(p.verified?'已確認收款，資料移至已核對區':'已取消核對，資料移回未核對區');
 }
 window.toggleVerification=toggleVerification;
+
+
+function openPublicNote(id){
+  const p=state.people.find(x=>x.id===id);if(!p)return;
+  $('#publicNoteId').value=p.id;
+  $('#publicNoteMember').textContent=`${p.memberNo||'—'}｜${p.lineName||p.name||''}`;
+  $('#publicNoteText').value=p.note||'';
+  $('#publicNoteModal').classList.add('show');
+  setTimeout(()=>$('#publicNoteText').focus(),60);
+}
+window.openPublicNote=openPublicNote;
+
+$('#savePublicNote').onclick=()=>{
+  const id=$('#publicNoteId').value;
+  const p=state.people.find(x=>x.id===id);if(!p)return;
+  p.note=$('#publicNoteText').value.trim();
+  p.updatedAt=Date.now();
+  persistAndSync();
+  $('#publicNoteModal').classList.remove('show');
+  toast('備註已更新');
+};
 
 function deletePerson(id){
   if(!isAdmin)return;
