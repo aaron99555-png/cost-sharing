@@ -1697,6 +1697,17 @@ body.resizing-column *{
 }
 </style>
 
+
+<style>
+#selfLineName[readonly]{
+  background:#f6f3f4;
+  color:#5f5055;
+  cursor:not-allowed;
+  border-style:dashed;
+  font-weight:800;
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -1944,14 +1955,16 @@ body.resizing-column *{
     <div>
       <div class="step-section-label">STEP 2</div>
       <h2>＋ 回報匯款紀錄</h2>
-      <div class="muted" style="margin-top:4px">所有人都可以自行新增，編號由系統自動產生；送出後一般使用者無法再修改。</div>
+      <div class="muted" style="margin-top:4px">LINE名稱會由 STEP 1 自動帶入，無法自行輸入；完成匯款資料後即可送出。</div>
     </div>
     <span class="pill paid">自行登記</span>
   </div>
   <div class="self-entry-grid">
     <div class="field">
       <label>LINE名稱</label>
-      <input id="selfLineName" list="lineNameOptions" autocomplete="off" placeholder="請輸入或選擇 LINE 名稱"><datalist id="lineNameOptions"></datalist>
+      <input id="selfLineName" type="text" readonly tabindex="-1" aria-readonly="true" placeholder="請先在 STEP 1 選擇 LINE 名稱">
+      <div class="muted" style="margin-top:4px;font-size:11px">此欄位由 STEP 1 自動帶入，無法自行輸入或修改。</div>
+      <datalist id="lineNameOptions"></datalist>
     </div>
     <div class="field">
       <label>帳號後五碼</label>
@@ -3671,6 +3684,8 @@ document.addEventListener('input',e=>{
 
 
 function resetSelfEntry(){
+  $('#publicLineLookup').value='';
+  showPublicBankResult();
   $('#selfLineName').value='';
   $('#selfLast5Warning').classList.remove('show');
   $('#selfLast5').classList.remove('input-error');
@@ -3682,14 +3697,22 @@ function resetSelfEntry(){
 $('#selfPaymentAt').value=formatDateTimeText(Date.now());
 
 $('#selfAddBtn').onclick=()=>{
-  const lineName=$('#selfLineName').value.trim();
+  const selectedRosterId=$('#publicLineLookup').value;
+  const selectedMember=state.roster.find(r=>r.id===selectedRosterId);
+  if(!selectedMember){
+    $('#publicLineLookup').focus();
+    return alert('請先在 STEP 1「查詢我的匯款帳戶」選擇您的 LINE 名稱');
+  }
+
+  const lineName=String(selectedMember.lineName||selectedMember.name||'').trim();
+  $('#selfLineName').value=lineName;
   const last5=$('#selfLast5').value.trim();
   const amount=Number($('#selfAmount').value);
   const parsedPaymentAt=parseDateTimeTextStrict($('#selfPaymentAt').value);
   const paymentAt=parsedPaymentAt.ts;
   const note=$('#selfNote').value.trim();
 
-  if(!lineName)return alert('請輸入 LINE 名稱');
+  if(!lineName)return alert('STEP 1 選擇的人員資料缺少 LINE 名稱，請聯絡管理員確認');
   if(!/^\d{5}$/.test(last5)){
     validateLast5Input('selfLast5','selfLast5Warning',true);
     $('#selfLast5').focus();
@@ -3701,14 +3724,7 @@ $('#selfAddBtn').onclick=()=>{
     return alert(parsedPaymentAt.message||'請輸入正確的匯款日期／時間，格式需為 YYYY-MM-DD HH:mm（24小時制）');
   }
 
-  let rosterMember=state.roster.find(r=>String(r.lineName||r.name||'').trim()===lineName);
-  if(!rosterMember){
-    const newNo=nextMemberNo();
-    rosterMember={id:uid(),memberNo:newNo,lineName,name:lineName};
-    state.roster.push(rosterMember);
-    state.roster=normalizeRoster(state.roster);
-  }
-
+  const rosterMember=selectedMember;
   const memberNo=rosterMember.memberNo;
   const existing=state.people.find(p=>
     String(p.memberNo||'')===String(memberNo) ||
@@ -3944,6 +3960,13 @@ $('#publicLineLookup').addEventListener('change',()=>{
 $('#selfLineName').addEventListener('input',updateBankLookup);
 $('#selfLineName').addEventListener('change',updateBankLookup);
 $('#selfLineName').addEventListener('blur',()=>setTimeout(updateBankLookup,80));
+
+['beforeinput','paste','drop'].forEach(evt=>{
+  $('#selfLineName').addEventListener(evt,e=>{
+    if(!isAdmin)e.preventDefault();
+  });
+});
+
 
 $('#projectName').onchange=e=>{if(isAdmin){state.settings.projectName=e.target.value.trim()||'收費匯款登記表';persistAndSync()}};
 $('#totalAmount').onchange=e=>{if(isAdmin){state.settings.totalAmount=Number(e.target.value)||0;persistAndSync();toast('總金額已更新')}};
