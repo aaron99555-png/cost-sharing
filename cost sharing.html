@@ -1005,6 +1005,160 @@ input,select,button,textarea{
 }
 </style>
 
+
+<style>
+/* ===== 管理員：分組收款統計 ===== */
+.group-stats-admin{
+  margin-top:14px;
+  padding:14px;
+  border:1px solid #ead9de;
+  border-radius:15px;
+  background:linear-gradient(145deg,#fffafb,#fff);
+}
+.group-stat-list{
+  display:grid;
+  gap:12px;
+}
+.group-stat-card{
+  border:1px solid #eadde1;
+  border-radius:16px;
+  background:#fff;
+  overflow:hidden;
+  box-shadow:0 6px 18px rgba(91,50,60,.05);
+}
+.group-stat-head{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-start;
+  padding:13px 14px;
+  background:linear-gradient(135deg,#8c3142,#ad4557);
+  color:#fff;
+}
+.group-stat-title{
+  font-size:15px;
+  font-weight:950;
+  line-height:1.4;
+}
+.group-stat-bank{
+  margin-top:4px;
+  font-size:12px;
+  opacity:.88;
+  line-height:1.5;
+}
+.group-stat-count{
+  flex:0 0 auto;
+  padding:5px 9px;
+  border:1px solid rgba(255,255,255,.24);
+  background:rgba(255,255,255,.12);
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+}
+.group-money-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  border-bottom:1px solid #eee2e5;
+}
+.group-money-item{
+  padding:13px;
+  border-right:1px solid #eee2e5;
+}
+.group-money-item:last-child{border-right:0}
+.group-money-item .k{
+  font-size:11px;
+  color:#88777c;
+  font-weight:850;
+  margin-bottom:4px;
+}
+.group-money-item .v{
+  font-size:20px;
+  line-height:1.2;
+  font-weight:950;
+  color:#7d2c3d;
+  word-break:break-word;
+}
+.group-money-item.unpaid .v{color:#a36a18}
+.group-name-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  padding:12px;
+  background:#fffcfd;
+}
+.group-name-box{
+  min-width:0;
+  border:1px solid #eee2e5;
+  border-radius:13px;
+  overflow:hidden;
+  background:#fff;
+}
+.group-name-head{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:center;
+  padding:9px 10px;
+  background:#faf4f6;
+  border-bottom:1px solid #eee2e5;
+  font-size:12px;
+  font-weight:950;
+  color:#6c3a45;
+}
+.group-name-items{
+  max-height:220px;
+  overflow:auto;
+  padding:7px;
+}
+.group-name-person{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  padding:7px 8px;
+  border-bottom:1px dashed #eee2e5;
+  font-size:12px;
+  line-height:1.4;
+}
+.group-name-person:last-child{border-bottom:0}
+.group-name-person .who{
+  min-width:0;
+  word-break:break-word;
+}
+.group-name-person .amt{
+  flex:0 0 auto;
+  font-weight:900;
+  color:#7d2c3d;
+}
+.group-name-empty{
+  padding:13px 9px;
+  text-align:center;
+  color:#97878c;
+  font-size:12px;
+}
+.group-unassigned-note{
+  margin-top:10px;
+  padding:10px 11px;
+  border-radius:11px;
+  background:#fff8e9;
+  border:1px solid #eeddb7;
+  color:#8a631e;
+  font-size:12px;
+  line-height:1.5;
+}
+@media(max-width:720px){
+  .group-stat-head{flex-direction:column}
+  .group-money-grid{grid-template-columns:1fr}
+  .group-money-item{
+    border-right:0;
+    border-bottom:1px solid #eee2e5;
+    padding:11px 12px;
+  }
+  .group-money-item:last-child{border-bottom:0}
+  .group-name-grid{grid-template-columns:1fr}
+  .group-name-items{max-height:180px}
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -1095,6 +1249,17 @@ input,select,button,textarea{
       </div>
       <div class="group-list" id="groupList"></div>
     </div>
+
+    <div class="group-stats-admin">
+      <div class="card-title" style="margin-bottom:10px">
+        <div>
+          <h2 style="font-size:16px">📊 分組收款統計</h2>
+          <div class="muted" style="margin-top:4px">依各組收款帳號即時統計應收、已收、未收與人員名單。</div>
+        </div>
+      </div>
+      <div id="groupCollectionStats"></div>
+    </div>
+
     <div class="quick-import-box">
       <div class="card-title" style="margin-bottom:10px">
         <div>
@@ -1687,6 +1852,105 @@ function copyPublicBankInfo(code,bank,recipient,account){
 window.copyPublicAccount=copyPublicAccount;
 window.copyPublicBankInfo=copyPublicBankInfo;
 
+
+function peopleForPaymentGroup(group){
+  const s=memberNoValue(group.start),e=memberNoValue(group.end);
+  if(s===null||e===null)return [];
+  return state.people
+    .filter(p=>{
+      const n=memberNoValue(p.memberNo);
+      return n!==null&&n>=s&&n<=e;
+    })
+    .sort((a,b)=>(memberNoValue(a.memberNo)||0)-(memberNoValue(b.memberNo)||0));
+}
+function groupPersonRows(list,showAmount=false){
+  if(!list.length)return '<div class="group-name-empty">目前無人員</div>';
+  return list.map(p=>`
+    <div class="group-name-person">
+      <div class="who"><strong>${esc(p.memberNo||'—')}</strong>｜${esc(p.lineName||p.name||'')}</div>
+      ${showAmount?`<div class="amt">${money(Number(p.amount)||0)}</div>`:''}
+    </div>`).join('');
+}
+function renderGroupCollectionStats(){
+  const root=$('#groupCollectionStats');
+  if(!root)return;
+
+  const groups=[...(state.settings.paymentGroups||[])]
+    .sort((a,b)=>(memberNoValue(a.start)||0)-(memberNoValue(b.start)||0));
+
+  if(!groups.length){
+    root.innerHTML='<div class="note">尚未設定分組收款帳號，請先於上方新增分組。</div>';
+    return;
+  }
+
+  const per=expected();
+  const assignedIds=new Set();
+
+  const cards=groups.map((g,index)=>{
+    const members=peopleForPaymentGroup(g);
+    members.forEach(p=>assignedIds.add(p.id));
+
+    const paidMembers=members.filter(paid);
+    const unpaidMembers=members.filter(p=>!paid(p));
+
+    const expectedAmount=members.length*per;
+    const receivedAmount=paidMembers.reduce((sum,p)=>sum+(Number(p.amount)||0),0);
+    const remainingAmount=Math.max(expectedAmount-receivedAmount,0);
+
+    return `<div class="group-stat-card">
+      <div class="group-stat-head">
+        <div>
+          <div class="group-stat-title">第 ${index+1} 組｜編號 ${esc(g.start)}～${esc(g.end)}</div>
+          <div class="group-stat-bank">
+            ${esc(g.bankCode||'—')} ${esc(g.bank||'—')}｜收款人：${esc(g.recipient||'—')}｜帳號：${esc(g.account||'—')}
+          </div>
+        </div>
+        <div class="group-stat-count">應收 ${members.length} 人｜已繳 ${paidMembers.length}｜未繳 ${unpaidMembers.length}</div>
+      </div>
+
+      <div class="group-money-grid">
+        <div class="group-money-item">
+          <div class="k">應收款金額</div>
+          <div class="v">${money(expectedAmount)}</div>
+        </div>
+        <div class="group-money-item">
+          <div class="k">已收款金額</div>
+          <div class="v">${money(receivedAmount)}</div>
+        </div>
+        <div class="group-money-item unpaid">
+          <div class="k">尚未繳交金額</div>
+          <div class="v">${money(remainingAmount)}</div>
+        </div>
+      </div>
+
+      <div class="group-name-grid">
+        <div class="group-name-box">
+          <div class="group-name-head"><span>應收款名單</span><span>${members.length} 人</span></div>
+          <div class="group-name-items">${groupPersonRows(members,false)}</div>
+        </div>
+        <div class="group-name-box">
+          <div class="group-name-head"><span>已繳款名單</span><span>${paidMembers.length} 人</span></div>
+          <div class="group-name-items">${groupPersonRows(paidMembers,true)}</div>
+        </div>
+        <div class="group-name-box">
+          <div class="group-name-head"><span>未繳款名單</span><span>${unpaidMembers.length} 人</span></div>
+          <div class="group-name-items">${groupPersonRows(unpaidMembers,false)}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const unassigned=state.people
+    .filter(p=>!assignedIds.has(p.id))
+    .sort((a,b)=>(memberNoValue(a.memberNo)||0)-(memberNoValue(b.memberNo)||0));
+
+  root.innerHTML=`<div class="group-stat-list">${cards}</div>`+
+    (unassigned.length?`<div class="group-unassigned-note">
+      ⚠️ 目前有 <strong>${unassigned.length}</strong> 位人員的編號未落在任何收款分組：
+      ${unassigned.map(p=>`${esc(p.memberNo||'—')} ${esc(p.lineName||p.name||'')}`).join('、')}
+    </div>`:'');
+}
+
 function getRows(){
   const q=$('#search').value.trim().toLowerCase();
   let rows=state.people.map((p,i)=>({...p,_index:i})).filter(p=>{
@@ -1771,7 +2035,7 @@ function render(){
   $('#adminBtn').style.display=isAdmin?'none':'inline-flex';$('#logoutBtn').style.display=isAdmin?'inline-flex':'none';
   $('#adminPanelBody').style.display=adminPanelOpen?'block':'none';$('#adminToggleBtn').textContent=adminPanelOpen?'收合':'展開';
 
-  renderPaymentGroups();updateLineNameOptions();renderPublicLookupOptions();showPublicBankResult();updateBankLookup();
+  renderPaymentGroups();renderGroupCollectionStats();updateLineNameOptions();renderPublicLookupOptions();showPublicBankResult();updateBankLookup();
   const rows=getRows();updateSortIndicators();$('#resultCount').textContent=rows.length+' 筆';
   $('#tbody').innerHTML=rows.length?rows.map((p,i)=>`<tr style="box-shadow:inset 4px 0 0 ${paid(p)?'#c84455':'#d7a03b'}">
     <td class="admin-cell"><input type="checkbox" ${p.selected?'checked':''} onchange="toggleSelect('${p.id}',this.checked)"></td>
@@ -1995,39 +2259,54 @@ $('#addPersonBtn').onclick=()=>{
 
 
 function parseQuickList(raw){
-  const lines=String(raw||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const sourceLines=String(raw||'').split(/\r?\n/);
   const parsed=[];
   const invalid=[];
-  for(const line of lines){
+  sourceLines.forEach((rawLine,index)=>{
+    const line=rawLine.trim();
+    if(!line)return;
+
     // 支援 1.Angela / 1．Angela / 1、Angela / 1 Angela / 104Hsin
     const m=line.match(/^(\d+)\s*(?:[.．、:：\-]\s*)?(.*)$/);
     if(!m || !m[2].trim()){
-      invalid.push(line);
-      continue;
+      invalid.push({lineNo:index+1,content:rawLine});
+      return;
     }
     const num=parseInt(m[1],10);
     if(!Number.isFinite(num)){
-      invalid.push(line);
-      continue;
+      invalid.push({lineNo:index+1,content:rawLine});
+      return;
     }
     parsed.push({
       memberNo:String(num).padStart(3,'0'),
       lineName:m[2].trim()
     });
-  }
+  });
   return {parsed,invalid};
 }
 function quickListPreviewText(result){
   const first=result.parsed.slice(0,8).map(x=>`${x.memberNo}｜${x.lineName}`).join('、');
   let s=`成功辨識 ${result.parsed.length} 筆`;
   if(first)s+=`：${first}${result.parsed.length>8?'…':''}`;
-  if(result.invalid.length)s+=`；無法辨識 ${result.invalid.length} 行：${result.invalid.slice(0,3).join(' / ')}`;
+  if(result.invalid.length){
+    s+=`；無法辨識 ${result.invalid.length} 行：`+
+      result.invalid.slice(0,3).map(x=>`第${x.lineNo}行「${x.content.trim()}」`).join(' / ');
+  }
   return s;
 }
+
+function alertQuickListInvalid(result){
+  if(!result.invalid.length)return false;
+  const details=result.invalid.map(x=>`第 ${x.lineNo} 行：${x.content.trim() || '(空白)'}`).join('\n');
+  alert(`以下 ${result.invalid.length} 筆無法辨識：\n\n${details}\n\n請修正後再重新貼上。`);
+  return true;
+}
+
 $('#quickPreviewBtn').onclick=()=>{
   if(!isAdmin)return;
   const result=parseQuickList($('#quickListInput').value);
   $('#quickImportResult').textContent=quickListPreviewText(result);
+  alertQuickListInvalid(result);
 };
 $('#quickClearBtn').onclick=()=>{
   $('#quickListInput').value='';
@@ -2037,6 +2316,7 @@ $('#quickImportBtn').onclick=()=>{
   if(!isAdmin)return;
   const result=parseQuickList($('#quickListInput').value);
   if(!result.parsed.length)return alert('沒有辨識到可新增的名單');
+  if(alertQuickListInvalid(result))return;
 
   let added=0,updated=0,conflict=0;
   for(const item of result.parsed){
@@ -2071,7 +2351,7 @@ $('#quickImportBtn').onclick=()=>{
   state.people=normalizePeople(state.people);
   persistAndSync();
   $('#quickImportResult').textContent=
-    `完成：新增 ${added} 筆、更新 ${updated} 筆${conflict?`、衝突略過 ${conflict} 筆`:''}${result.invalid.length?`、無法辨識 ${result.invalid.length} 行`:''}。`;
+    `完成：新增 ${added} 筆、更新 ${updated} 筆${conflict?`、衝突略過 ${conflict} 筆`:''}。`;
   toast(`名單處理完成：新增 ${added}、更新 ${updated}`);
 };
 
