@@ -1540,7 +1540,7 @@ body.resizing-column *{
 
 <style>
 #paymentTablePublic{
-  min-width:1220px;
+  min-width:1380px;
 }
 @media(max-width:720px){
   #publicUnifiedSection .verification-section-head{
@@ -1609,6 +1609,66 @@ body.resizing-column *{
   }
   .verify-progress-main{
     grid-column:auto;
+  }
+}
+</style>
+
+
+<style>
+.inline-edit{
+  width:100%;
+  min-width:0;
+  border:1px solid transparent;
+  border-radius:8px;
+  background:transparent;
+  padding:6px 7px;
+  font:inherit;
+  color:inherit;
+  transition:.15s ease;
+}
+.inline-edit:hover{
+  border-color:#ddcbd0;
+  background:#fffafb;
+}
+.inline-edit:focus{
+  outline:none;
+  border-color:#9b3a4d;
+  background:#fff;
+  box-shadow:0 0 0 3px rgba(155,58,77,.08);
+}
+.inline-edit.money-input{
+  text-align:right;
+}
+.inline-edit-status{
+  width:100%;
+  min-width:110px;
+  border:1px solid #dccbd0;
+  border-radius:8px;
+  padding:6px 7px;
+  background:#fff;
+  font-weight:800;
+  color:#713843;
+}
+.admin-inline-hint{
+  margin-top:5px;
+  font-size:11px;
+  color:#8b777d;
+}
+.admin-row-delete{
+  width:100%;
+  white-space:nowrap;
+}
+.inline-readonly{
+  color:#8b7c80;
+  font-size:12px;
+}
+@media(max-width:720px){
+  .admin-inline-card .person-item .inline-edit,
+  .admin-inline-card .inline-edit-status{
+    font-size:16px;
+  }
+  .admin-inline-card .admin-row-delete{
+    margin-top:8px;
   }
 }
 </style>
@@ -1945,6 +2005,7 @@ body.resizing-column *{
       <div>
         <h3>📋 所有名單總覽</h3>
         <div class="muted">匯入名冊的所有人都會顯示在這裡，可直接查看「未匯款／已匯款」與核對結果。</div>
+        <div class="admin-inline-hint" id="adminInlineHint" style="display:none">管理模式：直接點欄位即可修改，離開欄位後自動儲存。</div>
       </div>
       <span class="pill" id="publicResultCount">0 人</span>
     </div>
@@ -2928,6 +2989,114 @@ function renderPaymentRows(rows,verifiedSection=false){
 }
 
 
+
+function rosterById(id){
+  return (state.roster||[]).find(r=>r.id===id)||null;
+}
+function paymentById(id){
+  return (state.people||[]).find(p=>p.id===id)||null;
+}
+function ensurePaymentForRoster(rosterMember,paymentId=null){
+  let p=paymentId?paymentById(paymentId):null;
+  if(!p && rosterMember)p=paymentForRosterMember(rosterMember);
+  if(!p && rosterMember){
+    p={
+      id:uid(),
+      memberNo:rosterMember.memberNo||'',
+      lineName:rosterMember.lineName||rosterMember.name||'',
+      name:rosterMember.lineName||rosterMember.name||'',
+      last5:'',
+      amount:0,
+      paymentAt:null,
+      note:'',
+      verified:false,
+      verifiedAt:null,
+      updatedAt:Date.now(),
+      selected:false
+    };
+    state.people.push(p);
+  }
+  return p;
+}
+function inlineAdminUpdate(rosterId,paymentId,field,value){
+  if(!isAdmin)return;
+  const r=rosterById(rosterId);
+  if(!r)return;
+
+  const oldNo=String(r.memberNo||'');
+  const oldName=String(r.lineName||r.name||'');
+
+  if(field==='memberNo'){
+    const v=String(value||'').trim();
+    if(!v){alert('編號不可空白');render();return}
+    const dup=state.roster.some(x=>x.id!==r.id&&String(x.memberNo||'').trim()===v);
+    if(dup){alert('此編號已被其他人使用');render();return}
+    r.memberNo=v;
+    const p=paymentId?paymentById(paymentId):paymentForRosterMember({...r,memberNo:oldNo,lineName:oldName,name:oldName});
+    if(p)p.memberNo=v;
+  }else if(field==='lineName'){
+    const v=String(value||'').trim();
+    if(!v){alert('LINE 名稱不可空白');render();return}
+    const dup=state.roster.some(x=>x.id!==r.id&&String(x.lineName||x.name||'').trim()===v);
+    if(dup){alert('此 LINE 名稱已存在');render();return}
+    r.lineName=v;r.name=v;
+    const p=paymentId?paymentById(paymentId):paymentForRosterMember({...r,memberNo:oldNo,lineName:oldName,name:oldName});
+    if(p){p.lineName=v;p.name=v}
+  }else{
+    const p=ensurePaymentForRoster(r,paymentId);
+    if(!p)return;
+
+    if(field==='last5'){
+      const v=String(value||'').replace(/\D/g,'').slice(0,5);
+      if(v && v.length!==5){alert('帳號後五碼需完整輸入 5 碼，或留空');render();return}
+      p.last5=v;
+      if(!reported(p)){p.verified=false;p.verifiedAt=null}
+    }else if(field==='amount'){
+      const n=Number(value)||0;
+      if(n<0){alert('匯款金額不可小於 0');render();return}
+      p.amount=n;
+      if(!reported(p)){p.verified=false;p.verifiedAt=null}
+    }else if(field==='paymentAt'){
+      p.paymentAt=value?new Date(value).getTime():null;
+    }else if(field==='note'){
+      p.note=String(value||'').trim();
+    }else if(field==='verified'){
+      if(value==='verified'){
+        if(!reported(p)){alert('請先完成 5 碼帳號與匯款金額，才能核對');render();return}
+        p.verified=true;
+        p.verifiedAt=Date.now();
+      }else{
+        p.verified=false;
+        p.verifiedAt=null;
+      }
+    }
+    p.memberNo=r.memberNo||p.memberNo;
+    p.lineName=r.lineName||r.name||p.lineName;
+    p.name=p.lineName;
+    p.updatedAt=Date.now();
+  }
+
+  state.roster=normalizeRoster(state.roster);
+  persistAndSync();
+  toast('資料已更新');
+}
+window.inlineAdminUpdate=inlineAdminUpdate;
+
+function deleteRosterMember(rosterId,paymentId=null){
+  if(!isAdmin)return;
+  const r=rosterById(rosterId);
+  if(!r)return;
+  const pay=paymentId?paymentById(paymentId):paymentForRosterMember(r);
+  const label=`${r.memberNo||''}｜${r.lineName||r.name||''}`;
+  if(!confirm(`確定刪除「${label}」？\n\n名冊與此人的匯款紀錄都會一起刪除，並同步到 Firebase。`))return;
+
+  state.roster=state.roster.filter(x=>x.id!==rosterId);
+  if(pay)state.people=state.people.filter(x=>x.id!==pay.id);
+  persistAndSync();
+  toast(`已刪除 ${r.lineName||r.name||''}`);
+}
+window.deleteRosterMember=deleteRosterMember;
+
 function renderPublicPaymentRows(rows){
   const tbody=$('#publicTbody');
   const mobile=$('#publicMobileList');
@@ -2936,6 +3105,35 @@ function renderPublicPaymentRows(rows){
   tbody.innerHTML=rows.length?rows.map(p=>{
     const hasPayment=reported(p);
     const isVerified=paid(p);
+    const rosterId=p.rosterId||p.id;
+    const paymentId=p.paymentId||'';
+
+    if(isAdmin){
+      return `<tr style="box-shadow:inset 4px 0 0 ${isVerified?'#c84455':(hasPayment?'#d7a03b':'#cfc3c7')}">
+        <td><input class="inline-edit" value="${esc(p.memberNo||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','memberNo',this.value)" aria-label="編號"></td>
+        <td>
+          <input class="inline-edit" value="${esc(p.lineName||p.name||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','lineName',this.value)" aria-label="LINE名稱">
+          ${state.settings.showBankInList!==false && paymentGroupForNo(p.memberNo)?`<div class="list-bank-info">應匯款：${esc(paymentGroupForNo(p.memberNo).bank)}｜收款人：${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}
+        </td>
+        <td><input class="inline-edit" inputmode="numeric" maxlength="5" value="${esc(p.last5||'')}" placeholder="未匯款" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','last5',this.value)" aria-label="帳號後五碼"></td>
+        <td><input class="inline-edit money-input" type="number" min="0" value="${p.amount||''}" placeholder="0" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','amount',this.value)" aria-label="匯款金額"></td>
+        <td><input class="inline-edit" type="datetime-local" value="${p.paymentAt?toDateTimeLocal(p.paymentAt):''}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','paymentAt',this.value)" aria-label="匯款日期時間"></td>
+        <td><input class="inline-edit" value="${esc(p.note||'')}" placeholder="備註" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','note',this.value)" aria-label="備註"></td>
+        <td><span class="inline-readonly">${p.updatedAt?fmtTime(p.updatedAt):'—'}</span></td>
+        <td><span class="pill ${hasPayment?'paid':'unpaid'}">${hasPayment?'💰 已匯款':'— 未匯款'}</span></td>
+        <td><button class="btn small danger admin-row-delete" onclick="deleteRosterMember('${rosterId}','${paymentId}')">刪除</button></td>
+        <td>
+          ${hasPayment
+            ? `<select class="inline-edit-status" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','verified',this.value)">
+                <option value="pending" ${!isVerified?'selected':''}>⏳ 待核對</option>
+                <option value="verified" ${isVerified?'selected':''}>✅ 已核對</option>
+              </select>
+              ${p.verifiedAt?`<div class="muted" style="margin-top:4px">${fmtTime(p.verifiedAt)}</div>`:''}`
+            : `<span class="muted">— 尚無需核對</span>`}
+        </td>
+      </tr>`;
+    }
+
     return `<tr style="box-shadow:inset 4px 0 0 ${isVerified?'#c84455':(hasPayment?'#d7a03b':'#cfc3c7')}">
       <td><strong>${esc(p.memberNo||'—')}</strong></td>
       <td>
@@ -2963,6 +3161,36 @@ function renderPublicPaymentRows(rows){
   mobile.innerHTML=rows.length?rows.map(p=>{
     const hasPayment=reported(p);
     const isVerified=paid(p);
+    const rosterId=p.rosterId||p.id;
+    const paymentId=p.paymentId||'';
+
+    if(isAdmin){
+      return `<div class="person-card admin-inline-card" style="border-left:4px solid ${isVerified?'#c84455':(hasPayment?'#d7a03b':'#cfc3c7')}">
+        <div class="person-top">
+          <div style="width:100%">
+            <div class="field"><label>編號</label><input class="inline-edit" value="${esc(p.memberNo||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','memberNo',this.value)"></div>
+            <div class="field" style="margin-top:7px"><label>LINE名稱</label><input class="inline-edit" value="${esc(p.lineName||p.name||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','lineName',this.value)"></div>
+          </div>
+        </div>
+        <div class="person-grid">
+          <div class="person-item"><div class="k">帳號後五碼</div><input class="inline-edit" inputmode="numeric" maxlength="5" value="${esc(p.last5||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','last5',this.value)"></div>
+          <div class="person-item"><div class="k">匯款金額</div><input class="inline-edit money-input" type="number" min="0" value="${p.amount||''}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','amount',this.value)"></div>
+          <div class="person-item"><div class="k">匯款時間</div><input class="inline-edit" type="datetime-local" value="${p.paymentAt?toDateTimeLocal(p.paymentAt):''}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','paymentAt',this.value)"></div>
+          <div class="person-item"><div class="k">備註</div><input class="inline-edit" value="${esc(p.note||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','note',this.value)"></div>
+        </div>
+        <div class="person-grid">
+          <div class="person-item"><div class="k">匯款狀態</div><div class="v"><span class="pill ${hasPayment?'paid':'unpaid'}">${hasPayment?'💰 已匯款':'— 未匯款'}</span></div></div>
+          <div class="person-item"><div class="k">核對結果</div><div class="v">${hasPayment
+            ? `<select class="inline-edit-status" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','verified',this.value)">
+                <option value="pending" ${!isVerified?'selected':''}>⏳ 待核對</option>
+                <option value="verified" ${isVerified?'selected':''}>✅ 已核對</option>
+              </select>`
+            : '— 尚無需核對'}</div></div>
+        </div>
+        <button class="btn danger admin-row-delete" onclick="deleteRosterMember('${rosterId}','${paymentId}')">刪除此人與匯款紀錄</button>
+      </div>`;
+    }
+
     return `<div class="person-card" style="border-left:4px solid ${isVerified?'#c84455':(hasPayment?'#d7a03b':'#cfc3c7')}">
       <div class="person-top">
         <div>
@@ -3052,7 +3280,7 @@ function render(){
   const resultHint=document.querySelector('.payment-list-card .table-use-hint');
   if(resultTitle)resultTitle.textContent=isAdmin?'所有名單與收款核對管理':'所有名單';
   if(resultHint)resultHint.textContent=isAdmin
-    ? '所有匯入名冊都會顯示；下方另保留未核對／已核對管理區'
+    ? '所有匯入名冊都會顯示；可直接在總覽欄位修改內容或刪除，下方另保留核對管理區'
     : '所有匯入名冊都會顯示，可直接查看是否匯款與核對結果';
 
   $('#projectName').value=project;$('#totalAmount').value=state.settings.totalAmount||'';$('#shareCount').value=state.settings.shareCount||'';
@@ -3063,6 +3291,7 @@ function render(){
   if($('#newMemberNo')&&!$('#newMemberNo').value)$('#newMemberNo').value=nextMemberNo();
   $('#app').classList.toggle('is-admin',isAdmin);$('#adminPanel').classList.toggle('show',isAdmin);
   $('#adminBtn').style.display=isAdmin?'none':'inline-flex';$('#logoutBtn').style.display=isAdmin?'inline-flex':'none';
+  if($('#adminInlineHint'))$('#adminInlineHint').style.display=isAdmin?'block':'none';
   if($('#copyUnpaidBtn'))$('#copyUnpaidBtn').style.display=isAdmin?'inline-flex':'none';
   $('#adminPanelBody').style.display=adminPanelOpen?'block':'none';$('#adminToggleBtn').textContent=adminPanelOpen?'收合':'展開';
 
