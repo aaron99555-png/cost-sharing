@@ -1506,14 +1506,46 @@ body.resizing-column *{
 
 
 <style>
-.verification-section{
-  display:block !important;
-}
 .verification-section .empty{
   min-height:58px;
   display:flex;
   align-items:center;
   justify-content:center;
+}
+</style>
+
+
+<style>
+.public-result-section{
+  margin-top:16px;
+  border:1px solid #eadde1;
+  border-radius:16px;
+  overflow:hidden;
+  background:#fff;
+}
+.public-result-section .verification-section-head{
+  background:linear-gradient(145deg,#fff8fa,#fff);
+}
+.public-verify-result{
+  font-weight:950;
+  white-space:nowrap;
+}
+.public-verify-result.ok{color:#8d3041}
+.public-verify-result.pending{color:#956214}
+.public-note-action{
+  min-width:104px;
+}
+</style>
+
+
+<style>
+#paymentTablePublic{
+  min-width:1080px;
+}
+@media(max-width:720px){
+  #publicUnifiedSection .verification-section-head{
+    flex-direction:column;
+  }
 }
 </style>
 
@@ -1797,6 +1829,35 @@ body.resizing-column *{
       <button class="btn" id="copyUnpaidBtn">複製未核對名單</button>
       <button class="btn" id="clearFilter">清除篩選</button>
     </div>
+  </div>
+
+
+  <div class="public-result-section" id="publicUnifiedSection">
+    <div class="verification-section-head">
+      <div>
+        <h3>📋 匯款回報清單</h3>
+        <div class="muted">一般使用者可直接查看每筆匯款是否已由管理員核對完成。</div>
+      </div>
+      <span class="pill" id="publicResultCount">0 筆</span>
+    </div>
+
+    <div class="desktop-table table-wrap payment-table-wrap" id="paymentTablePublicWrap">
+      <table class="payment-data-table" id="paymentTablePublic">
+        <thead><tr>
+          <th class="sortable-th" data-sort-key="memberNo">編號<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="lineName">LINE名稱<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="last5">帳號後五碼<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="amount">匯款金額<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="paymentAt">匯款日期／時間<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="note">備註<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="updatedAt">最後更新<span class="sort-arrow">↕</span></th>
+          <th>操作</th>
+          <th class="sortable-th" data-sort-key="status">核對結果<span class="sort-arrow">↕</span></th>
+        </tr></thead>
+        <tbody id="publicTbody"></tbody>
+      </table>
+    </div>
+    <div class="mobile-list" id="publicMobileList"></div>
   </div>
 
   <div class="verification-section pending-section">
@@ -2546,6 +2607,7 @@ let columnWidths=loadColumnWidths();
 
 function paymentTables(){
   return [
+    {table:$('#paymentTablePublic'),wrap:$('#paymentTablePublicWrap')},
     {table:$('#paymentTablePending'),wrap:$('#paymentTablePendingWrap')},
     {table:$('#paymentTableVerified'),wrap:$('#paymentTableVerifiedWrap')}
   ].filter(x=>x.table&&x.wrap);
@@ -2722,6 +2784,50 @@ function renderPaymentRows(rows,verifiedSection=false){
   </div>`).join(''):`<div class="empty">${verifiedSection?'目前沒有已核對的匯款紀錄':'目前沒有等待核對的匯款紀錄'}</div>`;
 }
 
+
+function renderPublicPaymentRows(rows){
+  const tbody=$('#publicTbody');
+  const mobile=$('#publicMobileList');
+  if(!tbody||!mobile)return;
+
+  tbody.innerHTML=rows.length?rows.map(p=>`<tr style="box-shadow:inset 4px 0 0 ${paid(p)?'#c84455':'#d7a03b'}">
+    <td><strong>${esc(p.memberNo||'—')}</strong></td>
+    <td>
+      <div class="name">${esc(p.lineName||p.name||'')}</div>
+      ${state.settings.showBankInList!==false && paymentGroupForNo(p.memberNo)?`<div class="list-bank-info">應匯款：${esc(paymentGroupForNo(p.memberNo).bank)}｜收款人：${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}
+    </td>
+    <td>${esc(p.last5||'—')}</td>
+    <td class="money">${p.amount?money(p.amount):'—'}</td>
+    <td>${compactDate(p.paymentAt)}</td>
+    <td>${esc(p.note||'—')}</td>
+    <td>${compactDate(p.updatedAt)}</td>
+    <td><button class="btn small public-note-action" onclick="openPublicNote('${p.id}')">✏️ 修改備註</button></td>
+    <td>
+      <div class="public-verify-result ${paid(p)?'ok':'pending'}">${paid(p)?'✅ 已核對':'⏳ 待核對'}</div>
+      ${p.verifiedAt?`<div class="muted" style="margin-top:4px">${fmtTime(p.verifiedAt)}</div>`:''}
+    </td>
+  </tr>`).join(''):`<tr><td colspan="9" class="empty">目前尚無匯款回報紀錄</td></tr>`;
+
+  mobile.innerHTML=rows.length?rows.map(p=>`<div class="person-card" style="border-left:4px solid ${paid(p)?'#c84455':'#d7a03b'}">
+    <div class="person-top">
+      <div>
+        <div class="person-name">${esc(p.lineName||p.name||'')}</div>
+        <div class="muted">編號 ${esc(p.memberNo||'—')}</div>
+        ${state.settings.showBankInList!==false && paymentGroupForNo(p.memberNo)?`<div class="list-bank-info">🏦 應匯款：${esc(paymentGroupForNo(p.memberNo).bank)}｜收款人：${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}
+      </div>
+      <span class="pill ${statusClass(p)}">${paid(p)?'✅ 已核對':'⏳ 待核對'}</span>
+    </div>
+    <div class="person-grid">
+      <div class="person-item"><div class="k">帳號後五碼</div><div class="v">${esc(p.last5||'—')}</div></div>
+      <div class="person-item"><div class="k">匯款金額</div><div class="v">${p.amount?money(p.amount):'—'}</div></div>
+      <div class="person-item"><div class="k">匯款時間</div><div class="v">${fmtTime(p.paymentAt)}</div></div>
+      <div class="person-item"><div class="k">核對結果</div><div class="v public-verify-result ${paid(p)?'ok':'pending'}">${paid(p)?'✅ 已核對':'⏳ 待核對'}</div></div>
+    </div>
+    ${p.note?`<div class="note" style="margin-bottom:9px">備註：${esc(p.note)}</div>`:''}
+    <button class="btn note-edit-btn" style="width:100%" onclick="openPublicNote('${p.id}')">✏️ 修改備註</button>
+  </div>`).join(''):`<div class="empty">目前尚無匯款回報紀錄</div>`;
+}
+
 function render(){
   const shareCount=Number(state.settings.shareCount)||0;
   const total=shareCount;
@@ -2748,6 +2854,13 @@ function render(){
   $('#moneyGap').textContent=target?(received>=target?`已達目標 ${money(received-target)}`:`尚差 ${money(target-received)}`):'尚未設定總金額';
   $('#targetChip').textContent=money(target);$('#perPersonChip').textContent=money(Math.round(per||0));$('#shareCountChip').textContent=state.settings.shareCount||0;
 
+  const resultTitle=document.querySelector('.payment-list-card .table-title-row h2');
+  const resultHint=document.querySelector('.payment-list-card .table-use-hint');
+  if(resultTitle)resultTitle.textContent=isAdmin?'匯款回報核對狀態':'匯款回報清單';
+  if(resultHint)resultHint.textContent=isAdmin
+    ? '管理員可依未核對／已核對分區管理收款狀態'
+    : '核對結果會直接顯示在「操作」旁邊，一般使用者不分已核對／未核對區';
+
   $('#projectName').value=project;$('#totalAmount').value=state.settings.totalAmount||'';$('#shareCount').value=state.settings.shareCount||'';
   if($('#showBankInList')){
     $('#showBankInList').checked=state.settings.showBankInList!==false;
@@ -2756,6 +2869,7 @@ function render(){
   if($('#newMemberNo')&&!$('#newMemberNo').value)$('#newMemberNo').value=nextMemberNo();
   $('#app').classList.toggle('is-admin',isAdmin);$('#adminPanel').classList.toggle('show',isAdmin);
   $('#adminBtn').style.display=isAdmin?'none':'inline-flex';$('#logoutBtn').style.display=isAdmin?'inline-flex':'none';
+  if($('#copyUnpaidBtn'))$('#copyUnpaidBtn').style.display=isAdmin?'inline-flex':'none';
   $('#adminPanelBody').style.display=adminPanelOpen?'block':'none';$('#adminToggleBtn').textContent=adminPanelOpen?'收合':'展開';
 
   renderPaymentGroups();renderGroupCollectionStats();updateLineNameOptions();renderPublicLookupOptions();showPublicBankResult();updateBankLookup();
@@ -2768,12 +2882,27 @@ function render(){
   $('#resultCount').textContent=`${rows.length} 筆回報`;
   $('#pendingCount').textContent=`${pendingRows.length} 筆待核對`;
   $('#verifiedCount').textContent=`${verifiedRows.length} 筆已核對`;
+  $('#publicResultCount').textContent=`${rows.length} 筆`;
 
-  renderPaymentRows(pendingRows,false);
-  renderPaymentRows(verifiedRows,true);
+  const publicSection=$('#publicUnifiedSection');
+  const pendingSection=document.querySelector('.pending-section');
+  const verifiedSection=document.querySelector('.verified-section');
 
-  if($('#pendingCheckAll'))$('#pendingCheckAll').checked=pendingRows.length>0 && pendingRows.every(p=>p.selected);
-  if($('#verifiedCheckAll'))$('#verifiedCheckAll').checked=verifiedRows.length>0 && verifiedRows.every(p=>p.selected);
+  if(isAdmin){
+    publicSection.style.display='none';
+    pendingSection.style.display='block';
+    verifiedSection.style.display='block';
+    renderPaymentRows(pendingRows,false);
+    renderPaymentRows(verifiedRows,true);
+
+    if($('#pendingCheckAll'))$('#pendingCheckAll').checked=pendingRows.length>0 && pendingRows.every(p=>p.selected);
+    if($('#verifiedCheckAll'))$('#verifiedCheckAll').checked=verifiedRows.length>0 && verifiedRows.every(p=>p.selected);
+  }else{
+    publicSection.style.display='block';
+    pendingSection.style.display='none';
+    verifiedSection.style.display='none';
+    renderPublicPaymentRows(rows);
+  }
 
   initResizableTable();
   requestAnimationFrame(syncResizableTableWidth);
