@@ -1687,6 +1687,16 @@ body.resizing-column *{
 }
 </style>
 
+
+<style>
+#selfPaymentAt.input-error,
+#paymentDateTime.input-error{
+  border-color:#c44558 !important;
+  background:#fff4f6 !important;
+  box-shadow:0 0 0 3px rgba(196,69,88,.10) !important;
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -1953,8 +1963,9 @@ body.resizing-column *{
       <input id="selfAmount" type="number" min="1" placeholder="金額">
     </div>
     <div class="field">
-      <label>匯款日期／時間</label>
-      <input id="selfPaymentAt" type="datetime-local">
+      <label>匯款日期／時間（24小時制）</label>
+      <input id="selfPaymentAt" type="text" inputmode="numeric" placeholder="2026-09-26 18:05">
+      <div class="muted" style="margin-top:4px;font-size:11px">格式：YYYY-MM-DD HH:mm，例如 2026-09-26 18:05</div>
     </div>
     <div class="field">
       <label>備註</label>
@@ -2019,7 +2030,7 @@ body.resizing-column *{
       <div>
         <h3>📋 所有名單總覽</h3>
         <div class="muted">匯入名冊的所有人都會顯示在這裡，可直接查看「未匯款／已匯款」與核對結果。</div>
-        <div class="admin-inline-hint" id="adminInlineHint" style="display:none">管理模式：直接點欄位即可修改；按 Enter 會儲存並往右跳。匯款時間請輸入 YYYY-MM-DD HH:mm，分鐘需完整 2 碼。</div>
+        <div class="admin-inline-hint" id="adminInlineHint" style="display:none">管理模式：直接點欄位即可修改；按 Enter 會儲存並往右跳。所有時間一律使用 24 小時制 YYYY-MM-DD HH:mm，分鐘需完整 2 碼。</div>
       </div>
       <span class="pill" id="publicResultCount">0 人</span>
     </div>
@@ -2117,7 +2128,9 @@ body.resizing-column *{
     <div class="last5-warning" id="last5Warning">⚠️ 帳號後五碼需完整輸入 5 碼</div>
   </div>
   <div class="field" style="margin-top:10px"><label>匯款金額</label><input id="payAmount" type="number" min="0"></div>
-  <div class="field" style="margin-top:10px"><label>匯款日期／時間</label><input id="paymentDateTime" type="datetime-local"></div>
+  <div class="field" style="margin-top:10px"><label>匯款日期／時間（24小時制）</label><input id="paymentDateTime" type="text" inputmode="numeric" placeholder="2026-09-26 18:05">
+    <div class="muted" style="margin-top:4px;font-size:11px">格式：YYYY-MM-DD HH:mm，例如 2026-09-26 18:05</div>
+  </div>
   <div class="field" style="margin-top:10px"><label>備註</label><input id="note" placeholder="選填"></div>
   <div class="verify-box">
     <label class="verify-check">
@@ -2199,7 +2212,7 @@ const money=n=>'$'+Number(n||0).toLocaleString('zh-TW');
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const reported=p=>Number(p.amount)>0 && /^\d{5}$/.test(String(p.last5||''));
 const paid=p=>reported(p) && p.verified===true;
-const fmtTime=v=>v?new Date(v).toLocaleString('zh-TW',{hour12:false}):'—';
+const fmtTime=v=>v?new Date(v).toLocaleString('zh-TW',{hour12:false,hourCycle:'h23'}):'—';
 const toDateTimeLocal=ts=>{if(!ts)return '';const d=new Date(ts),pad=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`};
 const statusLabel=p=>paid(p)?'✅ 已核對':(reported(p)?'⏳ 待核對':'待回報');
 const statusClass=p=>paid(p)?'paid':(reported(p)?'pending':'unpaid');
@@ -3484,7 +3497,7 @@ function openPay(id){
   $('#last5Warning').classList.remove('show');
   $('#last5').classList.remove('input-error');
   $('#payAmount').value=p.amount||'';
-  $('#paymentDateTime').value=toDateTimeLocal(p.paymentAt||Date.now());$('#note').value=p.note||'';
+  $('#paymentDateTime').value=formatDateTimeText(p.paymentAt||Date.now());$('#note').value=p.note||'';
   $('#verifyReceived').checked=p.verified===true;
   $('#verifyMeta').textContent=p.verified===true
     ? `已核對${p.verifiedAt?'｜'+fmtTime(p.verifiedAt):''}`
@@ -3617,22 +3630,34 @@ $('#selfLast5').addEventListener('blur',()=>validateLast5Input('selfLast5','self
 $('#last5').addEventListener('input',()=>validateLast5Input('last5','last5Warning'));
 $('#last5').addEventListener('blur',()=>validateLast5Input('last5','last5Warning',true));
 
+function validate24hTextInput(id){
+  const input=$('#'+id);
+  if(!input)return true;
+  const parsed=parseDateTimeTextStrict(input.value);
+  input.classList.toggle('input-error',!parsed.ok || !parsed.ts);
+  return parsed.ok && !!parsed.ts;
+}
+$('#selfPaymentAt').addEventListener('blur',()=>validate24hTextInput('selfPaymentAt'));
+$('#paymentDateTime').addEventListener('blur',()=>validate24hTextInput('paymentDateTime'));
+
+
 function resetSelfEntry(){
   $('#selfLineName').value='';
   $('#selfLast5Warning').classList.remove('show');
   $('#selfLast5').classList.remove('input-error');
   $('#selfLast5').value='';
   $('#selfAmount').value='';
-  $('#selfPaymentAt').value=toDateTimeLocal(Date.now());
+  $('#selfPaymentAt').value=formatDateTimeText(Date.now());
   $('#selfNote').value='';
 }
-$('#selfPaymentAt').value=toDateTimeLocal(Date.now());
+$('#selfPaymentAt').value=formatDateTimeText(Date.now());
 
 $('#selfAddBtn').onclick=()=>{
   const lineName=$('#selfLineName').value.trim();
   const last5=$('#selfLast5').value.trim();
   const amount=Number($('#selfAmount').value);
-  const paymentAt=new Date($('#selfPaymentAt').value||Date.now()).getTime();
+  const parsedPaymentAt=parseDateTimeTextStrict($('#selfPaymentAt').value);
+  const paymentAt=parsedPaymentAt.ts;
   const note=$('#selfNote').value.trim();
 
   if(!lineName)return alert('請輸入 LINE 名稱');
@@ -3642,7 +3667,10 @@ $('#selfAddBtn').onclick=()=>{
     return alert('帳號後五碼不足 5 碼，請完整輸入 5 位數字');
   }
   if(!(amount>0))return alert('請輸入正確匯款金額');
-  if(!Number.isFinite(paymentAt))return alert('請輸入正確的匯款日期／時間');
+  if(!parsedPaymentAt.ok || !paymentAt){
+    $('#selfPaymentAt').focus();
+    return alert(parsedPaymentAt.message||'請輸入正確的匯款日期／時間，格式需為 YYYY-MM-DD HH:mm（24小時制）');
+  }
 
   let rosterMember=state.roster.find(r=>String(r.lineName||r.name||'').trim()===lineName);
   if(!rosterMember){
@@ -3696,7 +3724,12 @@ $('#savePay').onclick=()=>{
     return alert('帳號後五碼不足 5 碼，請完整輸入 5 位數字');
   }
   if(!(amount>0))return alert('請輸入正確匯款金額');
-  const paymentAt=new Date($('#paymentDateTime').value||Date.now()).getTime();
+  const parsedPaymentAt=parseDateTimeTextStrict($('#paymentDateTime').value);
+  if(!parsedPaymentAt.ok || !parsedPaymentAt.ts){
+    $('#paymentDateTime').focus();
+    return alert(parsedPaymentAt.message||'請輸入正確的匯款日期／時間，格式需為 YYYY-MM-DD HH:mm（24小時制）');
+  }
+  const paymentAt=parsedPaymentAt.ts;
   const oldMemberNo=p.memberNo;
   const verified=$('#verifyReceived').checked===true;
   p.memberNo=memberNo;
