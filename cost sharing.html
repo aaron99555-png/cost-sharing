@@ -2116,7 +2116,7 @@ function renderGroupCollectionStats(){
     return;
   }
 
-  const per=expected();
+  const perPersonAmount=Math.round(expected()||0);
   const assignedIds=new Set();
 
   const cards=groups.map((g,index)=>{
@@ -2126,7 +2126,8 @@ function renderGroupCollectionStats(){
     const paidMembers=members.filter(paid);
     const unpaidMembers=members.filter(p=>!paid(p));
 
-    const expectedAmount=members.length*per;
+    // 分組應收款金額 = 該組應收人數 × 每人應繳金額
+    const expectedAmount=members.length*perPersonAmount;
     const receivedAmount=paidMembers.reduce((sum,p)=>sum+(Number(p.amount)||0),0);
     const remainingAmount=Math.max(expectedAmount-receivedAmount,0);
 
@@ -2145,6 +2146,7 @@ function renderGroupCollectionStats(){
         <div class="group-money-item">
           <div class="k">應收款金額</div>
           <div class="v">${money(expectedAmount)}</div>
+          <div class="muted" style="margin-top:4px">${members.length} 人 × ${money(perPersonAmount)}</div>
         </div>
         <div class="group-money-item">
           <div class="k">已收款金額</div>
