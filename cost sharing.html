@@ -1896,7 +1896,7 @@ body.resizing-column *{
     <div>
       <div class="step-section-label">STEP 1</div>
       <h2>🏦 查詢我的匯款帳戶</h2>
-      <div class="muted" style="margin-top:4px">請先選擇自己的 LINE 名稱，確認您應匯款的指定銀行、收款人與帳號。</div>
+      <div class="muted" style="margin-top:4px">請先選擇自己的 LINE 名稱，確認您應匯款的指定銀行、收款人與帳號。選擇後會自動帶入 STEP 2 的「LINE名稱」。</div>
     </div>
     <span class="pill paid">所有人可查詢</span>
   </div>
@@ -3721,7 +3721,21 @@ $('#copyBankAccountBtn').onclick=async()=>{
   try{await navigator.clipboard.writeText(account);toast('匯款帳號已複製')}
   catch{const ta=document.createElement('textarea');ta.value=account;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('匯款帳號已複製')}
 };
-$('#publicLineLookup').addEventListener('change',showPublicBankResult);
+$('#publicLineLookup').addEventListener('change',()=>{
+  showPublicBankResult();
+
+  const id=$('#publicLineLookup').value;
+  const member=state.roster.find(x=>x.id===id);
+
+  if(member){
+    $('#selfLineName').value=member.lineName||member.name||'';
+    updateBankLookup();
+    toast(`已自動帶入 ${member.lineName||member.name||''}`);
+  }else{
+    $('#selfLineName').value='';
+    updateBankLookup();
+  }
+});
 $('#selfLineName').addEventListener('input',updateBankLookup);
 $('#selfLineName').addEventListener('change',updateBankLookup);
 $('#selfLineName').addEventListener('blur',()=>setTimeout(updateBankLookup,80));
