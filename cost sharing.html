@@ -1549,6 +1549,70 @@ body.resizing-column *{
 }
 </style>
 
+
+<style>
+.verify-progress-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.8fr) minmax(130px,.6fr) minmax(130px,.6fr);
+  gap:12px;
+  align-items:stretch;
+}
+.verify-progress-main{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  min-width:0;
+}
+.verify-count-box{
+  border:1px solid #eadde1;
+  border-radius:14px;
+  padding:13px;
+  background:#fff;
+}
+.verify-count-box.pending{
+  background:linear-gradient(145deg,#fff9ec,#fff);
+}
+.verify-count-box.done{
+  background:linear-gradient(145deg,#fff4f7,#fff);
+}
+.verify-count-box .k{
+  font-size:12px;
+  font-weight:900;
+  color:#7d666d;
+}
+.verify-count-box .v{
+  margin-top:4px;
+  font-size:26px;
+  font-weight:950;
+  color:#7e3040;
+}
+.verify-count-box.pending .v{color:#9b6818}
+.verify-count-box .s{
+  margin-top:3px;
+  font-size:11px;
+  color:#948288;
+}
+.verify-progress-bar{
+  background:linear-gradient(90deg,#8f3042,#b54b60);
+}
+@media(max-width:720px){
+  .verify-progress-grid{
+    grid-template-columns:1fr 1fr;
+  }
+  .verify-progress-main{
+    grid-column:1/-1;
+  }
+}
+@media(max-width:420px){
+  .verify-progress-grid{
+    grid-template-columns:1fr;
+  }
+  .verify-progress-main{
+    grid-column:auto;
+  }
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -1567,7 +1631,7 @@ body.resizing-column *{
       <div class="eyebrow">PROJECT OVERVIEW</div>
       <h2 id="heroProjectName">收費匯款登記表</h2>
       <div class="hero-money">
-        <div class="money-box"><div class="k">已收金額</div><div class="v" id="heroReceived">$0</div></div>
+        <div class="money-box"><div class="k">已回報金額</div><div class="v" id="heroReceived">$0</div></div>
         <div class="money-box"><div class="k">目標金額</div><div class="v" id="heroTarget">$0</div></div>
         <div class="money-box"><div class="k">尚差金額</div><div class="v" id="heroShort">$0</div></div>
       </div>
@@ -1585,21 +1649,65 @@ body.resizing-column *{
 </section>
 
 <section class="hero">
-  <div class="stat"><div class="label">分擔人數</div><div class="value" id="totalPeople">0</div><div class="sub">管理員設定</div></div>
-  <div class="stat"><div class="label">已核對人數</div><div class="value red" id="paidPeople">0</div><div class="sub" id="paidRate">核對完成率 0%</div></div>
-  <div class="stat"><div class="label">未核對完成</div><div class="value gold" id="unpaidPeople">0</div><div class="sub">含尚未回報與待核對</div></div>
-  <div class="stat"><div class="label">已收金額</div><div class="value red" id="receivedMoney">$0</div><div class="sub" id="targetMoney">目標 $0</div></div>
-  <div class="stat"><div class="label">尚差金額</div><div class="value" id="shortMoney">$0</div><div class="sub">距離收齊還差</div></div>
+  <div class="stat"><div class="label">應繳人數</div><div class="value" id="totalPeople">0</div><div class="sub">管理員設定</div></div>
+  <div class="stat"><div class="label">已繳人數</div><div class="value red" id="paidPeople">0</div><div class="sub" id="paidRate">收款完成率 0%</div></div>
+  <div class="stat"><div class="label">未繳人數</div><div class="value gold" id="unpaidPeople">0</div><div class="sub">尚未回報匯款</div></div>
+  <div class="stat"><div class="label">已回報金額</div><div class="value red" id="receivedMoney">$0</div><div class="sub" id="targetMoney">目標 $0</div></div>
+  <div class="stat"><div class="label">尚差金額</div><div class="value" id="shortMoney">$0</div><div class="sub">依回報金額計算</div></div>
 </section>
 
-<section class="card">
-  <div class="card-title"><h2>收款進度</h2><span class="pill paid" id="progressBadge">0%</span></div>
+<section class="card payment-progress-card">
+  <div class="card-title">
+    <div>
+      <h2>💰 收款完成進度</h2>
+      <div class="muted" style="margin-top:4px">依一般使用者已回報匯款的人數計算，不受管理員核對狀態影響。</div>
+    </div>
+    <span class="pill paid" id="progressBadge">0%</span>
+  </div>
   <div class="progress-wrap"><div class="progress" id="progress"></div></div>
-  <div class="progress-meta"><span id="progressLabel">0 / 0 人已完成</span><span id="moneyGap">尚差 $0</span></div>
+  <div class="progress-meta">
+    <span id="progressLabel">已繳 0 / 應繳 0 人</span>
+    <span id="moneyGap">尚差 $0</span>
+  </div>
   <div class="summary-line">
-    <span class="summary-chip">目標金額 <strong id="targetChip">$0</strong></span>
+    <span class="summary-chip">已繳人數 <strong id="paymentPaidCount">0</strong></span>
+    <span class="summary-chip">未繳人數 <strong id="paymentUnpaidCount">0</strong></span>
+    <span class="summary-chip">應繳人數 <strong id="shareCountChip">0</strong></span>
     <span class="summary-chip">每人應繳 <strong id="perPersonChip">$0</strong></span>
-    <span class="summary-chip">分擔人數 <strong id="shareCountChip">0</strong></span>
+    <span class="summary-chip">目標金額 <strong id="targetChip">$0</strong></span>
+  </div>
+</section>
+
+<section class="card verify-progress-card">
+  <div class="card-title">
+    <div>
+      <h2>✅ 核對進度</h2>
+      <div class="muted" style="margin-top:4px">只統計已回報匯款的資料；尚未繳款的人不列入未核對。</div>
+    </div>
+    <span class="pill paid" id="verifyProgressBadge">0%</span>
+  </div>
+  <div class="verify-progress-grid">
+    <div class="verify-progress-main">
+      <div class="progress-wrap"><div class="progress verify-progress-bar" id="verifyProgress"></div></div>
+      <div class="progress-meta">
+        <span id="verifyProgressLabel">已核對 0 / 已回報 0 人</span>
+        <span id="verifyProgressRate">核對完成率 0%</span>
+      </div>
+    </div>
+    <div class="verify-count-box pending">
+      <div class="k">未核對</div>
+      <div class="v" id="verifyPendingCount">0</div>
+      <div class="s">已回報但尚未確認</div>
+    </div>
+    <div class="verify-count-box done">
+      <div class="k">已核對</div>
+      <div class="v" id="verifyDoneCount">0</div>
+      <div class="s">管理員已確認收款</div>
+    </div>
+  </div>
+  <div class="summary-line">
+    <span class="summary-chip">已核對金額 <strong id="verifiedMoney">$0</strong></span>
+    <span class="summary-chip">待核對金額 <strong id="pendingVerifyMoney">$0</strong></span>
   </div>
 </section>
 
@@ -1618,7 +1726,7 @@ body.resizing-column *{
       <button class="btn primary" id="addPersonBtn">＋ 新增人員</button>
     </div>
     <div class="note" style="margin-top:8px;padding:10px 12px;background:#fff6f7;border:1px solid #efd9de;border-radius:11px">
-      管理員可設定「總金額」與「分擔人數」。未繳人數＝分擔人數－已繳人數；系統會自動更新每人應繳、收款完成率與 Firebase。
+      管理員可設定「總金額」與「分擔人數」。收款完成進度依使用者匯款回報計算；核對進度則依管理員確認收款結果另外計算，兩者互不混用。
     </div>
     <div class="list-display-setting">
       <div>
@@ -2515,11 +2623,11 @@ function renderGroupCollectionStats(){
           <div class="muted" style="margin-top:4px">${members.length} 人 × ${money(perPersonAmount)}</div>
         </div>
         <div class="group-money-item">
-          <div class="k">已收款金額</div>
+          <div class="k">已核對金額</div>
           <div class="v">${money(receivedAmount)}</div>
         </div>
         <div class="group-money-item unpaid">
-          <div class="k">尚未繳交金額</div>
+          <div class="k">尚未核對金額</div>
           <div class="v">${money(remainingAmount)}</div>
         </div>
       </div>
@@ -2831,28 +2939,66 @@ function renderPublicPaymentRows(rows){
 function render(){
   const shareCount=Number(state.settings.shareCount)||0;
   const total=shareCount;
-  const paidN=state.people.filter(paid).length;
-  const pendingN=state.people.filter(p=>reported(p)&&!paid(p)).length;
-  const unpaidN=Math.max(shareCount-paidN,0);
-  const received=state.people.filter(paid).reduce((s,p)=>s+(Number(p.amount)||0),0);
+
+  // 收款完成進度：以「已回報匯款」為準
+  const reportedN=state.people.filter(reported).length;
+  const unpaidN=Math.max(shareCount-reportedN,0);
+  const reportedMoney=state.people.filter(reported).reduce((s,p)=>s+(Number(p.amount)||0),0);
+  const paymentPct=shareCount?reportedN/shareCount*100:0;
+
+  // 核對進度：只針對已回報資料
+  const verifiedN=state.people.filter(paid).length;
+  const pendingN=Math.max(reportedN-verifiedN,0);
+  const verifiedMoneyValue=state.people.filter(paid).reduce((s,p)=>s+(Number(p.amount)||0),0);
+  const pendingVerifyMoneyValue=state.people.filter(p=>reported(p)&&!paid(p)).reduce((s,p)=>s+(Number(p.amount)||0),0);
+  const verifyPct=reportedN?verifiedN/reportedN*100:0;
+
   const target=Number(state.settings.totalAmount)||0;
   const per=expected();
-  const pct=shareCount?paidN/shareCount*100:0;
   const project=state.settings.projectName||'收費匯款登記表';
 
   $('#projectTitle').textContent=project;$('#heroProjectName').textContent=project;document.title=project+'｜收款管理';
-  $('#totalPeople').textContent=total;$('#paidPeople').textContent=paidN;$('#unpaidPeople').textContent=unpaidN;
-  $('#receivedMoney').textContent=money(received);$('#shortMoney').textContent=money(Math.max(target-received,0));
-  $('#targetMoney').textContent='目標 '+money(target);$('#paidRate').textContent=`完成率 ${Math.round(pct)}%${pendingN?`｜待核對 ${pendingN}`:''}`;
-  $('#heroReceived').textContent=money(received);$('#heroTarget').textContent=money(target);$('#heroShort').textContent=money(Math.max(target-received,0));
-  $('#heroPaid').textContent=paidN;$('#heroUnpaid').textContent=unpaidN;$('#heroPer').textContent=money(Math.round(per||0));
-  $('#ringPct').textContent=Math.round(pct)+'%';$('#ringCaption').textContent=`${paidN} / ${total} 人已核對`;
-  const deg=Math.min(360,Math.max(0,pct*3.6));$('#ring').style.background=`conic-gradient(#fff 0deg ${deg}deg,#efd8de ${deg}deg 360deg)`;
 
-  $('#progress').style.width=Math.min(100,pct)+'%';$('#progressBadge').textContent=Math.round(pct)+'%';
-  $('#progressLabel').textContent=`${paidN} / ${total} 人已核對完成`;
-  $('#moneyGap').textContent=target?(received>=target?`已達目標 ${money(received-target)}`:`尚差 ${money(target-received)}`):'尚未設定總金額';
-  $('#targetChip').textContent=money(target);$('#perPersonChip').textContent=money(Math.round(per||0));$('#shareCountChip').textContent=state.settings.shareCount||0;
+  // 首頁統計：只顯示收款完成進度
+  $('#totalPeople').textContent=total;
+  $('#paidPeople').textContent=reportedN;
+  $('#unpaidPeople').textContent=unpaidN;
+  $('#receivedMoney').textContent=money(reportedMoney);
+  $('#shortMoney').textContent=money(Math.max(target-reportedMoney,0));
+  $('#targetMoney').textContent='目標 '+money(target);
+  $('#paidRate').textContent='收款完成率 '+Math.round(paymentPct)+'%';
+
+  $('#heroReceived').textContent=money(reportedMoney);
+  $('#heroTarget').textContent=money(target);
+  $('#heroShort').textContent=money(Math.max(target-reportedMoney,0));
+  $('#heroPaid').textContent=reportedN;
+  $('#heroUnpaid').textContent=unpaidN;
+  $('#heroPer').textContent=money(Math.round(per||0));
+  $('#ringPct').textContent=Math.round(paymentPct)+'%';
+  $('#ringCaption').textContent=`已繳 ${reportedN} / 應繳 ${total} 人`;
+  const deg=Math.min(360,Math.max(0,paymentPct*3.6));
+  $('#ring').style.background=`conic-gradient(#fff 0deg ${deg}deg,#efd8de ${deg}deg 360deg)`;
+
+  // 收款完成進度
+  $('#progress').style.width=Math.min(100,paymentPct)+'%';
+  $('#progressBadge').textContent=Math.round(paymentPct)+'%';
+  $('#progressLabel').textContent=`已繳 ${reportedN} / 應繳 ${total} 人`;
+  $('#paymentPaidCount').textContent=reportedN;
+  $('#paymentUnpaidCount').textContent=unpaidN;
+  $('#moneyGap').textContent=target?(reportedMoney>=target?`已達目標 ${money(reportedMoney-target)}`:`尚差 ${money(target-reportedMoney)}`):'尚未設定總金額';
+  $('#targetChip').textContent=money(target);
+  $('#perPersonChip').textContent=money(Math.round(per||0));
+  $('#shareCountChip').textContent=state.settings.shareCount||0;
+
+  // 核對進度
+  $('#verifyProgress').style.width=Math.min(100,verifyPct)+'%';
+  $('#verifyProgressBadge').textContent=Math.round(verifyPct)+'%';
+  $('#verifyProgressLabel').textContent=`已核對 ${verifiedN} / 已回報 ${reportedN} 人`;
+  $('#verifyProgressRate').textContent=`核對完成率 ${Math.round(verifyPct)}%`;
+  $('#verifyPendingCount').textContent=pendingN;
+  $('#verifyDoneCount').textContent=verifiedN;
+  $('#verifiedMoney').textContent=money(verifiedMoneyValue);
+  $('#pendingVerifyMoney').textContent=money(pendingVerifyMoneyValue);
 
   const resultTitle=document.querySelector('.payment-list-card .table-title-row h2');
   const resultHint=document.querySelector('.payment-list-card .table-use-hint');
@@ -3374,8 +3520,23 @@ function exportExcel(template=false){
     state.people.map((p,i)=>({'編號':p.memberNo||'','LINE名稱':p.lineName||p.name||'','核對狀態':paid(p)?'已核對':'待核對','帳號後五碼':p.last5||'','匯款金額':p.amount||0,'匯款日期／時間':p.paymentAt?fmtTime(p.paymentAt):'','核對時間':p.verifiedAt?fmtTime(p.verifiedAt):'','備註':p.note||'','最後更新':p.updatedAt?fmtTime(p.updatedAt):''}));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),template?'匯入範本':'匯款明細');
   if(!template){
-    const total=Number(state.settings.shareCount)||0,paidN=state.people.filter(paid).length,received=state.people.filter(paid).reduce((s,p)=>s+(Number(p.amount)||0),0);
-    const summary=[{'項目':'專案名稱','數值':state.settings.projectName},{'項目':'分擔人數','數值':total},{'項目':'已核對','數值':paidN},{'項目':'未核對完成','數值':Math.max(total-paidN,0)},{'項目':'已收金額','數值':received},{'項目':'目標金額','數值':state.settings.totalAmount||0}];
+    const total=Number(state.settings.shareCount)||0;
+    const reportedN=state.people.filter(reported).length;
+    const verifiedN=state.people.filter(paid).length;
+    const pendingN=Math.max(reportedN-verifiedN,0);
+    const reportedMoney=state.people.filter(reported).reduce((s,p)=>s+(Number(p.amount)||0),0);
+    const verifiedMoney=state.people.filter(paid).reduce((s,p)=>s+(Number(p.amount)||0),0);
+    const summary=[
+      {'項目':'專案名稱','數值':state.settings.projectName},
+      {'項目':'應繳人數','數值':total},
+      {'項目':'已繳人數','數值':reportedN},
+      {'項目':'未繳人數','數值':Math.max(total-reportedN,0)},
+      {'項目':'未核對人數','數值':pendingN},
+      {'項目':'已核對人數','數值':verifiedN},
+      {'項目':'已回報金額','數值':reportedMoney},
+      {'項目':'已核對金額','數值':verifiedMoney},
+      {'項目':'目標金額','數值':state.settings.totalAmount||0}
+    ];
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),'統計摘要');
     const groupRows=(state.settings.paymentGroups||[]).map(g=>({
       '編號起':g.start,'編號迄':g.end,'銀行代碼':g.bankCode||'','指定銀行':g.bank,'收款人':g.recipient,'匯款帳號':g.account
