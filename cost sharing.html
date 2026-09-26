@@ -1370,6 +1370,126 @@ body.resizing-column *{
 }
 </style>
 
+
+<style>
+/* ===== 收款核對流程 ===== */
+.pill.pending{
+  background:#fff3dc;
+  color:#956214;
+  border-color:#ead09a;
+}
+.verification-section{
+  margin-top:16px;
+  border:1px solid #eadde1;
+  border-radius:16px;
+  overflow:hidden;
+  background:#fff;
+}
+.verification-section-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  padding:13px 14px;
+  border-bottom:1px solid #eee2e5;
+}
+.verification-section-head h3{
+  margin:0;
+  font-size:16px;
+  color:#5f343d;
+}
+.pending-section .verification-section-head{
+  background:linear-gradient(145deg,#fff8ea,#fff);
+}
+.verified-section .verification-section-head{
+  background:linear-gradient(145deg,#fff3f6,#fff);
+}
+.verify-box{
+  margin-top:12px;
+  padding:12px;
+  border:1px solid #ead9de;
+  border-radius:13px;
+  background:#fffafb;
+}
+.verify-check{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  cursor:pointer;
+}
+.verify-check input{
+  width:20px;
+  height:20px;
+  min-height:20px;
+  flex:0 0 20px;
+  margin-top:1px;
+  accent-color:#96364a;
+}
+.verify-check strong{
+  display:block;
+  color:#6e3540;
+  font-size:13px;
+}
+.verify-check small{
+  display:block;
+  margin-top:3px;
+  color:#89777c;
+  line-height:1.45;
+}
+.verify-meta{
+  margin-top:7px;
+  padding-left:30px;
+  color:#8c7a80;
+  font-size:11px;
+}
+.verify-status-line{
+  margin-top:7px;
+  font-size:12px;
+  font-weight:950;
+}
+.verify-status-line.pending{color:#956214}
+.verify-status-line.ok{color:#8d3041}
+.verify-action-row{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.payment-data-table{
+  table-layout:fixed;
+  width:100%;
+  min-width:1180px;
+}
+.payment-table-wrap{
+  width:100%;
+  max-width:100%;
+  overflow:auto;
+  scrollbar-gutter:stable;
+}
+.payment-data-table th,
+.payment-data-table td{
+  box-sizing:border-box;
+  overflow-wrap:anywhere;
+}
+.payment-data-table th{
+  position:sticky;
+  top:0;
+  z-index:4;
+  padding-right:14px;
+}
+@media(max-width:720px){
+  .verification-section-head{
+    flex-direction:column;
+  }
+  .verify-action-row{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  .verify-action-row .btn{
+    width:100%;
+  }
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -1407,8 +1527,8 @@ body.resizing-column *{
 
 <section class="hero">
   <div class="stat"><div class="label">分擔人數</div><div class="value" id="totalPeople">0</div><div class="sub">管理員設定</div></div>
-  <div class="stat"><div class="label">已繳人數</div><div class="value red" id="paidPeople">0</div><div class="sub" id="paidRate">完成率 0%</div></div>
-  <div class="stat"><div class="label">未繳人數</div><div class="value gold" id="unpaidPeople">0</div><div class="sub">待完成</div></div>
+  <div class="stat"><div class="label">已核對人數</div><div class="value red" id="paidPeople">0</div><div class="sub" id="paidRate">核對完成率 0%</div></div>
+  <div class="stat"><div class="label">未核對完成</div><div class="value gold" id="unpaidPeople">0</div><div class="sub">含尚未回報與待核對</div></div>
   <div class="stat"><div class="label">已收金額</div><div class="value red" id="receivedMoney">$0</div><div class="sub" id="targetMoney">目標 $0</div></div>
   <div class="stat"><div class="label">尚差金額</div><div class="value" id="shortMoney">$0</div><div class="sub">距離收齊還差</div></div>
 </section>
@@ -1486,7 +1606,7 @@ body.resizing-column *{
       <div class="card-title" style="margin-bottom:10px">
         <div>
           <h2 style="font-size:16px">⚡ 快速貼上人員名單</h2>
-          <div class="muted" style="margin-top:4px">直接貼上「1.Angela」「2.Candy (妤庭)」這類格式；沒有句點如「104Hsin」也能辨識。</div>
+          <div class="muted" style="margin-top:4px">建立「查詢／分組用名冊」，不會新增到下方匯款結果表格。支援「1.Angela」與「104Hsin」格式。</div>
         </div>
       </div>
       <textarea id="quickListInput" placeholder="例如：
@@ -1513,7 +1633,7 @@ body.resizing-column *{
       <button class="btn" id="restoreBtn">還原 JSON</button>
       <button class="btn danger" id="deleteSelectedBtn">刪除勾選</button>
     </div>
-    <div class="note" style="margin-top:11px">管理員可預建人員名單，並可修改人員編號；一般使用者可在下方自行新增或完成自己的紀錄。送出後只有管理員能修改／刪除；Firebase 同步鎖定仍保留。</div>
+    <div class="note" style="margin-top:11px">管理員建立的名冊只供查詢帳戶與分組統計，不會出現在下方匯款結果表格；下方表格只顯示一般使用者實際回報的匯款紀錄。送出後只有管理員能修改／刪除。</div>
     <input type="file" id="namesFile" accept=".xlsx,.xls,.csv" hidden>
     <input type="file" id="detailFile" accept=".xlsx,.xls,.csv" hidden>
     <input type="file" id="restoreFile" accept=".json" hidden>
@@ -1627,50 +1747,88 @@ body.resizing-column *{
 <section class="card payment-list-card">
   <div class="card-title table-title-row">
     <div>
-      <h2>匯款名單</h2>
-      <div class="table-use-hint">點擊表頭可排序｜拖曳表頭右側分隔線可調整欄寬</div>
+      <h2>匯款回報核對狀態</h2>
+      <div class="table-use-hint">一般使用者可查看核對狀態｜管理員確認收款後，資料會由「未核對區」移至「已核對區」</div>
     </div>
     <div class="table-title-actions">
-      <span class="muted" id="resultCount">0 筆</span>
+      <span class="muted" id="resultCount">0 筆回報</span>
       <button class="btn small" id="resetColumnWidths" type="button">重設欄寬</button>
     </div>
   </div>
+
   <div class="sticky-zone">
-    <div class="tabs">
-      <button class="tab active" data-filter="all">全部</button>
-      <button class="tab" data-filter="paid">已繳</button>
-      <button class="tab" data-filter="unpaid">未繳</button>
-    </div>
     <div class="toolbar">
       <div class="field"><label>搜尋編號／LINE名稱／後五碼</label><input id="search" placeholder="輸入編號、LINE名稱或後五碼"></div>
       <div class="field"><label>排序</label><select id="sortBy">
-        <option value="unpaidFirst">未繳優先</option><option value="default">原始順序</option>
-        <option value="memberNo">編號</option><option value="name">LINE名稱</option><option value="amountDesc">金額高 → 低</option>
-        <option value="amountAsc">金額低 → 高</option><option value="updated">最近更新</option>
+        <option value="updated">最近更新</option>
+        <option value="memberNo">編號</option>
+        <option value="name">LINE名稱</option>
+        <option value="amountDesc">金額高 → 低</option>
+        <option value="amountAsc">金額低 → 高</option>
+        <option value="default">原始順序</option>
       </select></div>
-      <button class="btn" id="copyUnpaidBtn">複製未繳名單</button>
+      <button class="btn" id="copyUnpaidBtn">複製未核對名單</button>
       <button class="btn" id="clearFilter">清除篩選</button>
     </div>
   </div>
 
-  <div class="desktop-table table-wrap" id="paymentTableWrap">
-    <table id="paymentTable">
-      <thead><tr>
-        <th class="admin-cell"><input type="checkbox" id="checkAll"></th>
-        <th class="sortable-th" data-sort-key="memberNo">編號<span class="sort-arrow" id="sort-memberNo">↕</span></th>
-        <th class="sortable-th" data-sort-key="lineName">LINE名稱<span class="sort-arrow" id="sort-lineName">↕</span></th>
-        <th class="sortable-th" data-sort-key="status">狀態<span class="sort-arrow" id="sort-status">↕</span></th>
-        <th class="sortable-th" data-sort-key="last5">帳號後五碼<span class="sort-arrow" id="sort-last5">↕</span></th>
-        <th class="sortable-th" data-sort-key="amount">匯款金額<span class="sort-arrow" id="sort-amount">↕</span></th>
-        <th class="sortable-th" data-sort-key="paymentAt">匯款日期／時間<span class="sort-arrow" id="sort-paymentAt">↕</span></th>
-        <th class="sortable-th" data-sort-key="note">備註<span class="sort-arrow" id="sort-note">↕</span></th>
-        <th class="sortable-th" data-sort-key="updatedAt">最後更新<span class="sort-arrow" id="sort-updatedAt">↕</span></th>
-        <th>操作</th><th class="admin-cell">管理</th>
-      </tr></thead>
-      <tbody id="tbody"></tbody>
-    </table>
+  <div class="verification-section pending-section">
+    <div class="verification-section-head">
+      <div>
+        <h3>⏳ 未核對區</h3>
+        <div class="muted">已回報匯款資料，但尚未經管理員確認收款。</div>
+      </div>
+      <span class="pill pending" id="pendingCount">0 筆待核對</span>
+    </div>
+
+    <div class="desktop-table table-wrap payment-table-wrap" id="paymentTablePendingWrap">
+      <table class="payment-data-table" id="paymentTablePending">
+        <thead><tr>
+          <th class="admin-cell"><input type="checkbox" id="pendingCheckAll"></th>
+          <th class="sortable-th" data-sort-key="memberNo">編號<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="lineName">LINE名稱<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="status">核對狀態<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="last5">帳號後五碼<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="amount">匯款金額<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="paymentAt">匯款日期／時間<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="note">備註<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="updatedAt">最後更新<span class="sort-arrow">↕</span></th>
+          <th>操作</th><th class="admin-cell">管理</th>
+        </tr></thead>
+        <tbody id="pendingTbody"></tbody>
+      </table>
+    </div>
+    <div class="mobile-list" id="pendingMobileList"></div>
   </div>
-  <div class="mobile-list" id="mobileList"></div>
+
+  <div class="verification-section verified-section">
+    <div class="verification-section-head">
+      <div>
+        <h3>✅ 已核對區</h3>
+        <div class="muted">管理員已確認款項入帳的匯款紀錄。</div>
+      </div>
+      <span class="pill paid" id="verifiedCount">0 筆已核對</span>
+    </div>
+
+    <div class="desktop-table table-wrap payment-table-wrap" id="paymentTableVerifiedWrap">
+      <table class="payment-data-table" id="paymentTableVerified">
+        <thead><tr>
+          <th class="admin-cell"><input type="checkbox" id="verifiedCheckAll"></th>
+          <th class="sortable-th" data-sort-key="memberNo">編號<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="lineName">LINE名稱<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="status">核對狀態<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="last5">帳號後五碼<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="amount">匯款金額<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="paymentAt">匯款日期／時間<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="note">備註<span class="sort-arrow">↕</span></th>
+          <th class="sortable-th" data-sort-key="updatedAt">最後更新<span class="sort-arrow">↕</span></th>
+          <th>操作</th><th class="admin-cell">管理</th>
+        </tr></thead>
+        <tbody id="verifiedTbody"></tbody>
+      </table>
+    </div>
+    <div class="mobile-list" id="verifiedMobileList"></div>
+  </div>
 </section>
 </div>
 
@@ -1689,6 +1847,16 @@ body.resizing-column *{
   <div class="field" style="margin-top:10px"><label>匯款金額</label><input id="payAmount" type="number" min="0"></div>
   <div class="field" style="margin-top:10px"><label>匯款日期／時間</label><input id="paymentDateTime" type="datetime-local"></div>
   <div class="field" style="margin-top:10px"><label>備註</label><input id="note" placeholder="選填"></div>
+  <div class="verify-box">
+    <label class="verify-check">
+      <input id="verifyReceived" type="checkbox">
+      <span>
+        <strong>收款核對完成</strong>
+        <small>管理員確認實際收到款項後再勾選。勾選後才會顯示「✅ 已核對」。</small>
+      </span>
+    </label>
+    <div class="verify-meta" id="verifyMeta">尚未核對</div>
+  </div>
   <div class="modal-row"><button class="btn" data-close="payModal">取消</button><button class="btn primary" id="savePay">儲存登記</button></div>
 </div></div>
 
@@ -1697,10 +1865,10 @@ body.resizing-column *{
   <div class="modal-card">
     <div class="card-title" style="margin-bottom:12px">
       <div>
-        <h3 style="margin:0">✅ 填單完成</h3>
+        <h3 style="margin:0">✅ 回報完成</h3>
         <div class="muted" style="margin-top:4px">請確認以下內容，並複製傳送給 Dolly。</div>
       </div>
-      <span class="pill paid">已送出</span>
+      <span class="pill pending">⏳ 待管理員核對</span>
     </div>
 
     <div class="submit-summary-box">
@@ -1712,7 +1880,7 @@ body.resizing-column *{
     </div>
 
     <div class="dolly-reminder">
-      📌 請點選下方「複製內容」，並將資料傳送給 <strong>Dolly</strong>。
+      📌 匯款資料已送出，目前為「待管理員核對」。管理員確認款項入帳後，才會移到「✅ 已核對區」。
     </div>
 
     <div class="modal-row">
@@ -1735,13 +1903,14 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const money=n=>'$'+Number(n||0).toLocaleString('zh-TW');
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const paid=p=>Number(p.amount)>0 && /^\d{5}$/.test(String(p.last5||''));
+const reported=p=>Number(p.amount)>0 && /^\d{5}$/.test(String(p.last5||''));
+const paid=p=>reported(p) && p.verified===true;
 const fmtTime=v=>v?new Date(v).toLocaleString('zh-TW',{hour12:false}):'—';
 const toDateTimeLocal=ts=>{if(!ts)return '';const d=new Date(ts),pad=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`};
-const statusLabel=p=>paid(p)?'✓ 已完成':'待匯款';
-const statusClass=p=>paid(p)?'paid':'unpaid';
+const statusLabel=p=>paid(p)?'✅ 已核對':(reported(p)?'⏳ 待核對':'待回報');
+const statusClass=p=>paid(p)?'paid':(reported(p)?'pending':'unpaid');
 
-function nextMemberNo(list=state?.people||[]){
+function nextMemberNo(list=[...(state?.roster||[]),...(state?.people||[])]){
   const used=new Set((list||[]).map(p=>String(p.memberNo||'').trim()).filter(Boolean));
   let n=1;
   while(used.has(String(n).padStart(3,'0')) || used.has(String(n))) n++;
@@ -1762,17 +1931,89 @@ function normalizePeople(list=[]){
   });
 }
 
+function normalizeRoster(list=[]){
+  const usedNo=new Set();
+  const usedName=new Set();
+  const out=[];
+  for(const raw of (list||[])){
+    const lineName=String(raw.lineName||raw.name||'').trim();
+    if(!lineName)continue;
+    let memberNo=String(raw.memberNo||raw.no||'').trim();
+    if(!memberNo){
+      let n=1;
+      const used=new Set(out.map(x=>String(x.memberNo||'')));
+      while(used.has(String(n).padStart(3,'0'))||used.has(String(n)))n++;
+      memberNo=String(n).padStart(3,'0');
+    }
+    const nameKey=lineName.toLowerCase();
+    if(usedNo.has(memberNo)||usedName.has(nameKey))continue;
+    usedNo.add(memberNo);
+    usedName.add(nameKey);
+    out.push({id:raw.id||uid(),memberNo,lineName,name:lineName});
+  }
+  return out;
+}
+
+function hasPaymentData(p){
+  return !!(
+    String(p.last5||'').trim() ||
+    Number(p.amount)>0 ||
+    p.paymentAt ||
+    String(p.note||'').trim()
+  );
+}
+
+function ensureRosterAndPayments(data){
+  data ||= {};
+  data.people ||= [];
+  data.roster ||= [];
+
+  // 舊版的預建名單會自動搬到 roster。
+  const seed=[
+    ...(data.roster||[]),
+    ...(data.people||[]).map(p=>({
+      id:p.rosterId||uid(),
+      memberNo:p.memberNo||p.no||'',
+      lineName:p.lineName||p.name||'',
+      name:p.lineName||p.name||''
+    }))
+  ];
+  data.roster=normalizeRoster(seed);
+
+  // 下方匯款結果只保留真正有回報內容的資料。
+  data.people=normalizePeople((data.people||[]).filter(hasPaymentData));
+
+  // 匯款紀錄若不在名冊內，自動補入名冊。
+  for(const p of data.people){
+    const exists=data.roster.some(r=>
+      String(r.memberNo||'')===String(p.memberNo||'') ||
+      String(r.lineName||r.name||'').trim()===String(p.lineName||p.name||'').trim()
+    );
+    if(!exists){
+      data.roster.push({
+        id:uid(),
+        memberNo:p.memberNo||nextMemberNo(data.roster),
+        lineName:p.lineName||p.name||'',
+        name:p.lineName||p.name||''
+      });
+    }
+  }
+  data.roster=normalizeRoster(data.roster);
+  return data;
+}
+
 let state=null;
 for(const key of [STORAGE_KEY,...LEGACY_KEYS]){
   try{const v=JSON.parse(localStorage.getItem(key)||'null');if(v){state=v;break}}catch{}
 }
-if(!state) state={settings:{projectName:'收費匯款登記表',totalAmount:0,shareCount:0,paymentGroups:[]},people:[],modifiedAt:0};
+if(!state) state={settings:{projectName:'收費匯款登記表',totalAmount:0,shareCount:0,paymentGroups:[]},roster:[],people:[],modifiedAt:0};
 state.settings ||= {projectName:'收費匯款登記表',totalAmount:0,shareCount:0,paymentGroups:[]};
 state.settings.paymentGroups ||= [];
 state.settings.showBankInList = typeof state.settings.showBankInList==='boolean' ? state.settings.showBankInList : true;
 state.people ||= [];
+state.roster ||= [];
 state.modifiedAt ||= 0;
-state.people=normalizePeople(state.people);
+state=ensureRosterAndPayments(state);
 
 let isAdmin=sessionStorage.getItem('payment_admin')==='1';
 let activeFilter='all';
@@ -1790,6 +2031,7 @@ let latestLocalRevision=Number(state.modifiedAt)||0;
 function cleanState(data){
   const copy=JSON.parse(JSON.stringify(data));
   copy.people=(copy.people||[]).map(({selected,...p})=>p);
+  copy.roster=(copy.roster||[]).map(({selected,...p})=>p);
   return copy;
 }
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900)}
@@ -1852,13 +2094,14 @@ async function pullCloud({force=false}={}){
     const remoteRevision=Number(remote.modifiedAt)||0;
     const localRevision=Number(state.modifiedAt)||0;
 
-    if(force || remoteRevision>localRevision || (localRevision===0 && state.people.length===0)){
+    if(force || remoteRevision>localRevision || (localRevision===0 && state.people.length===0 && state.roster.length===0)){
       state=remote;
       state.settings ||= {projectName:'收費匯款登記表',totalAmount:0,shareCount:0,paymentGroups:[]};
       state.settings.paymentGroups ||= [];
       state.settings.showBankInList = typeof state.settings.showBankInList==='boolean' ? state.settings.showBankInList : true;
       state.people ||= [];
-      state.people=normalizePeople(state.people);
+      state.roster ||= [];
+      state=ensureRosterAndPayments(state);
       state.modifiedAt=remoteRevision;
       latestLocalRevision=Math.max(latestLocalRevision,remoteRevision);
       localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
@@ -1878,15 +2121,15 @@ async function initialCloudLoad(){
     const remote=await res.json();
     if(remote && typeof remote==='object'){
       const rr=Number(remote.modifiedAt)||0, lr=Number(state.modifiedAt)||0;
-      if(rr>=lr || state.people.length===0){
-        state=remote;state.settings ||= {};state.settings.paymentGroups ||= [];state.settings.showBankInList = typeof state.settings.showBankInList==='boolean' ? state.settings.showBankInList : true;state.people ||= [];
-        state.people=normalizePeople(state.people);
+      if(rr>=lr || (state.people.length===0 && state.roster.length===0)){
+        state=remote;state.settings ||= {};state.settings.paymentGroups ||= [];state.settings.showBankInList = typeof state.settings.showBankInList==='boolean' ? state.settings.showBankInList : true;state.people ||= [];state.roster ||= [];
+        state=ensureRosterAndPayments(state);
         state.modifiedAt=rr;latestLocalRevision=Math.max(latestLocalRevision,rr);
         localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
       }else{
         queuedSnapshot=cleanState(state);flushCloudWrite();
       }
-    }else if(state.people.length||state.settings.totalAmount){
+    }else if(state.people.length||state.roster.length||state.settings.totalAmount){
       queuedSnapshot=cleanState(state);flushCloudWrite();
     }
     render();setCloud('☁️ 雲端已同步');
@@ -1967,7 +2210,7 @@ window.deletePaymentGroup=deletePaymentGroup;
 
 function updateLineNameOptions(){
   const dl=$('#lineNameOptions');if(!dl)return;
-  dl.innerHTML=state.people
+  dl.innerHTML=state.roster
     .slice()
     .sort((a,b)=>String(a.memberNo||'').localeCompare(String(b.memberNo||''),'zh-Hant',{numeric:true}))
     .map(p=>`<option value="${esc(p.lineName||p.name||'')}">${esc(p.memberNo||'')}</option>`)
@@ -1980,7 +2223,7 @@ function updateBankLookup(){
     box.classList.remove('show','bank-lookup-missing');
     return;
   }
-  const p=state.people.find(x=>String(x.lineName||x.name||'').trim()===q);
+  const p=state.roster.find(x=>String(x.lineName||x.name||'').trim()===q);
   let memberNo=p?.memberNo||'';
   let tentative=false;
   if(!memberNo){
@@ -2019,7 +2262,7 @@ function renderPublicLookupOptions(){
   const sel=$('#publicLineLookup');
   if(!sel)return;
   const current=sel.value;
-  const people=state.people.slice().sort((a,b)=>
+  const people=state.roster.slice().sort((a,b)=>
     String(a.memberNo||'').localeCompare(String(b.memberNo||''),'zh-Hant',{numeric:true})
   );
   sel.innerHTML='<option value="">請選擇 LINE 名稱</option>'+
@@ -2035,7 +2278,7 @@ function showPublicBankResult(){
     result.innerHTML='<div class="public-bank-empty">請先選擇自己的 LINE 名稱</div>';
     return;
   }
-  const p=state.people.find(x=>x.id===id);
+  const p=state.roster.find(x=>x.id===id);
   if(!p){
     result.innerHTML='<div class="public-account-error">找不到此人員資料，請重新選擇。</div>';
     return;
@@ -2089,12 +2332,18 @@ window.copyPublicBankInfo=copyPublicBankInfo;
 function peopleForPaymentGroup(group){
   const s=memberNoValue(group.start),e=memberNoValue(group.end);
   if(s===null||e===null)return [];
-  return state.people
+  return state.roster
     .filter(p=>{
       const n=memberNoValue(p.memberNo);
       return n!==null&&n>=s&&n<=e;
     })
     .sort((a,b)=>(memberNoValue(a.memberNo)||0)-(memberNoValue(b.memberNo)||0));
+}
+function paymentForRosterMember(member){
+  return state.people.find(p=>
+    (member.memberNo && String(p.memberNo||'')===String(member.memberNo)) ||
+    String(p.lineName||p.name||'').trim()===String(member.lineName||member.name||'').trim()
+  )||null;
 }
 function groupPersonRows(list,showAmount=false){
   if(!list.length)return '<div class="group-name-empty">目前無人員</div>';
@@ -2123,10 +2372,17 @@ function renderGroupCollectionStats(){
     const members=peopleForPaymentGroup(g);
     members.forEach(p=>assignedIds.add(p.id));
 
-    const paidMembers=members.filter(paid);
-    const unpaidMembers=members.filter(p=>!paid(p));
+    const paidMembers=[];
+    const unpaidMembers=[];
+    for(const member of members){
+      const pay=paymentForRosterMember(member);
+      if(pay && paid(pay)){
+        paidMembers.push({...member,amount:Number(pay.amount)||0,paymentAt:pay.paymentAt,last5:pay.last5});
+      }else{
+        unpaidMembers.push(member);
+      }
+    }
 
-    // 分組應收款金額 = 該組應收人數 × 每人應繳金額
     const expectedAmount=members.length*perPersonAmount;
     const receivedAmount=paidMembers.reduce((sum,p)=>sum+(Number(p.amount)||0),0);
     const remainingAmount=Math.max(expectedAmount-receivedAmount,0);
@@ -2139,7 +2395,7 @@ function renderGroupCollectionStats(){
             ${esc(g.bankCode||'—')} ${esc(g.bank||'—')}｜收款人：${esc(g.recipient||'—')}｜帳號：${esc(g.account||'—')}
           </div>
         </div>
-        <div class="group-stat-count">應收 ${members.length} 人｜已繳 ${paidMembers.length}｜未繳 ${unpaidMembers.length}</div>
+        <div class="group-stat-count">應收 ${members.length} 人｜已核對 ${paidMembers.length}｜未核對 ${unpaidMembers.length}</div>
       </div>
 
       <div class="group-money-grid">
@@ -2164,24 +2420,24 @@ function renderGroupCollectionStats(){
           <div class="group-name-items">${groupPersonRows(members,false)}</div>
         </div>
         <div class="group-name-box">
-          <div class="group-name-head"><span>已繳款名單</span><span>${paidMembers.length} 人</span></div>
+          <div class="group-name-head"><span>已核對名單</span><span>${paidMembers.length} 人</span></div>
           <div class="group-name-items">${groupPersonRows(paidMembers,true)}</div>
         </div>
         <div class="group-name-box">
-          <div class="group-name-head"><span>未繳款名單</span><span>${unpaidMembers.length} 人</span></div>
+          <div class="group-name-head"><span>未核對名單</span><span>${unpaidMembers.length} 人</span></div>
           <div class="group-name-items">${groupPersonRows(unpaidMembers,false)}</div>
         </div>
       </div>
     </div>`;
   }).join('');
 
-  const unassigned=state.people
+  const unassigned=state.roster
     .filter(p=>!assignedIds.has(p.id))
     .sort((a,b)=>(memberNoValue(a.memberNo)||0)-(memberNoValue(b.memberNo)||0));
 
   root.innerHTML=`<div class="group-stat-list">${cards}</div>`+
     (unassigned.length?`<div class="group-unassigned-note">
-      ⚠️ 目前有 <strong>${unassigned.length}</strong> 位人員的編號未落在任何收款分組：
+      ⚠️ 目前有 <strong>${unassigned.length}</strong> 位名冊人員的編號未落在任何收款分組：
       ${unassigned.map(p=>`${esc(p.memberNo||'—')} ${esc(p.lineName||p.name||'')}`).join('、')}
     </div>`:'');
 }
@@ -2190,7 +2446,7 @@ function getRows(){
   const q=$('#search').value.trim().toLowerCase();
   let rows=state.people.map((p,i)=>({...p,_index:i})).filter(p=>{
     if(q && !((p.memberNo||'')+' '+(p.lineName||p.name||'')+' '+(p.last5||'')).toLowerCase().includes(q))return false;
-    return activeFilter==='all' ? true : (activeFilter==='paid'?paid(p):!paid(p));
+    return reported(p);
   });
 
   if(headerSortKey){
@@ -2212,7 +2468,6 @@ function getRows(){
   }
 
   const sort=$('#sortBy').value;
-  if(sort==='unpaidFirst')rows.sort((a,b)=>(paid(a)?1:0)-(paid(b)?1:0));
   if(sort==='memberNo')rows.sort((a,b)=>String(a.memberNo||'').localeCompare(String(b.memberNo||''),'zh-Hant',{numeric:true}));
   if(sort==='name')rows.sort((a,b)=>String(a.lineName||a.name||'').localeCompare(String(b.lineName||b.name||''),'zh-Hant'));
   if(sort==='amountDesc')rows.sort((a,b)=>(b.amount||0)-(a.amount||0));
@@ -2223,7 +2478,7 @@ function getRows(){
 
 
 const COLUMN_WIDTHS_KEY='payment_registry_column_widths_v1';
-const DEFAULT_COLUMN_WIDTHS=[48,82,220,100,112,122,154,190,154,100,88];
+const DEFAULT_COLUMN_WIDTHS=[48,82,220,110,112,122,154,190,154,180,88];
 let columnResizeReady=false;
 
 function loadColumnWidths(){
@@ -2240,28 +2495,34 @@ function loadColumnWidths(){
 }
 let columnWidths=loadColumnWidths();
 
+function paymentTables(){
+  return [
+    {table:$('#paymentTablePending'),wrap:$('#paymentTablePendingWrap')},
+    {table:$('#paymentTableVerified'),wrap:$('#paymentTableVerifiedWrap')}
+  ].filter(x=>x.table&&x.wrap);
+}
 function applyColumnWidths(){
-  const table=$('#paymentTable');
-  if(!table)return;
-  const heads=[...table.querySelectorAll('thead th')];
-  heads.forEach((th,i)=>{
-    const w=columnWidths[i]||DEFAULT_COLUMN_WIDTHS[i]||100;
-    th.style.width=w+'px';
-    th.style.minWidth=w+'px';
-    th.style.maxWidth=w+'px';
+  paymentTables().forEach(({table})=>{
+    const heads=[...table.querySelectorAll('thead th')];
+    heads.forEach((th,i)=>{
+      const w=columnWidths[i]||DEFAULT_COLUMN_WIDTHS[i]||100;
+      th.style.width=w+'px';
+      th.style.minWidth=w+'px';
+      th.style.maxWidth=w+'px';
+    });
   });
   syncResizableTableWidth();
 }
 function syncResizableTableWidth(){
-  const table=$('#paymentTable'),wrap=$('#paymentTableWrap');
-  if(!table||!wrap)return;
-  const heads=[...table.querySelectorAll('thead th')];
-  let total=0;
-  heads.forEach((th,i)=>{
-    if(getComputedStyle(th).display==='none')return;
-    total+=columnWidths[i]||DEFAULT_COLUMN_WIDTHS[i]||100;
+  paymentTables().forEach(({table,wrap})=>{
+    const heads=[...table.querySelectorAll('thead th')];
+    let total=0;
+    heads.forEach((th,i)=>{
+      if(getComputedStyle(th).display==='none')return;
+      total+=columnWidths[i]||DEFAULT_COLUMN_WIDTHS[i]||100;
+    });
+    table.style.width=Math.max(wrap.clientWidth,total)+'px';
   });
-  table.style.width=Math.max(wrap.clientWidth,total)+'px';
 }
 function saveColumnWidths(){
   localStorage.setItem(COLUMN_WIDTHS_KEY,JSON.stringify(columnWidths));
@@ -2274,52 +2535,54 @@ function resetColumnWidths(){
 }
 function initResizableTable(){
   if(columnResizeReady)return;
-  const table=$('#paymentTable');
-  if(!table)return;
-  const heads=[...table.querySelectorAll('thead th')];
+  const tables=paymentTables();
+  if(!tables.length)return;
 
-  heads.forEach((th,index)=>{
-    th.style.position='sticky';
-    const handle=document.createElement('span');
-    handle.className='col-resizer';
-    handle.title='拖曳調整欄寬';
-    th.appendChild(handle);
+  tables.forEach(({table})=>{
+    const heads=[...table.querySelectorAll('thead th')];
+    heads.forEach((th,index)=>{
+      th.style.position='sticky';
+      const handle=document.createElement('span');
+      handle.className='col-resizer';
+      handle.title='拖曳調整欄寬';
+      th.appendChild(handle);
 
-    handle.addEventListener('click',e=>{
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    handle.addEventListener('pointerdown',e=>{
-      e.preventDefault();
-      e.stopPropagation();
+      handle.addEventListener('click',e=>{
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      handle.addEventListener('pointerdown',e=>{
+        e.preventDefault();
+        e.stopPropagation();
 
-      const startX=e.clientX;
-      const startWidth=columnWidths[index]||Math.round(th.getBoundingClientRect().width)||100;
-      handle.classList.add('dragging');
-      document.body.classList.add('resizing-column');
-      try{handle.setPointerCapture(e.pointerId)}catch{}
+        const startX=e.clientX;
+        const startWidth=columnWidths[index]||Math.round(th.getBoundingClientRect().width)||100;
+        handle.classList.add('dragging');
+        document.body.classList.add('resizing-column');
+        try{handle.setPointerCapture(e.pointerId)}catch{}
 
-      const move=ev=>{
-        const next=Math.max(54,Math.min(520,startWidth+(ev.clientX-startX)));
-        columnWidths[index]=Math.round(next);
-        applyColumnWidths();
-      };
-      const up=ev=>{
-        handle.classList.remove('dragging');
-        document.body.classList.remove('resizing-column');
-        try{handle.releasePointerCapture(ev.pointerId)}catch{}
-        handle.removeEventListener('pointermove',move);
-        handle.removeEventListener('pointerup',up);
-        handle.removeEventListener('pointercancel',up);
-        saveColumnWidths();
-      };
-      handle.addEventListener('pointermove',move);
-      handle.addEventListener('pointerup',up);
-      handle.addEventListener('pointercancel',up);
+        const move=ev=>{
+          const next=Math.max(54,Math.min(520,startWidth+(ev.clientX-startX)));
+          columnWidths[index]=Math.round(next);
+          applyColumnWidths();
+        };
+        const up=ev=>{
+          handle.classList.remove('dragging');
+          document.body.classList.remove('resizing-column');
+          try{handle.releasePointerCapture(ev.pointerId)}catch{}
+          handle.removeEventListener('pointermove',move);
+          handle.removeEventListener('pointerup',up);
+          handle.removeEventListener('pointercancel',up);
+          saveColumnWidths();
+        };
+        handle.addEventListener('pointermove',move);
+        handle.addEventListener('pointerup',up);
+        handle.addEventListener('pointercancel',up);
+      });
     });
   });
 
-  heads.filter(th=>th.classList.contains('sortable-th')).forEach(th=>{
+  $$('.sortable-th').forEach(th=>{
     th.title='點擊排序；拖曳右側分隔線可調整欄寬';
   });
 
@@ -2348,12 +2611,69 @@ function headerSort(key){
 }
 window.headerSort=headerSort;
 
+function renderPaymentRows(rows,verifiedSection=false){
+  const tbodyId=verifiedSection?'#verifiedTbody':'#pendingTbody';
+  const mobileId=verifiedSection?'#verifiedMobileList':'#pendingMobileList';
+
+  $(tbodyId).innerHTML=rows.length?rows.map(p=>`<tr style="box-shadow:inset 4px 0 0 ${verifiedSection?'#c84455':'#d7a03b'}">
+    <td class="admin-cell"><input type="checkbox" ${p.selected?'checked':''} onchange="toggleSelect('${p.id}',this.checked)"></td>
+    <td><strong>${esc(p.memberNo||'—')}</strong></td>
+    <td>
+      <div class="name">${esc(p.lineName||p.name||'')}</div>
+      ${state.settings.showBankInList!==false && paymentGroupForNo(p.memberNo)?`<div class="list-bank-info">應匯款：${esc(paymentGroupForNo(p.memberNo).bank)}｜收款人：${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}
+    </td>
+    <td>
+      <span class="pill ${statusClass(p)}">${statusLabel(p)}</span>
+      ${p.verifiedAt?`<div class="muted" style="margin-top:4px">${fmtTime(p.verifiedAt)}</div>`:''}
+    </td>
+    <td>${esc(p.last5||'—')}</td>
+    <td class="money">${p.amount?money(p.amount):'—'}</td>
+    <td>${compactDate(p.paymentAt)}</td>
+    <td>${esc(p.note||'—')}</td>
+    <td>${compactDate(p.updatedAt)}</td>
+    <td>${isAdmin
+      ? `<div class="verify-action-row">
+          <button class="btn small ${verifiedSection?'':'primary'}" onclick="toggleVerification('${p.id}',${verifiedSection?'false':'true'})">${verifiedSection?'取消核對':'✅ 確認收款'}</button>
+          <button class="btn small" onclick="openPay('${p.id}')">修改</button>
+        </div>`
+      : `<div class="verify-status-line ${verifiedSection?'ok':'pending'}">${verifiedSection?'✅ 管理員已核對':'⏳ 等待管理員核對'}</div>`}
+    </td>
+    <td class="admin-cell"><button class="btn small danger" onclick="deletePerson('${p.id}')">刪除</button></td>
+  </tr>`).join(''):`<tr><td colspan="11" class="empty">${verifiedSection?'目前沒有已核對的匯款紀錄':'目前沒有等待核對的匯款紀錄'}</td></tr>`;
+
+  $(mobileId).innerHTML=rows.length?rows.map(p=>`<div class="person-card" style="border-left:4px solid ${verifiedSection?'#c84455':'#d7a03b'}">
+    <div class="person-top">
+      <div>
+        <div class="person-name">${esc(p.lineName||p.name||'')}</div>
+        <div class="muted">編號 ${esc(p.memberNo||'—')}</div>
+        ${state.settings.showBankInList!==false && paymentGroupForNo(p.memberNo)?`<div class="list-bank-info">🏦 應匯款：${esc(paymentGroupForNo(p.memberNo).bank)}｜收款人：${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}
+      </div>
+      <span class="pill ${statusClass(p)}">${statusLabel(p)}</span>
+    </div>
+    <div class="person-grid">
+      <div class="person-item"><div class="k">帳號後五碼</div><div class="v">${esc(p.last5||'—')}</div></div>
+      <div class="person-item"><div class="k">匯款金額</div><div class="v">${p.amount?money(p.amount):'—'}</div></div>
+      <div class="person-item"><div class="k">匯款時間</div><div class="v">${fmtTime(p.paymentAt)}</div></div>
+      <div class="person-item"><div class="k">${verifiedSection?'核對時間':'最後更新'}</div><div class="v">${verifiedSection?fmtTime(p.verifiedAt):fmtTime(p.updatedAt)}</div></div>
+    </div>
+    ${p.note?`<div class="note" style="margin-bottom:9px">備註：${esc(p.note)}</div>`:''}
+    ${isAdmin
+      ? `<div class="person-actions">
+          <button class="btn ${verifiedSection?'':'primary'}" onclick="toggleVerification('${p.id}',${verifiedSection?'false':'true'})">${verifiedSection?'取消核對':'✅ 確認收款'}</button>
+          <button class="btn" onclick="openPay('${p.id}')">修改匯款</button>
+          <button class="btn danger" onclick="deletePerson('${p.id}')">刪除</button>
+        </div>`
+      : `<div class="verify-status-line ${verifiedSection?'ok':'pending'}">${verifiedSection?'✅ 此筆匯款已由管理員核對完成':'⏳ 此筆匯款正在等待管理員核對'}</div>`}
+  </div>`).join(''):`<div class="empty">${verifiedSection?'目前沒有已核對的匯款紀錄':'目前沒有等待核對的匯款紀錄'}</div>`;
+}
+
 function render(){
   const shareCount=Number(state.settings.shareCount)||0;
   const total=shareCount;
   const paidN=state.people.filter(paid).length;
+  const pendingN=state.people.filter(p=>reported(p)&&!paid(p)).length;
   const unpaidN=Math.max(shareCount-paidN,0);
-  const received=state.people.reduce((s,p)=>s+(Number(p.amount)||0),0);
+  const received=state.people.filter(paid).reduce((s,p)=>s+(Number(p.amount)||0),0);
   const target=Number(state.settings.totalAmount)||0;
   const per=expected();
   const pct=shareCount?paidN/shareCount*100:0;
@@ -2362,14 +2682,14 @@ function render(){
   $('#projectTitle').textContent=project;$('#heroProjectName').textContent=project;document.title=project+'｜收款管理';
   $('#totalPeople').textContent=total;$('#paidPeople').textContent=paidN;$('#unpaidPeople').textContent=unpaidN;
   $('#receivedMoney').textContent=money(received);$('#shortMoney').textContent=money(Math.max(target-received,0));
-  $('#targetMoney').textContent='目標 '+money(target);$('#paidRate').textContent='完成率 '+Math.round(pct)+'%';
+  $('#targetMoney').textContent='目標 '+money(target);$('#paidRate').textContent=`完成率 ${Math.round(pct)}%${pendingN?`｜待核對 ${pendingN}`:''}`;
   $('#heroReceived').textContent=money(received);$('#heroTarget').textContent=money(target);$('#heroShort').textContent=money(Math.max(target-received,0));
   $('#heroPaid').textContent=paidN;$('#heroUnpaid').textContent=unpaidN;$('#heroPer').textContent=money(Math.round(per||0));
-  $('#ringPct').textContent=Math.round(pct)+'%';$('#ringCaption').textContent=`${paidN} / ${total} 人已完成`;
+  $('#ringPct').textContent=Math.round(pct)+'%';$('#ringCaption').textContent=`${paidN} / ${total} 人已核對`;
   const deg=Math.min(360,Math.max(0,pct*3.6));$('#ring').style.background=`conic-gradient(#fff 0deg ${deg}deg,#efd8de ${deg}deg 360deg)`;
 
   $('#progress').style.width=Math.min(100,pct)+'%';$('#progressBadge').textContent=Math.round(pct)+'%';
-  $('#progressLabel').textContent=`${paidN} / ${total} 人已完成`;
+  $('#progressLabel').textContent=`${paidN} / ${total} 人已核對完成`;
   $('#moneyGap').textContent=target?(received>=target?`已達目標 ${money(received-target)}`:`尚差 ${money(target-received)}`):'尚未設定總金額';
   $('#targetChip').textContent=money(target);$('#perPersonChip').textContent=money(Math.round(per||0));$('#shareCountChip').textContent=state.settings.shareCount||0;
 
@@ -2384,37 +2704,26 @@ function render(){
   $('#adminPanelBody').style.display=adminPanelOpen?'block':'none';$('#adminToggleBtn').textContent=adminPanelOpen?'收合':'展開';
 
   renderPaymentGroups();renderGroupCollectionStats();updateLineNameOptions();renderPublicLookupOptions();showPublicBankResult();updateBankLookup();
-  const rows=getRows();updateSortIndicators();$('#resultCount').textContent=rows.length+' 筆';
-  $('#tbody').innerHTML=rows.length?rows.map((p,i)=>`<tr style="box-shadow:inset 4px 0 0 ${paid(p)?'#c84455':'#d7a03b'}">
-    <td class="admin-cell"><input type="checkbox" ${p.selected?'checked':''} onchange="toggleSelect('${p.id}',this.checked)"></td>
-    <td><strong>${esc(p.memberNo||'—')}</strong></td><td><div class="name">${esc(p.lineName||p.name||'')}</div>${state.settings.showBankInList!==false && paymentGroupForNo(p.memberNo)?`<div class="list-bank-info">應匯款：${esc(paymentGroupForNo(p.memberNo).bank)}｜收款人：${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}</td>
-    <td><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></td>
-    <td>${esc(p.last5||'—')}</td><td class="money">${p.amount?money(p.amount):'—'}</td>
-    <td>${compactDate(p.paymentAt)}</td><td>${esc(p.note||'—')}</td><td>${compactDate(p.updatedAt)}</td>
-    <td>${isAdmin
-      ? `<button class="btn small primary" onclick="openPay('${p.id}')">修改</button>`
-      : `<span class="locked-chip">🔒 ${paid(p)?'已送出':'待新增'}</span>`}</td>
-    <td class="admin-cell"><button class="btn small danger" onclick="deletePerson('${p.id}')">刪除</button></td>
-  </tr>`).join(''):`<tr><td colspan="11" class="empty">目前沒有符合條件的資料</td></tr>`;
 
-  $('#mobileList').innerHTML=rows.length?rows.map(p=>`<div class="person-card" style="border-left:4px solid ${paid(p)?'#c84455':'#d7a03b'}">
-    <div class="person-top"><div><div class="person-name">${esc(p.lineName||p.name||'')}</div><div class="muted">編號 ${esc(p.memberNo||'—')}</div>${state.settings.showBankInList!==false && paymentGroupForNo(p.memberNo)?`<div class="list-bank-info">🏦 應匯款：${esc(paymentGroupForNo(p.memberNo).bank)}｜收款人：${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}</div><span class="pill ${statusClass(p)}">${statusLabel(p)}</span></div>
-    <div class="person-grid">
-      <div class="person-item"><div class="k">帳號後五碼</div><div class="v">${esc(p.last5||'—')}</div></div>
-      <div class="person-item"><div class="k">匯款金額</div><div class="v">${p.amount?money(p.amount):'—'}</div></div>
-      <div class="person-item"><div class="k">匯款時間</div><div class="v">${fmtTime(p.paymentAt)}</div></div>
-      <div class="person-item"><div class="k">最後更新</div><div class="v">${fmtTime(p.updatedAt)}</div></div>
-    </div>
-    ${p.note?`<div class="note" style="margin-bottom:9px">備註：${esc(p.note)}</div>`:''}
-    <div class="person-actions">${isAdmin
-      ? `<button class="btn primary" onclick="openPay('${p.id}')">修改匯款</button><button class="btn danger" onclick="deletePerson('${p.id}')">刪除</button>`
-      : `<span class="locked-chip">🔒 ${paid(p)?'送出後已鎖定':'尚未完成'}</span>`}</div>
-  </div>`).join(''):`<div class="empty">目前沒有符合條件的資料</div>`;
+  const rows=getRows();
+  const pendingRows=rows.filter(p=>reported(p)&&!paid(p));
+  const verifiedRows=rows.filter(p=>paid(p));
+  updateSortIndicators();
 
-  $('#checkAll').checked=state.people.length>0 && state.people.every(p=>p.selected);
+  $('#resultCount').textContent=`${rows.length} 筆回報`;
+  $('#pendingCount').textContent=`${pendingRows.length} 筆待核對`;
+  $('#verifiedCount').textContent=`${verifiedRows.length} 筆已核對`;
+
+  renderPaymentRows(pendingRows,false);
+  renderPaymentRows(verifiedRows,true);
+
+  if($('#pendingCheckAll'))$('#pendingCheckAll').checked=pendingRows.length>0 && pendingRows.every(p=>p.selected);
+  if($('#verifiedCheckAll'))$('#verifiedCheckAll').checked=verifiedRows.length>0 && verifiedRows.every(p=>p.selected);
+
   initResizableTable();
   requestAnimationFrame(syncResizableTableWidth);
 }
+
 function openPay(id){
   if(!isAdmin){toast('送出後只有管理員可以修改');return}
   const p=state.people.find(x=>x.id===id);if(!p)return;
@@ -2425,8 +2734,25 @@ function openPay(id){
   $('#last5').classList.remove('input-error');
   $('#payAmount').value=p.amount||'';
   $('#paymentDateTime').value=toDateTimeLocal(p.paymentAt||Date.now());$('#note').value=p.note||'';
+  $('#verifyReceived').checked=p.verified===true;
+  $('#verifyMeta').textContent=p.verified===true
+    ? `已核對${p.verifiedAt?'｜'+fmtTime(p.verifiedAt):''}`
+    : '尚未核對';
   $('#payModal').classList.add('show');
 }
+
+function toggleVerification(id,verified){
+  if(!isAdmin)return;
+  const p=state.people.find(x=>x.id===id);if(!p)return;
+  if(!reported(p))return alert('此筆匯款資料尚未完整，無法核對');
+  p.verified=!!verified;
+  p.verifiedAt=p.verified?Date.now():null;
+  p.updatedAt=Date.now();
+  persistAndSync();
+  toast(p.verified?'已確認收款，資料移至已核對區':'已取消核對，資料移回未核對區');
+}
+window.toggleVerification=toggleVerification;
+
 function deletePerson(id){
   if(!isAdmin)return;
   const p=state.people.find(x=>x.id===id);if(!p)return;
@@ -2533,41 +2859,39 @@ $('#selfAddBtn').onclick=()=>{
   if(!(amount>0))return alert('請輸入正確匯款金額');
   if(!Number.isFinite(paymentAt))return alert('請輸入正確的匯款日期／時間');
 
-  // 只以 LINE 名稱比對預建且尚未完成的名單
-  const existing=state.people.find(p=>String(p.lineName||p.name||'').trim()===lineName);
+  let rosterMember=state.roster.find(r=>String(r.lineName||r.name||'').trim()===lineName);
+  if(!rosterMember){
+    const newNo=nextMemberNo();
+    rosterMember={id:uid(),memberNo:newNo,lineName,name:lineName};
+    state.roster.push(rosterMember);
+    state.roster=normalizeRoster(state.roster);
+  }
 
-  if(existing){
-    if(paid(existing)){
-      alert('此 LINE 名稱已有完成紀錄。送出後僅管理員可以修改。');
-      return;
-    }
-    existing.lineName=lineName;
-    existing.name=lineName;
-    existing.last5=last5;
-    existing.amount=amount;
-    existing.paymentAt=paymentAt;
-    existing.note=note;
-    existing.updatedAt=Date.now();
-    if(!existing.memberNo)existing.memberNo=nextMemberNo();
-    persistAndSync();
-    const submitted={...existing};
-    resetSelfEntry();
-    showSubmitSummary(submitted);
-    toast(`已完成紀錄，編號 ${existing.memberNo}`);
+  const memberNo=rosterMember.memberNo;
+  const existing=state.people.find(p=>
+    String(p.memberNo||'')===String(memberNo) ||
+    String(p.lineName||p.name||'').trim()===lineName
+  );
+
+  if(existing && reported(existing)){
+    alert(paid(existing)?'此 LINE 名稱已完成核對。送出後僅管理員可以修改。':'此 LINE 名稱已有匯款回報，目前正在等待管理員核對。');
     return;
   }
 
-  const finalNo=nextMemberNo();
-  state.people.push({
-    id:uid(),memberNo:finalNo,lineName,name:lineName,last5,amount,paymentAt,note,
-    updatedAt:Date.now(),selected:false
-  });
-  const submitted=state.people[state.people.length-1];
+  let submitted;
+  if(existing){
+    Object.assign(existing,{memberNo,lineName,name:lineName,last5,amount,paymentAt,note,verified:false,verifiedAt:null,updatedAt:Date.now()});
+    submitted={...existing};
+  }else{
+    const p={id:uid(),memberNo,lineName,name:lineName,last5,amount,paymentAt,note,verified:false,verifiedAt:null,updatedAt:Date.now(),selected:false};
+    state.people.push(p);
+    submitted={...p};
+  }
+
   persistAndSync();
-  const submittedSnapshot={...submitted};
   resetSelfEntry();
-  showSubmitSummary(submittedSnapshot);
-  toast(`新增完成，系統編號 ${finalNo}`);
+  showSubmitSummary(submitted);
+  toast(`匯款紀錄已回報，編號 ${memberNo}`);
 };
 
 $('#savePay').onclick=()=>{
@@ -2588,9 +2912,17 @@ $('#savePay').onclick=()=>{
   }
   if(!(amount>0))return alert('請輸入正確匯款金額');
   const paymentAt=new Date($('#paymentDateTime').value||Date.now()).getTime();
+  const oldMemberNo=p.memberNo;
+  const verified=$('#verifyReceived').checked===true;
   p.memberNo=memberNo;
-  p.last5=last5;p.amount=amount;p.paymentAt=paymentAt;p.note=$('#note').value.trim();p.updatedAt=Date.now();
-  persistAndSync();$('#payModal').classList.remove('show');toast('匯款資料已儲存');
+  p.last5=last5;p.amount=amount;p.paymentAt=paymentAt;p.note=$('#note').value.trim();
+  p.verified=verified;
+  p.verifiedAt=verified?(p.verifiedAt||Date.now()):null;
+  p.updatedAt=Date.now();
+  const rosterMember=state.roster.find(r=>String(r.memberNo||'')===String(oldMemberNo) || String(r.lineName||r.name||'').trim()===String(p.lineName||p.name||'').trim());
+  if(rosterMember)rosterMember.memberNo=memberNo;
+  state.roster=normalizeRoster(state.roster);
+  persistAndSync();$('#payModal').classList.remove('show');toast(verified?'已儲存並完成收款核對':'已儲存，狀態為待核對');
 };
 
 $('#addPersonBtn').onclick=()=>{
@@ -2599,12 +2931,16 @@ $('#addPersonBtn').onclick=()=>{
   const lineName=$('#newLineName').value.trim();
   if(!memberNo)return alert('請輸入編號');
   if(!lineName)return alert('請輸入 LINE 名稱');
-  if(state.people.some(p=>String(p.memberNo||'').trim()===memberNo))return alert('此編號已存在');
-  if(state.people.some(p=>String(p.lineName||p.name||'').trim()===lineName))return alert('此 LINE 名稱已存在');
-  state.people.push({id:uid(),memberNo,lineName,name:lineName,last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false});
-  $('#newMemberNo').value=nextMemberNo();
+  if(state.roster.some(p=>String(p.memberNo||'').trim()===memberNo))return alert('此編號已存在於名冊');
+  if(state.roster.some(p=>String(p.lineName||p.name||'').trim()===lineName))return alert('此 LINE 名稱已存在於名冊');
+
+  state.roster.push({id:uid(),memberNo,lineName,name:lineName});
+  state.roster=normalizeRoster(state.roster);
+  persistAndSync();
+
   $('#newLineName').value='';
-  persistAndSync();toast('已新增人員');
+  $('#newMemberNo').value=nextMemberNo();
+  toast('已新增至查詢名冊，不會出現在下方匯款結果表格');
 };
 
 
@@ -2670,11 +3006,10 @@ $('#quickImportBtn').onclick=()=>{
 
   let added=0,updated=0,conflict=0;
   for(const item of result.parsed){
-    const byNo=state.people.find(p=>String(p.memberNo||'')===item.memberNo);
-    const byName=state.people.find(p=>String(p.lineName||p.name||'').trim()===item.lineName);
+    const byNo=state.roster.find(p=>String(p.memberNo||'')===item.memberNo);
+    const byName=state.roster.find(p=>String(p.lineName||p.name||'').trim()===item.lineName);
 
     if(byNo){
-      // 編號相同：保留匯款資料，只更新 LINE 名稱
       byNo.lineName=item.lineName;
       byNo.name=item.lineName;
       updated++;
@@ -2682,7 +3017,7 @@ $('#quickImportBtn').onclick=()=>{
     }
 
     if(byName){
-      const numberUsed=state.people.some(p=>p.id!==byName.id&&String(p.memberNo||'')===item.memberNo);
+      const numberUsed=state.roster.some(p=>p.id!==byName.id&&String(p.memberNo||'')===item.memberNo);
       if(numberUsed){conflict++;continue}
       byName.memberNo=item.memberNo;
       byName.lineName=item.lineName;
@@ -2691,18 +3026,15 @@ $('#quickImportBtn').onclick=()=>{
       continue;
     }
 
-    state.people.push({
-      id:uid(),memberNo:item.memberNo,lineName:item.lineName,name:item.lineName,
-      last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false
-    });
+    state.roster.push({id:uid(),memberNo:item.memberNo,lineName:item.lineName,name:item.lineName});
     added++;
   }
 
-  state.people=normalizePeople(state.people);
+  state.roster=normalizeRoster(state.roster);
   persistAndSync();
   $('#quickImportResult').textContent=
-    `完成：新增 ${added} 筆、更新 ${updated} 筆${conflict?`、衝突略過 ${conflict} 筆`:''}。`;
-  toast(`名單處理完成：新增 ${added}、更新 ${updated}`);
+    `名冊完成：新增 ${added} 筆、更新 ${updated} 筆${conflict?`、衝突略過 ${conflict} 筆`:''}。下方匯款結果表格不會新增空白列。`;
+  toast(`查詢名冊已更新：新增 ${added}、更新 ${updated}`);
 };
 
 $('#groupBankCode').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,4)});
@@ -2762,7 +3094,7 @@ $('#showBankInList').onchange=e=>{
   toast(state.settings.showBankInList?'下方名單已顯示應匯款銀行與收款人':'下方名單已隱藏應匯款銀行與收款人');
 };
 
-$$('.tab').forEach(b=>b.onclick=()=>{activeFilter=b.dataset.filter;$$('.tab').forEach(x=>x.classList.toggle('active',x===b));render()});
+
 $('#search').oninput=render;
 
 $$('.sortable-th').forEach(th=>th.addEventListener('click',e=>{
@@ -2771,9 +3103,15 @@ $$('.sortable-th').forEach(th=>th.addEventListener('click',e=>{
 }));
 $('#sortBy').addEventListener('change',()=>{headerSortKey=null;headerSortDir='asc';render()});
 
-$('#clearFilter').onclick=()=>{$('#search').value='';$('#sortBy').value='unpaidFirst';headerSortKey=null;headerSortDir='asc';activeFilter='all';$$('.tab').forEach((x,i)=>x.classList.toggle('active',i===0));render()};
-$('#copyUnpaidBtn').onclick=async()=>{const names=state.people.filter(p=>!paid(p)).map(p=>`${p.memberNo||''}｜${p.lineName||p.name||''}`);await navigator.clipboard.writeText(names.join('\n'));toast(`已複製 ${names.length} 位未繳名單`)};
-$('#checkAll').onchange=e=>{state.people.forEach(p=>p.selected=e.target.checked);saveLocalOnly()};
+$('#clearFilter').onclick=()=>{$('#search').value='';$('#sortBy').value='updated';headerSortKey=null;headerSortDir='asc';render()};
+$('#copyUnpaidBtn').onclick=async()=>{
+  const pending=state.people.filter(p=>reported(p)&&!paid(p));
+  const names=pending.map(p=>`${p.memberNo||''}｜${p.lineName||p.name||''}`);
+  await navigator.clipboard.writeText(names.join('\n'));
+  toast(`已複製 ${names.length} 位未核對名單`);
+};
+$('#pendingCheckAll').onchange=e=>{state.people.filter(p=>reported(p)&&!paid(p)).forEach(p=>p.selected=e.target.checked);saveLocalOnly()};
+$('#verifiedCheckAll').onchange=e=>{state.people.filter(p=>paid(p)).forEach(p=>p.selected=e.target.checked);saveLocalOnly()};
 $('#deleteSelectedBtn').onclick=()=>{
   if(!isAdmin)return;
   const selected=state.people.filter(p=>p.selected);
@@ -2793,9 +3131,10 @@ $('#namesFile').onchange=e=>{const f=e.target.files[0];if(!f)return;parseSheet(f
   let memberNo=String(r['編號']||r['No']||r['NO']||'').trim();
   if(!lineName)return;
   if(!memberNo)memberNo=nextMemberNo();
-  if(state.people.some(p=>String(p.memberNo||'')===memberNo || String(p.lineName||p.name||'')===lineName))return;
-  state.people.push({id:uid(),memberNo,lineName,name:lineName,last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false});c++;
-});persistAndSync();toast(`已匯入 ${c} 人`)})};
+  if(state.roster.some(p=>String(p.memberNo||'')===memberNo || String(p.lineName||p.name||'')===lineName))return;
+  state.roster.push({id:uid(),memberNo,lineName,name:lineName});c++;
+});state.roster=normalizeRoster(state.roster);persistAndSync();toast(`已匯入 ${c} 人至查詢名冊`)})};
+
 $('#importDetailBtn').onclick=()=>isAdmin&&$('#detailFile').click();
 $('#detailFile').onchange=e=>{const f=e.target.files[0];if(!f)return;parseSheet(f,rows=>{let c=0;rows.forEach(r=>{
   const lineName=String(r['LINE名稱']||r['Line名稱']||r['LINE 名稱']||r['姓名']||'').trim();
@@ -2809,16 +3148,16 @@ $('#detailFile').onchange=e=>{const f=e.target.files[0];if(!f)return;parseSheet(
   }else{
     if(memberNo)p.memberNo=memberNo;
     if(lineName){p.lineName=lineName;p.name=lineName;}
-  }p.last5=String(r['帳號後五碼']||p.last5||'').trim();p.amount=Number(r['匯款金額']||p.amount||0);const t=r['匯款日期／時間']||r['匯款日期/時間']||r['匯款時間'];if(t){const d=new Date(t);if(!isNaN(d))p.paymentAt=d.getTime()}p.note=String(r['備註']||p.note||'');p.updatedAt=Date.now();c++});persistAndSync();toast(`已匯入 ${c} 筆資料`)})};
+  }p.last5=String(r['帳號後五碼']||p.last5||'').trim();p.amount=Number(r['匯款金額']||p.amount||0);const t=r['匯款日期／時間']||r['匯款日期/時間']||r['匯款時間'];if(t){const d=new Date(t);if(!isNaN(d))p.paymentAt=d.getTime()}p.note=String(r['備註']||p.note||'');p.updatedAt=Date.now();c++});state=ensureRosterAndPayments(state);persistAndSync();toast(`已匯入 ${c} 筆資料`)})};
 
 function exportExcel(template=false){
   const wb=XLSX.utils.book_new();
   const rows=template?[{'編號':'001','LINE名稱':'Ryan','帳號後五碼':'12345','匯款金額':1400,'匯款日期／時間':'2026/09/23 16:00','備註':''}]:
-    state.people.map((p,i)=>({'編號':p.memberNo||'','LINE名稱':p.lineName||p.name||'','繳款狀態':paid(p)?'已繳':'未繳','帳號後五碼':p.last5||'','匯款金額':p.amount||0,'匯款日期／時間':p.paymentAt?fmtTime(p.paymentAt):'','備註':p.note||'','最後更新':p.updatedAt?fmtTime(p.updatedAt):''}));
+    state.people.map((p,i)=>({'編號':p.memberNo||'','LINE名稱':p.lineName||p.name||'','核對狀態':paid(p)?'已核對':'待核對','帳號後五碼':p.last5||'','匯款金額':p.amount||0,'匯款日期／時間':p.paymentAt?fmtTime(p.paymentAt):'','核對時間':p.verifiedAt?fmtTime(p.verifiedAt):'','備註':p.note||'','最後更新':p.updatedAt?fmtTime(p.updatedAt):''}));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),template?'匯入範本':'匯款明細');
   if(!template){
-    const total=Number(state.settings.shareCount)||0,paidN=state.people.filter(paid).length,received=state.people.reduce((s,p)=>s+(Number(p.amount)||0),0);
-    const summary=[{'項目':'專案名稱','數值':state.settings.projectName},{'項目':'分擔人數','數值':total},{'項目':'已繳','數值':paidN},{'項目':'未繳','數值':Math.max(total-paidN,0)},{'項目':'已收金額','數值':received},{'項目':'目標金額','數值':state.settings.totalAmount||0}];
+    const total=Number(state.settings.shareCount)||0,paidN=state.people.filter(paid).length,received=state.people.filter(paid).reduce((s,p)=>s+(Number(p.amount)||0),0);
+    const summary=[{'項目':'專案名稱','數值':state.settings.projectName},{'項目':'分擔人數','數值':total},{'項目':'已核對','數值':paidN},{'項目':'未核對完成','數值':Math.max(total-paidN,0)},{'項目':'已收金額','數值':received},{'項目':'目標金額','數值':state.settings.totalAmount||0}];
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),'統計摘要');
     const groupRows=(state.settings.paymentGroups||[]).map(g=>({
       '編號起':g.start,'編號迄':g.end,'銀行代碼':g.bankCode||'','指定銀行':g.bank,'收款人':g.recipient,'匯款帳號':g.account
@@ -2830,11 +3169,11 @@ function exportExcel(template=false){
 }
 $('#exportBtn').onclick=()=>isAdmin&&exportExcel(false);
 $('#templateBtn').onclick=()=>isAdmin&&exportExcel(true);
-$('#exportPeopleBtn').onclick=()=>{if(!isAdmin)return;const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(state.people.map(p=>({'編號':p.memberNo||'','LINE名稱':p.lineName||p.name||''})));XLSX.utils.book_append_sheet(wb,ws,'人員名單');XLSX.writeFile(wb,(state.settings.projectName||'收費匯款登記表')+'_人員名單.xlsx')};
+$('#exportPeopleBtn').onclick=()=>{if(!isAdmin)return;const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(state.roster.map(p=>({'編號':p.memberNo||'','LINE名稱':p.lineName||p.name||''})));XLSX.utils.book_append_sheet(wb,ws,'人員名單');XLSX.writeFile(wb,(state.settings.projectName||'收費匯款登記表')+'_人員名單.xlsx')};
 
 $('#backupBtn').onclick=()=>{if(!isAdmin)return;const blob=new Blob([JSON.stringify(cleanState(state),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(state.settings.projectName||'收費匯款登記表')+'_備份.json';a.click();URL.revokeObjectURL(a.href)};
 $('#restoreBtn').onclick=()=>isAdmin&&$('#restoreFile').click();
-$('#restoreFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.people)throw 0;state=d;state.settings ||= {};state.settings.paymentGroups ||= [];state.people=normalizePeople(state.people);persistAndSync();toast('備份已還原')}catch{alert('JSON 格式錯誤')}};r.readAsText(f)};
+$('#restoreFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.people&&!d.roster)throw 0;state=d;state.settings ||= {};state.settings.paymentGroups ||= [];state.people ||= [];state.roster ||= [];state=ensureRosterAndPayments(state);persistAndSync();toast('備份已還原')}catch{alert('JSON 格式錯誤')}};r.readAsText(f)};
 $('#cloudSyncBtn').onclick=async()=>{if(!isAdmin)return;queuedSnapshot=cleanState(state);await flushCloudWrite();await pullCloud({force:false});toast('雲端同步完成')};
 
 setInterval(()=>pullCloud(),5000);
