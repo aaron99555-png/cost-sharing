@@ -1673,6 +1673,20 @@ body.resizing-column *{
 }
 </style>
 
+
+<style>
+.inline-datetime-text{
+  min-width:152px;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.1px;
+}
+.inline-datetime-text.input-error{
+  border-color:#c44558 !important;
+  background:#fff4f6 !important;
+  box-shadow:0 0 0 3px rgba(196,69,88,.10) !important;
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -2005,7 +2019,7 @@ body.resizing-column *{
       <div>
         <h3>📋 所有名單總覽</h3>
         <div class="muted">匯入名冊的所有人都會顯示在這裡，可直接查看「未匯款／已匯款」與核對結果。</div>
-        <div class="admin-inline-hint" id="adminInlineHint" style="display:none">管理模式：直接點欄位即可修改；按 Enter 會儲存並往右跳到下一個可編輯欄位。</div>
+        <div class="admin-inline-hint" id="adminInlineHint" style="display:none">管理模式：直接點欄位即可修改；按 Enter 會儲存並往右跳。匯款時間請輸入 YYYY-MM-DD HH:mm，分鐘需完整 2 碼。</div>
       </div>
       <span class="pill" id="publicResultCount">0 人</span>
     </div>
@@ -3018,6 +3032,46 @@ function ensurePaymentForRoster(rosterMember,paymentId=null){
   }
   return p;
 }
+
+function formatDateTimeText(ts){
+  if(!ts)return '';
+  const d=new Date(ts);
+  if(Number.isNaN(d.getTime()))return '';
+  const pad=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function parseDateTimeTextStrict(value){
+  const s=String(value||'').trim();
+  if(!s)return {ok:true,ts:null};
+
+  // 嚴格要求分鐘兩碼：YYYY-MM-DD HH:mm
+  const m=s.match(/^(\d{4})[-\/](\d{2})[-\/](\d{2})\s+(\d{2}):(\d{2})$/);
+  if(!m)return {ok:false,message:'時間格式請完整輸入 YYYY-MM-DD HH:mm，例如 2026-09-26 14:05；分鐘一定要兩碼。'};
+
+  const y=Number(m[1]),mo=Number(m[2]),day=Number(m[3]),h=Number(m[4]),min=Number(m[5]);
+  if(mo<1||mo>12||day<1||day>31||h<0||h>23||min<0||min>59){
+    return {ok:false,message:'日期或時間數值不正確，請確認月份、日期、時、分。'};
+  }
+  const d=new Date(y,mo-1,day,h,min,0,0);
+  if(d.getFullYear()!==y||d.getMonth()!==mo-1||d.getDate()!==day||d.getHours()!==h||d.getMinutes()!==min){
+    return {ok:false,message:'日期或時間不存在，請重新輸入。'};
+  }
+  return {ok:true,ts:d.getTime()};
+}
+function validateInlineDateTimeField(field,showAlert=true){
+  if(!field || field.dataset.datetimeStrict!=='1')return true;
+  const parsed=parseDateTimeTextStrict(field.value);
+  field.classList.toggle('input-error',!parsed.ok);
+  if(!parsed.ok && showAlert){
+    alert(parsed.message);
+    setTimeout(()=>{
+      field.focus();
+      try{field.setSelectionRange(field.value.length,field.value.length)}catch{}
+    },0);
+  }
+  return parsed.ok;
+}
+
 function inlineAdminUpdate(rosterId,paymentId,field,value){
   if(!isAdmin)return;
   const r=rosterById(rosterId);
@@ -3057,7 +3111,13 @@ function inlineAdminUpdate(rosterId,paymentId,field,value){
       p.amount=n;
       if(!reported(p)){p.verified=false;p.verifiedAt=null}
     }else if(field==='paymentAt'){
-      p.paymentAt=value?new Date(value).getTime():null;
+      const parsed=parseDateTimeTextStrict(value);
+      if(!parsed.ok){
+        alert(parsed.message);
+        render();
+        return;
+      }
+      p.paymentAt=parsed.ts;
     }else if(field==='note'){
       p.note=String(value||'').trim();
     }else if(field==='verified'){
@@ -3117,7 +3177,7 @@ function renderPublicPaymentRows(rows){
         </td>
         <td><input class="inline-edit" data-roster-id="${esc(rosterId)}" data-field-index="2" inputmode="numeric" maxlength="5" value="${esc(p.last5||'')}" placeholder="未匯款" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','last5',this.value)" aria-label="帳號後五碼"></td>
         <td><input class="inline-edit money-input" data-roster-id="${esc(rosterId)}" data-field-index="3" type="number" min="0" value="${p.amount||''}" placeholder="0" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','amount',this.value)" aria-label="匯款金額"></td>
-        <td><input class="inline-edit" data-roster-id="${esc(rosterId)}" data-field-index="4" type="datetime-local" value="${p.paymentAt?toDateTimeLocal(p.paymentAt):''}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','paymentAt',this.value)" aria-label="匯款日期時間"></td>
+        <td><input class="inline-edit inline-datetime-text" data-datetime-strict="1" data-roster-id="${esc(rosterId)}" data-field-index="4" type="text" inputmode="numeric" value="${p.paymentAt?formatDateTimeText(p.paymentAt):''}" placeholder="2026-09-26 14:05" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','paymentAt',this.value)" aria-label="匯款日期時間"></td>
         <td><input class="inline-edit" data-roster-id="${esc(rosterId)}" data-field-index="5" value="${esc(p.note||'')}" placeholder="備註" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','note',this.value)" aria-label="備註"></td>
         <td><span class="inline-readonly">${p.updatedAt?fmtTime(p.updatedAt):'—'}</span></td>
         <td><span class="pill ${hasPayment?'paid':'unpaid'}">${hasPayment?'💰 已匯款':'— 未匯款'}</span></td>
@@ -3175,7 +3235,7 @@ function renderPublicPaymentRows(rows){
         <div class="person-grid">
           <div class="person-item"><div class="k">帳號後五碼</div><input class="inline-edit" inputmode="numeric" maxlength="5" value="${esc(p.last5||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','last5',this.value)"></div>
           <div class="person-item"><div class="k">匯款金額</div><input class="inline-edit money-input" type="number" min="0" value="${p.amount||''}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','amount',this.value)"></div>
-          <div class="person-item"><div class="k">匯款時間</div><input class="inline-edit" type="datetime-local" value="${p.paymentAt?toDateTimeLocal(p.paymentAt):''}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','paymentAt',this.value)"></div>
+          <div class="person-item"><div class="k">匯款時間</div><input class="inline-edit inline-datetime-text" data-datetime-strict="1" type="text" inputmode="numeric" value="${p.paymentAt?formatDateTimeText(p.paymentAt):''}" placeholder="2026-09-26 14:05" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','paymentAt',this.value)"></div>
           <div class="person-item"><div class="k">備註</div><input class="inline-edit" value="${esc(p.note||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','note',this.value)"></div>
         </div>
         <div class="person-grid">
@@ -3245,6 +3305,11 @@ function bindInlineEnterNavigation(){
 
     if(e.key==='Enter'){
       e.preventDefault();
+
+      // 時間欄位需完整輸入到兩碼分鐘才允許確認與跳下一格
+      if(field.dataset.datetimeStrict==='1' && !validateInlineDateTimeField(field,true)){
+        return;
+      }
 
       // 先觸發原本 onchange 儲存，再往右一格
       field.blur();
