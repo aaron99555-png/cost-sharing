@@ -673,7 +673,7 @@ input,select,button,textarea{
 </section>
 
 <section class="hero">
-  <div class="stat"><div class="label">總人數</div><div class="value" id="totalPeople">0</div><div class="sub">目前名單</div></div>
+  <div class="stat"><div class="label">分擔人數</div><div class="value" id="totalPeople">0</div><div class="sub">管理員設定</div></div>
   <div class="stat"><div class="label">已繳人數</div><div class="value red" id="paidPeople">0</div><div class="sub" id="paidRate">完成率 0%</div></div>
   <div class="stat"><div class="label">未繳人數</div><div class="value gold" id="unpaidPeople">0</div><div class="sub">待完成</div></div>
   <div class="stat"><div class="label">已收金額</div><div class="value red" id="receivedMoney">$0</div><div class="sub" id="targetMoney">目標 $0</div></div>
@@ -706,7 +706,7 @@ input,select,button,textarea{
       <button class="btn primary" id="addPersonBtn">＋ 新增人員</button>
     </div>
     <div class="note" style="margin-top:8px;padding:10px 12px;background:#fff6f7;border:1px solid #efd9de;border-radius:11px">
-      管理員可設定「總金額」與「分擔人數」，系統會自動計算每人應繳金額，並同步更新收款進度與 Firebase。
+      管理員可設定「總金額」與「分擔人數」。未繳人數＝分擔人數－已繳人數；系統會自動更新每人應繳、收款完成率與 Firebase。
     </div>
     <div class="tools">
       <button class="btn" id="importNamesBtn">匯入人員名單</button>
@@ -719,7 +719,7 @@ input,select,button,textarea{
       <button class="btn" id="restoreBtn">還原 JSON</button>
       <button class="btn danger" id="deleteSelectedBtn">刪除勾選</button>
     </div>
-    <div class="note" style="margin-top:11px">管理員可預建人員名單；一般使用者可在下方自行新增或完成自己的紀錄。送出後只有管理員能修改／刪除；Firebase 同步鎖定仍保留。</div>
+    <div class="note" style="margin-top:11px">管理員可預建人員名單，並可修改人員編號；一般使用者可在下方自行新增或完成自己的紀錄。送出後只有管理員能修改／刪除；Firebase 同步鎖定仍保留。</div>
     <input type="file" id="namesFile" accept=".xlsx,.xls,.csv" hidden>
     <input type="file" id="detailFile" accept=".xlsx,.xls,.csv" hidden>
     <input type="file" id="restoreFile" accept=".json" hidden>
@@ -812,8 +812,9 @@ input,select,button,textarea{
 </div></div>
 
 <div class="modal" id="payModal"><div class="modal-card">
-  <h3 id="payTitle">登記匯款</h3><input id="payId" type="hidden">
-  <div class="field"><label>帳號後五碼</label><input id="last5" inputmode="numeric" maxlength="5" placeholder="例如 12345">
+  <h3 id="payTitle">修改匯款資料</h3><input id="payId" type="hidden">
+  <div class="field"><label>編號</label><input id="editMemberNo" placeholder="例如 001"></div>
+  <div class="field" style="margin-top:10px"><label>帳號後五碼</label><input id="last5" inputmode="numeric" maxlength="5" placeholder="例如 12345">
     <div class="last5-warning" id="last5Warning">⚠️ 帳號後五碼需完整輸入 5 碼</div>
   </div>
   <div class="field" style="margin-top:10px"><label>匯款金額</label><input id="payAmount" type="number" min="0"></div>
@@ -1082,13 +1083,14 @@ function headerSort(key){
 window.headerSort=headerSort;
 
 function render(){
-  const total=state.people.length;
+  const shareCount=Number(state.settings.shareCount)||0;
+  const total=shareCount;
   const paidN=state.people.filter(paid).length;
-  const unpaidN=total-paidN;
+  const unpaidN=Math.max(shareCount-paidN,0);
   const received=state.people.reduce((s,p)=>s+(Number(p.amount)||0),0);
   const target=Number(state.settings.totalAmount)||0;
   const per=expected();
-  const pct=total?paidN/total*100:0;
+  const pct=shareCount?paidN/shareCount*100:0;
   const project=state.settings.projectName||'收費匯款登記表';
 
   $('#projectTitle').textContent=project;$('#heroProjectName').textContent=project;document.title=project+'｜收款管理';
@@ -1142,7 +1144,8 @@ function render(){
 function openPay(id){
   if(!isAdmin){toast('送出後只有管理員可以修改');return}
   const p=state.people.find(x=>x.id===id);if(!p)return;
-  $('#payId').value=id;$('#payTitle').textContent=`${p.lineName||p.name||''}｜${paid(p)?'修改匯款':'登記匯款'}`;
+  $('#payId').value=id;$('#payTitle').textContent=`${p.lineName||p.name||''}｜修改資料`;
+  $('#editMemberNo').value=p.memberNo||'';
   $('#last5').value=p.last5||'';
   $('#last5Warning').classList.remove('show');
   $('#last5').classList.remove('input-error');
@@ -1296,7 +1299,14 @@ $('#selfAddBtn').onclick=()=>{
 $('#savePay').onclick=()=>{
   if(!isAdmin)return alert('只有管理員可以修改已送出的資料');
   const p=state.people.find(x=>x.id===$('#payId').value);if(!p)return;
+  const memberNo=$('#editMemberNo').value.trim();
   const last5=$('#last5').value.trim(), amount=Number($('#payAmount').value);
+  if(!memberNo)return alert('請輸入編號');
+  const duplicateNo=state.people.some(x=>x.id!==p.id && String(x.memberNo||'').trim()===memberNo);
+  if(duplicateNo){
+    $('#editMemberNo').focus();
+    return alert('此編號已被其他人使用，請輸入不同編號');
+  }
   if(!/^\d{5}$/.test(last5)){
     validateLast5Input('last5','last5Warning',true);
     $('#last5').focus();
@@ -1304,6 +1314,7 @@ $('#savePay').onclick=()=>{
   }
   if(!(amount>0))return alert('請輸入正確匯款金額');
   const paymentAt=new Date($('#paymentDateTime').value||Date.now()).getTime();
+  p.memberNo=memberNo;
   p.last5=last5;p.amount=amount;p.paymentAt=paymentAt;p.note=$('#note').value.trim();p.updatedAt=Date.now();
   persistAndSync();$('#payModal').classList.remove('show');toast('匯款資料已儲存');
 };
@@ -1377,8 +1388,8 @@ function exportExcel(template=false){
     state.people.map((p,i)=>({'編號':p.memberNo||'','LINE名稱':p.lineName||p.name||'','繳款狀態':paid(p)?'已繳':'未繳','帳號後五碼':p.last5||'','匯款金額':p.amount||0,'匯款日期／時間':p.paymentAt?fmtTime(p.paymentAt):'','備註':p.note||'','最後更新':p.updatedAt?fmtTime(p.updatedAt):''}));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),template?'匯入範本':'匯款明細');
   if(!template){
-    const total=state.people.length,paidN=state.people.filter(paid).length,received=state.people.reduce((s,p)=>s+(Number(p.amount)||0),0);
-    const summary=[{'項目':'專案名稱','數值':state.settings.projectName},{'項目':'總人數','數值':total},{'項目':'已繳','數值':paidN},{'項目':'未繳','數值':total-paidN},{'項目':'已收金額','數值':received},{'項目':'目標金額','數值':state.settings.totalAmount||0}];
+    const total=Number(state.settings.shareCount)||0,paidN=state.people.filter(paid).length,received=state.people.reduce((s,p)=>s+(Number(p.amount)||0),0);
+    const summary=[{'項目':'專案名稱','數值':state.settings.projectName},{'項目':'分擔人數','數值':total},{'項目':'已繳','數值':paidN},{'項目':'未繳','數值':Math.max(total-paidN,0)},{'項目':'已收金額','數值':received},{'項目':'目標金額','數值':state.settings.totalAmount||0}];
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),'統計摘要');
   }
   const safe=(state.settings.projectName||'收費匯款登記表').replace(/[\\/:*?"<>|]/g,'_');
