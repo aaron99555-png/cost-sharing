@@ -1791,6 +1791,86 @@ body.resizing-column *{
 }
 </style>
 
+
+<style>
+.page-tabs{
+  display:flex;
+  gap:8px;
+  margin:14px 0 16px;
+  padding:6px;
+  border:1px solid #eadde1;
+  border-radius:14px;
+  background:rgba(255,255,255,.78);
+  position:sticky;
+  top:8px;
+  z-index:35;
+  backdrop-filter:blur(12px);
+}
+.page-tab{
+  appearance:none;
+  border:0;
+  border-radius:10px;
+  padding:10px 15px;
+  background:transparent;
+  color:#76545d;
+  font-weight:900;
+  cursor:pointer;
+  transition:.16s ease;
+}
+.page-tab:hover{
+  background:#fff3f6;
+}
+.page-tab.active{
+  color:#fff;
+  background:linear-gradient(135deg,#8d3041,#b9475c);
+  box-shadow:0 5px 14px rgba(126,48,64,.18);
+}
+.app-page{
+  display:none;
+}
+.app-page.active{
+  display:block;
+}
+.admin-page-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin:6px 0 14px;
+  padding:18px 20px;
+  border:1px solid #eadde1;
+  border-radius:16px;
+  background:linear-gradient(145deg,#fff7f9,#fff);
+}
+.admin-page-heading h2{
+  margin:2px 0 5px;
+  color:#713843;
+}
+#adminPage .admin-panel{
+  display:block !important;
+  margin-top:0;
+}
+#adminPage .admin-panel:not(.show){
+  display:block !important;
+}
+@media(max-width:720px){
+  .page-tabs{
+    top:4px;
+  }
+  .page-tab{
+    flex:1;
+    padding:10px 8px;
+    font-size:13px;
+  }
+  .admin-page-heading{
+    flex-direction:column;
+  }
+  #backToMainBtn{
+    width:100%;
+  }
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -1803,6 +1883,13 @@ body.resizing-column *{
   </div>
 </header>
 
+<nav class="page-tabs" id="pageTabs">
+  <button class="page-tab active" id="mainPageTab" type="button">🏠 匯款首頁</button>
+  <button class="page-tab" id="adminPageTab" type="button" style="display:none">⚙️ 管理者控制台</button>
+</nav>
+
+
+<main id="mainPage" class="app-page active">
 <section class="card project-banner">
   <div class="project-main">
     <div>
@@ -1889,103 +1976,7 @@ body.resizing-column *{
   </div>
 </section>
 
-<section class="card admin-panel" id="adminPanel">
-  <div class="card-title">
-    <div style="display:flex;align-items:center;gap:8px"><h2>管理者控制台</h2><span class="pill paid">管理模式</span></div>
-    <button class="btn small" id="adminToggleBtn">收合</button>
-  </div>
-  <div id="adminPanelBody">
-    <div class="admin-grid">
-      <div class="field"><label>專案名稱</label><input id="projectName" maxlength="40"></div>
-      <div class="field"><label>總金額（管理員設定）</label><input id="totalAmount" type="number" min="0" step="1" placeholder="例如 168000"></div>
-      <div class="field"><label>分擔人數（管理員設定）</label><input id="shareCount" type="number" min="1" step="1" placeholder="例如 120"></div>
-      <div class="field"><label>編號</label><input id="newMemberNo" placeholder="例如 001"></div>
-      <div class="field"><label>LINE名稱</label><input id="newLineName" placeholder="輸入 LINE 名稱"></div>
-      <button class="btn primary" id="addPersonBtn">＋ 新增人員</button>
-    </div>
-    <div class="note" style="margin-top:8px;padding:10px 12px;background:#fff6f7;border:1px solid #efd9de;border-radius:11px">
-      管理員可設定「總金額」與「分擔人數」。收款完成進度依使用者匯款回報計算；核對進度則依管理員確認收款結果另外計算，兩者互不混用。
-    </div>
-    <div class="list-display-setting">
-      <div>
-        <div class="list-display-title">👁️ 下方名單顯示設定</div>
-        <div class="muted" style="margin-top:3px">控制 LINE 名稱旁是否顯示「應匯款銀行／收款人」。此設定會同步所有裝置。</div>
-      </div>
-      <label class="switch-control">
-        <input type="checkbox" id="showBankInList">
-        <span class="switch-slider"></span>
-        <span class="switch-text" id="showBankInListText">顯示</span>
-      </label>
-    </div>
-    <div class="payment-group-admin">
-      <div class="card-title" style="margin-bottom:10px">
-        <div>
-          <h2 style="font-size:16px">🏦 分組收款帳號設定</h2>
-          <div class="muted" style="margin-top:4px">依人員編號區間指定銀行、收款人與匯款帳號。</div>
-        </div>
-      </div>
-      <input id="editGroupId" type="hidden">
-      <div class="group-form">
-        <div class="field"><label>編號起</label><input id="groupStart" inputmode="numeric" placeholder="001"></div>
-        <div class="field"><label>編號迄</label><input id="groupEnd" inputmode="numeric" placeholder="050"></div>
-        <div class="field"><label>銀行代碼</label><input id="groupBankCode" inputmode="numeric" maxlength="4" placeholder="例如 822"></div>
-        <div class="field"><label>指定銀行</label><input id="groupBank" placeholder="例如 中國信託"></div>
-        <div class="field"><label>收款人</label><input id="groupRecipient" placeholder="例如 Dolly"></div>
-        <div class="field"><label>匯款帳號</label><input id="groupAccount" inputmode="numeric" placeholder="請輸入收款帳號"></div>
-        <button class="btn primary" id="saveGroupBtn">＋ 新增分組</button>
-      </div>
-      <div class="group-list" id="groupList"></div>
-    </div>
 
-<div class="quick-import-box">
-      <div class="card-title" style="margin-bottom:10px">
-        <div>
-          <h2 style="font-size:16px">⚡ 快速貼上人員名單</h2>
-          <div class="muted" style="margin-top:4px">建立「查詢／分組用名冊」，不會新增到下方匯款結果表格。支援「1.Angela」與「104Hsin」格式。</div>
-        </div>
-      </div>
-      <textarea id="quickListInput" placeholder="例如：
-1.Angela
-2.Candy ( 妤庭)
-3.caran
-...
-104Hsin"></textarea>
-      <div class="quick-import-actions">
-        <button class="btn primary" id="quickImportBtn">＋ 解析並新增名單</button>
-        <button class="btn" id="quickPreviewBtn">預覽解析結果</button>
-        <button class="btn" id="quickClearBtn">清除</button>
-      </div>
-      <div class="quick-import-result" id="quickImportResult">尚未解析。</div>
-    </div>
-
-    <div class="group-stats-admin">
-      <div class="card-title" style="margin-bottom:10px">
-        <div>
-          <h2 style="font-size:16px">📊 分組收款統計</h2>
-          <div class="muted" style="margin-top:4px">依各組收款帳號即時統計應收、已核對、未核對與人員名單；管理模式可直接在名單快速核對或取消核對。</div>
-        </div>
-      </div>
-      <div id="groupCollectionStats"></div>
-    </div>
-
-    
-    <div class="tools">
-      <button class="btn" id="importNamesBtn">匯入人員名單</button>
-      <button class="btn" id="importDetailBtn">匯入匯款資料</button>
-      <button class="btn" id="exportBtn">匯出完整明細</button>
-      <button class="btn" id="exportPeopleBtn">匯出人員名單</button>
-      <button class="btn" id="templateBtn">下載 Excel 範本</button>
-      <button class="btn" id="cloudSyncBtn">☁️ 立即同步</button>
-      <button class="btn" id="backupBtn">備份 JSON</button>
-      <button class="btn" id="restoreBtn">還原 JSON</button>
-      <button class="btn danger" id="deleteSelectedBtn">刪除勾選</button>
-    </div>
-    <div class="note" style="margin-top:11px">管理員建立的名冊只供查詢帳戶與分組統計，不會出現在下方匯款結果表格；下方表格只顯示一般使用者實際回報的匯款紀錄。送出後只有管理員能修改／刪除。</div>
-    <input type="file" id="namesFile" accept=".xlsx,.xls,.csv" hidden>
-    <input type="file" id="detailFile" accept=".xlsx,.xls,.csv" hidden>
-    <input type="file" id="restoreFile" accept=".json" hidden>
-  </div>
-</section>
 
 
 
@@ -2211,6 +2202,117 @@ body.resizing-column *{
     <div class="mobile-list" id="verifiedMobileList"></div>
   </div>
 </section>
+</main>
+
+<main id="adminPage" class="app-page admin-page">
+  <div class="admin-page-heading">
+    <div>
+      <div class="eyebrow">ADMINISTRATION</div>
+      <h2>⚙️ 管理者控制台</h2>
+      <div class="muted">管理專案設定、分組帳號、人員名冊、核對統計與資料匯入匯出。</div>
+    </div>
+    <button class="btn" id="backToMainBtn" type="button">← 回匯款首頁</button>
+  </div>
+  <section class="card admin-panel" id="adminPanel">
+  <div class="card-title">
+    <div style="display:flex;align-items:center;gap:8px"><h2>後台管理工具</h2><span class="pill paid">管理模式</span></div>
+    <button class="btn small" id="adminToggleBtn">收合</button>
+  </div>
+  <div id="adminPanelBody">
+    <div class="admin-grid">
+      <div class="field"><label>專案名稱</label><input id="projectName" maxlength="40"></div>
+      <div class="field"><label>總金額（管理員設定）</label><input id="totalAmount" type="number" min="0" step="1" placeholder="例如 168000"></div>
+      <div class="field"><label>分擔人數（管理員設定）</label><input id="shareCount" type="number" min="1" step="1" placeholder="例如 120"></div>
+      <div class="field"><label>編號</label><input id="newMemberNo" placeholder="例如 001"></div>
+      <div class="field"><label>LINE名稱</label><input id="newLineName" placeholder="輸入 LINE 名稱"></div>
+      <button class="btn primary" id="addPersonBtn">＋ 新增人員</button>
+    </div>
+    <div class="note" style="margin-top:8px;padding:10px 12px;background:#fff6f7;border:1px solid #efd9de;border-radius:11px">
+      管理員可設定「總金額」與「分擔人數」。收款完成進度依使用者匯款回報計算；核對進度則依管理員確認收款結果另外計算，兩者互不混用。
+    </div>
+    <div class="list-display-setting">
+      <div>
+        <div class="list-display-title">👁️ 下方名單顯示設定</div>
+        <div class="muted" style="margin-top:3px">控制 LINE 名稱旁是否顯示「應匯款銀行／收款人」。此設定會同步所有裝置。</div>
+      </div>
+      <label class="switch-control">
+        <input type="checkbox" id="showBankInList">
+        <span class="switch-slider"></span>
+        <span class="switch-text" id="showBankInListText">顯示</span>
+      </label>
+    </div>
+    <div class="payment-group-admin">
+      <div class="card-title" style="margin-bottom:10px">
+        <div>
+          <h2 style="font-size:16px">🏦 分組收款帳號設定</h2>
+          <div class="muted" style="margin-top:4px">依人員編號區間指定銀行、收款人與匯款帳號。</div>
+        </div>
+      </div>
+      <input id="editGroupId" type="hidden">
+      <div class="group-form">
+        <div class="field"><label>編號起</label><input id="groupStart" inputmode="numeric" placeholder="001"></div>
+        <div class="field"><label>編號迄</label><input id="groupEnd" inputmode="numeric" placeholder="050"></div>
+        <div class="field"><label>銀行代碼</label><input id="groupBankCode" inputmode="numeric" maxlength="4" placeholder="例如 822"></div>
+        <div class="field"><label>指定銀行</label><input id="groupBank" placeholder="例如 中國信託"></div>
+        <div class="field"><label>收款人</label><input id="groupRecipient" placeholder="例如 Dolly"></div>
+        <div class="field"><label>匯款帳號</label><input id="groupAccount" inputmode="numeric" placeholder="請輸入收款帳號"></div>
+        <button class="btn primary" id="saveGroupBtn">＋ 新增分組</button>
+      </div>
+      <div class="group-list" id="groupList"></div>
+    </div>
+
+<div class="quick-import-box">
+      <div class="card-title" style="margin-bottom:10px">
+        <div>
+          <h2 style="font-size:16px">⚡ 快速貼上人員名單</h2>
+          <div class="muted" style="margin-top:4px">建立「查詢／分組用名冊」，不會新增到下方匯款結果表格。支援「1.Angela」與「104Hsin」格式。</div>
+        </div>
+      </div>
+      <textarea id="quickListInput" placeholder="例如：
+1.Angela
+2.Candy ( 妤庭)
+3.caran
+...
+104Hsin"></textarea>
+      <div class="quick-import-actions">
+        <button class="btn primary" id="quickImportBtn">＋ 解析並新增名單</button>
+        <button class="btn" id="quickPreviewBtn">預覽解析結果</button>
+        <button class="btn" id="quickClearBtn">清除</button>
+      </div>
+      <div class="quick-import-result" id="quickImportResult">尚未解析。</div>
+    </div>
+
+    <div class="group-stats-admin">
+      <div class="card-title" style="margin-bottom:10px">
+        <div>
+          <h2 style="font-size:16px">📊 分組收款統計</h2>
+          <div class="muted" style="margin-top:4px">依各組收款帳號即時統計應收、已核對、未核對與人員名單；管理模式可直接在名單快速核對或取消核對。</div>
+        </div>
+      </div>
+      <div id="groupCollectionStats"></div>
+    </div>
+
+    
+    <div class="tools">
+      <button class="btn" id="importNamesBtn">匯入人員名單</button>
+      <button class="btn" id="importDetailBtn">匯入匯款資料</button>
+      <button class="btn" id="exportBtn">匯出完整明細</button>
+      <button class="btn" id="exportPeopleBtn">匯出人員名單</button>
+      <button class="btn" id="templateBtn">下載 Excel 範本</button>
+      <button class="btn" id="cloudSyncBtn">☁️ 立即同步</button>
+      <button class="btn" id="backupBtn">備份 JSON</button>
+      <button class="btn" id="restoreBtn">還原 JSON</button>
+      <button class="btn danger" id="deleteSelectedBtn">刪除勾選</button>
+    </div>
+    <div class="note" style="margin-top:11px">管理員建立的名冊只供查詢帳戶與分組統計，不會出現在下方匯款結果表格；下方表格只顯示一般使用者實際回報的匯款紀錄。送出後只有管理員能修改／刪除。</div>
+    <input type="file" id="namesFile" accept=".xlsx,.xls,.csv" hidden>
+    <input type="file" id="detailFile" accept=".xlsx,.xls,.csv" hidden>
+    <input type="file" id="restoreFile" accept=".json" hidden>
+  </div>
+</section>
+</main>
+
+
 </div>
 
 <div class="modal" id="loginModal"><div class="modal-card">
@@ -3522,6 +3624,28 @@ function bindInlineEnterNavigation(){
   table.dataset.enterNavBound='1';
 }
 
+
+let currentAppPage='main';
+
+function switchAppPage(page){
+  if(page==='admin' && !isAdmin)page='main';
+  currentAppPage=page;
+
+  const main=$('#mainPage');
+  const admin=$('#adminPage');
+  const mainTab=$('#mainPageTab');
+  const adminTab=$('#adminPageTab');
+
+  if(main)main.classList.toggle('active',page==='main');
+  if(admin)admin.classList.toggle('active',page==='admin');
+  if(mainTab)mainTab.classList.toggle('active',page==='main');
+  if(adminTab)adminTab.classList.toggle('active',page==='admin');
+
+  window.scrollTo({top:0,behavior:'smooth'});
+  requestAnimationFrame(syncResizableTableWidth);
+}
+window.switchAppPage=switchAppPage;
+
 function render(){
   const shareCount=Number(state.settings.shareCount)||0;
   const total=shareCount;
@@ -3601,6 +3725,9 @@ function render(){
   if($('#newMemberNo')&&!$('#newMemberNo').value)$('#newMemberNo').value=nextMemberNo();
   $('#app').classList.toggle('is-admin',isAdmin);$('#adminPanel').classList.toggle('show',isAdmin);
   $('#adminBtn').style.display=isAdmin?'none':'inline-flex';$('#logoutBtn').style.display=isAdmin?'inline-flex':'none';
+  if($('#adminPageTab'))$('#adminPageTab').style.display=isAdmin?'inline-flex':'none';
+  if(!isAdmin && currentAppPage==='admin')currentAppPage='main';
+  switchAppPage(currentAppPage);
   if($('#adminInlineHint'))$('#adminInlineHint').style.display=isAdmin?'block':'none';
   if($('#copyUnpaidBtn'))$('#copyUnpaidBtn').style.display=isAdmin?'inline-flex':'none';
   $('#adminPanelBody').style.display=adminPanelOpen?'block':'none';$('#adminToggleBtn').textContent=adminPanelOpen?'收合':'展開';
@@ -3717,10 +3844,15 @@ function deletePerson(id){
 function toggleSelect(id,v){const p=state.people.find(x=>x.id===id);if(p){p.selected=v;saveLocalOnly()}}
 window.openPay=openPay;window.deletePerson=deletePerson;window.toggleSelect=toggleSelect;
 
+
+$('#mainPageTab').onclick=()=>switchAppPage('main');
+$('#adminPageTab').onclick=()=>{if(isAdmin)switchAppPage('admin')};
+$('#backToMainBtn').onclick=()=>switchAppPage('main');
+
 $$('[data-close]').forEach(b=>b.onclick=()=>$('#'+b.dataset.close).classList.remove('show'));
 $('#adminBtn').onclick=()=>{$('#adminPassword').value='';$('#loginModal').classList.add('show');setTimeout(()=>$('#adminPassword').focus(),50)};
-$('#loginSubmit').onclick=()=>{if($('#adminPassword').value===ADMIN_PASSWORD){isAdmin=true;sessionStorage.setItem('payment_admin','1');$('#loginModal').classList.remove('show');render();toast('已進入管理模式')}else alert('密碼錯誤')};
-$('#logoutBtn').onclick=()=>{isAdmin=false;sessionStorage.removeItem('payment_admin');render();toast('已登出管理模式')};
+$('#loginSubmit').onclick=()=>{if($('#adminPassword').value===ADMIN_PASSWORD){isAdmin=true;sessionStorage.setItem('payment_admin','1');$('#loginModal').classList.remove('show');currentAppPage='admin';render();toast('已進入管理者控制台')}else alert('密碼錯誤')};
+$('#logoutBtn').onclick=()=>{isAdmin=false;sessionStorage.removeItem('payment_admin');currentAppPage='main';render();toast('已登出管理模式')};
 $('#adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginSubmit').click()});
 $('#adminToggleBtn').onclick=()=>{adminPanelOpen=!adminPanelOpen;localStorage.setItem('payment_admin_panel_open',adminPanelOpen?'1':'0');render()};
 
