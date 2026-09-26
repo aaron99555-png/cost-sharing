@@ -1708,6 +1708,89 @@ body.resizing-column *{
 }
 </style>
 
+
+<style>
+.group-name-person{
+  gap:10px;
+}
+.group-name-person.actionable{
+  align-items:center;
+}
+.group-person-main{
+  min-width:0;
+  flex:1;
+}
+.group-person-action{
+  flex:0 0 auto;
+}
+.group-quick-btn{
+  border:1px solid #d9c2c8;
+  border-radius:999px;
+  padding:5px 9px;
+  background:#fff;
+  color:#713843;
+  font-size:11px;
+  font-weight:900;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:.15s ease;
+}
+.group-quick-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 3px 10px rgba(93,40,52,.10);
+}
+.group-quick-btn.verify{
+  background:#fff1f4;
+  border-color:#e6bac4;
+  color:#922f45;
+}
+.group-quick-btn.cancel{
+  background:#fff8ea;
+  border-color:#ead6a9;
+  color:#8c621b;
+}
+.group-quick-status{
+  display:inline-flex;
+  align-items:center;
+  border-radius:999px;
+  padding:4px 8px;
+  font-size:10px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.group-quick-status.unpaid{
+  background:#f2eff0;
+  color:#88777c;
+}
+.group-quick-status.pending{
+  background:#fff4dc;
+  color:#936316;
+}
+.group-quick-status.verified{
+  background:#fff0f4;
+  color:#8d3041;
+}
+.group-fast-hint{
+  font-size:10px;
+  font-weight:700;
+  color:#9a858b;
+}
+#app:not(.is-admin) .group-fast-hint{
+  display:none;
+}
+@media(max-width:720px){
+  .group-name-person.actionable{
+    align-items:flex-start;
+  }
+  .group-person-action{
+    margin-left:auto;
+  }
+  .group-quick-btn{
+    padding:6px 9px;
+  }
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -1858,7 +1941,7 @@ body.resizing-column *{
       <div class="card-title" style="margin-bottom:10px">
         <div>
           <h2 style="font-size:16px">📊 分組收款統計</h2>
-          <div class="muted" style="margin-top:4px">依各組收款帳號即時統計應收、已收、未收與人員名單。</div>
+          <div class="muted" style="margin-top:4px">依各組收款帳號即時統計應收、已核對、未核對與人員名單；管理模式可直接在名單快速核對或取消核對。</div>
         </div>
       </div>
       <div id="groupCollectionStats"></div>
@@ -2665,13 +2748,45 @@ function paymentForRosterMember(member){
     String(p.lineName||p.name||'').trim()===String(member.lineName||member.name||'').trim()
   )||null;
 }
-function groupPersonRows(list,showAmount=false){
+function groupPersonRows(list,mode='normal'){
   if(!list.length)return '<div class="group-name-empty">目前無人員</div>';
-  return list.map(p=>`
-    <div class="group-name-person">
-      <div class="who"><strong>${esc(p.memberNo||'—')}</strong>｜${esc(p.lineName||p.name||'')}</div>
-      ${showAmount?`<div class="amt">${money(Number(p.amount)||0)}</div>`:''}
-    </div>`).join('');
+
+  return list.map(member=>{
+    const pay=paymentForRosterMember(member);
+    const hasPayment=!!(pay&&reported(pay));
+    const isVerified=!!(pay&&paid(pay));
+
+    let action='';
+    if(isAdmin && mode==='receivable'){
+      if(!hasPayment){
+        action='<span class="group-quick-status unpaid">未匯款</span>';
+      }else if(isVerified){
+        action='<span class="group-quick-status verified">✅ 已核對</span>';
+      }else{
+        action=`<button class="group-quick-btn verify" type="button" onclick="toggleVerification('${pay.id}',true)">✅ 快速核對</button>`;
+      }
+    }else if(isAdmin && mode==='verified'){
+      action=pay
+        ? `<button class="group-quick-btn cancel" type="button" onclick="toggleVerification('${pay.id}',false)">↩ 取消核對</button>`
+        : '';
+    }else if(mode==='pending'){
+      action=!hasPayment
+        ? '<span class="group-quick-status unpaid">未匯款</span>'
+        : (isVerified
+            ? '<span class="group-quick-status verified">✅ 已核對</span>'
+            : '<span class="group-quick-status pending">⏳ 待核對</span>');
+    }
+
+    const amount=(mode==='verified' && pay)?`<div class="amt">${money(Number(pay.amount)||0)}</div>`:'';
+
+    return `<div class="group-name-person ${isAdmin&&(mode==='receivable'||mode==='verified')?'actionable':''}">
+      <div class="group-person-main">
+        <div class="who"><strong>${esc(member.memberNo||'—')}</strong>｜${esc(member.lineName||member.name||'')}</div>
+        ${amount}
+      </div>
+      ${action?`<div class="group-person-action">${action}</div>`:''}
+    </div>`;
+  }).join('');
 }
 function renderGroupCollectionStats(){
   const root=$('#groupCollectionStats');
@@ -2736,16 +2851,22 @@ function renderGroupCollectionStats(){
 
       <div class="group-name-grid">
         <div class="group-name-box">
-          <div class="group-name-head"><span>應收款名單</span><span>${members.length} 人</span></div>
-          <div class="group-name-items">${groupPersonRows(members,false)}</div>
+          <div class="group-name-head">
+            <span>應收款名單 <small class="group-fast-hint">｜已匯款者可快速核對</small></span>
+            <span>${members.length} 人</span>
+          </div>
+          <div class="group-name-items">${groupPersonRows(members,'receivable')}</div>
         </div>
         <div class="group-name-box">
-          <div class="group-name-head"><span>已核對名單</span><span>${paidMembers.length} 人</span></div>
-          <div class="group-name-items">${groupPersonRows(paidMembers,true)}</div>
+          <div class="group-name-head">
+            <span>已核對名單 <small class="group-fast-hint">｜可快速取消</small></span>
+            <span>${paidMembers.length} 人</span>
+          </div>
+          <div class="group-name-items">${groupPersonRows(paidMembers,'verified')}</div>
         </div>
         <div class="group-name-box">
           <div class="group-name-head"><span>未核對名單</span><span>${unpaidMembers.length} 人</span></div>
-          <div class="group-name-items">${groupPersonRows(unpaidMembers,false)}</div>
+          <div class="group-name-items">${groupPersonRows(unpaidMembers,'pending')}</div>
         </div>
       </div>
     </div>`;
