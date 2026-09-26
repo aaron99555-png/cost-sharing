@@ -2327,6 +2327,149 @@ a{
 }
 </style>
 
+
+<style>
+/* ===== 右上角操作區高對比強化 ===== */
+.topbar .actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.topbar .actions .btn,
+#cloudStatus,
+#adminBtn,
+#logoutBtn{
+  color:#3f1f28 !important;
+  background:#ffffff !important;
+  border:1px solid #b98a96 !important;
+  box-shadow:0 4px 12px rgba(90,35,50,.12) !important;
+  font-weight:900 !important;
+  opacity:1 !important;
+  text-shadow:none !important;
+}
+
+#cloudStatus{
+  background:#fff2f5 !important;
+  color:#6f283b !important;
+  border-color:#c98e9d !important;
+}
+
+#adminBtn{
+  background:linear-gradient(135deg,#7f2f40,#a84057) !important;
+  color:#ffffff !important;
+  border-color:#7f2f40 !important;
+}
+
+#logoutBtn{
+  background:#fff7e9 !important;
+  color:#6a4715 !important;
+  border-color:#d8bd86 !important;
+}
+
+.topbar .actions .btn:hover,
+#cloudStatus:hover,
+#adminBtn:hover,
+#logoutBtn:hover{
+  filter:brightness(.98);
+  transform:translateY(-1px);
+}
+
+@media(max-width:720px){
+  .topbar .actions{
+    width:100%;
+    justify-content:flex-end;
+  }
+  .topbar .actions .btn,
+  #cloudStatus,
+  #adminBtn,
+  #logoutBtn{
+    font-size:12px !important;
+    padding:8px 10px !important;
+  }
+}
+</style>
+
+
+<style>
+/* ===== 分組收款統計：加高可視區＋多組並排 ===== */
+#groupCollectionStats{
+  min-height:520px;
+  max-height:1050px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:4px 6px 8px 2px;
+  scrollbar-gutter:stable;
+}
+
+#groupCollectionStats .group-stat-list{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:16px !important;
+  align-items:start;
+}
+
+#groupCollectionStats .group-stat-card{
+  min-height:430px;
+  margin:0 !important;
+  height:auto;
+  display:flex;
+  flex-direction:column;
+}
+
+#groupCollectionStats .group-name-grid{
+  flex:1;
+  align-items:stretch;
+}
+
+#groupCollectionStats .group-name-box{
+  min-height:180px;
+}
+
+#groupCollectionStats::-webkit-scrollbar{
+  width:10px;
+}
+#groupCollectionStats::-webkit-scrollbar-track{
+  background:#f7ecef;
+  border-radius:999px;
+}
+#groupCollectionStats::-webkit-scrollbar-thumb{
+  background:#c99eaa;
+  border-radius:999px;
+  border:2px solid #f7ecef;
+}
+
+@media(min-width:1500px){
+  #groupCollectionStats{
+    max-height:1200px;
+  }
+}
+
+@media(max-width:1050px){
+  #groupCollectionStats .group-stat-list{
+    grid-template-columns:1fr !important;
+  }
+  #groupCollectionStats{
+    max-height:none;
+    overflow:visible;
+  }
+  #groupCollectionStats .group-stat-card{
+    min-height:0;
+  }
+}
+
+@media(max-width:720px){
+  #groupCollectionStats{
+    min-height:0;
+    padding:0;
+  }
+  #groupCollectionStats .group-name-box{
+    min-height:0;
+  }
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
