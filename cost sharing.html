@@ -2579,6 +2579,165 @@ a{
 }
 </style>
 
+
+<style>
+/* ===== 恢復明亮紅色主題 ===== */
+:root{
+  --red:#c92335 !important;
+  --red2:#e03a4e !important;
+  --red3:#f05b6e !important;
+  --wine-1:#b91f32 !important;
+  --wine-2:#d52b41 !important;
+  --wine-3:#ed5266 !important;
+  --soft-bg:#fff8f8 !important;
+  --soft-panel:#fffefe !important;
+  --line-soft:#f0d7db !important;
+}
+
+/* 頁面與卡片 */
+body{
+  background:
+    radial-gradient(circle at top left, rgba(239,68,68,.08), transparent 28%),
+    linear-gradient(180deg,#fffafa 0%,#fff5f6 45%,#fffdfd 100%) !important;
+}
+.card,
+.payment-list-card,
+.admin-panel,
+.public-result-section,
+.verification-section,
+.group-stat-card{
+  border-color:#efd3d8 !important;
+}
+
+/* 主視覺 */
+.project-banner{
+  background:linear-gradient(135deg,#a8152c 0%,#d62942 58%,#ed4b60 100%) !important;
+}
+.project-banner,
+.project-banner *{
+  color:#fff !important;
+}
+
+/* 主要按鈕、分頁 */
+.btn.primary,
+.page-tab.active,
+#adminBtn{
+  background:linear-gradient(135deg,#b71930,#df3047) !important;
+  color:#fff !important;
+  border-color:#b71930 !important;
+}
+.btn.primary:hover,
+.page-tab.active:hover,
+#adminBtn:hover{
+  background:linear-gradient(135deg,#a8152c,#d62640) !important;
+}
+
+/* 進度條 */
+.progress,
+.verify-progress-bar{
+  background:linear-gradient(90deg,#bd1e34,#df3047,#f15a6e) !important;
+}
+
+/* 重要數字與文字 */
+.stat .value.red,
+.summary-chip strong,
+.verify-count-box.done .v,
+.group-money-item .v,
+.public-verify-result.ok{
+  color:#c61f35 !important;
+}
+
+/* 標題 */
+h1,h2,h3,h4,
+.card-title h2,
+.card-title h3,
+.admin-page-heading h2,
+.group-stat-title,
+.group-name-head,
+.bank-lookup-title,
+.steps-title{
+  color:#7e1d2d !important;
+}
+
+/* 表格標頭 */
+.payment-data-table thead th,
+table thead th{
+  background:linear-gradient(180deg,#ffecef 0%,#fff6f7 100%) !important;
+  color:#7b1f30 !important;
+  border-bottom-color:#efcfd5 !important;
+}
+
+/* 輸入框聚焦 */
+input:focus,
+select:focus,
+textarea:focus{
+  border-color:#da3048 !important;
+  box-shadow:0 0 0 3px rgba(218,48,72,.12) !important;
+}
+
+/* 分組統計 */
+#groupCollectionStats .group-stat-head{
+  background:linear-gradient(135deg,#b71d32,#dc3047) !important;
+}
+#groupCollectionStats .group-stat-head,
+#groupCollectionStats .group-stat-head *,
+#groupCollectionStats .group-stat-title,
+#groupCollectionStats .group-stat-bank,
+#groupCollectionStats .group-stat-count{
+  color:#fff !important;
+}
+
+#groupCollectionStats .group-name-head{
+  background:linear-gradient(135deg,#c92339,#e44055) !important;
+  color:#fff !important;
+}
+#groupCollectionStats .group-name-head *,
+#groupCollectionStats .group-name-head span,
+#groupCollectionStats .group-name-head small{
+  color:#fff !important;
+}
+
+#groupCollectionStats .group-quick-btn.verify,
+#groupCollectionStats .group-quick-status.verified{
+  background:#c72038 !important;
+  border-color:#c72038 !important;
+  color:#fff !important;
+}
+
+.group-payment-detail span{
+  background:#fff0f2 !important;
+  border-color:#f0d1d7 !important;
+}
+.group-payment-note{
+  background:#fff6f7 !important;
+  border-color:#efd7dc !important;
+}
+
+/* 右上角 */
+#cloudStatus{
+  background:#fff0f2 !important;
+  color:#a51e32 !important;
+  border-color:#e5a8b3 !important;
+}
+#logoutBtn{
+  background:#fff3f4 !important;
+  color:#9d1f32 !important;
+  border-color:#e0a9b2 !important;
+}
+
+/* 提示與膠囊 */
+.pill.paid,
+.group-quick-status.verified{
+  background:#c72038 !important;
+  color:#fff !important;
+}
+.pill.pending,
+.group-quick-status.pending{
+  background:#fff0d8 !important;
+  color:#8a5a00 !important;
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
