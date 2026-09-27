@@ -3489,9 +3489,10 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const money=n=>'$'+Number(n||0).toLocaleString('zh-TW');
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const nameKey=v=>String(v||'').trim().toLocaleLowerCase();
 const reported=p=>Number(p.amount)>0 && /^\d{5}$/.test(String(p.last5||''));
 const paid=p=>reported(p) && p.verified===true;
-const fmtTime=v=>v?new Date(v).toLocaleString('zh-TW',{hour12:false,hourCycle:'h23'}):'—';
+const fmtTime=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('zh-TW',{hour12:false,hourCycle:'h23'})};
 const toDateTimeLocal=ts=>{if(!ts)return '';const d=new Date(ts),pad=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`};
 const statusLabel=p=>paid(p)?'✅ 已核對':(reported(p)?'⏳ 待核對':'待回報');
 const statusClass=p=>paid(p)?'paid':(reported(p)?'pending':'unpaid');
@@ -3513,7 +3514,7 @@ function normalizePeople(list=[]){
       memberNo=String(n++).padStart(3,'0');
     }
     used.add(memberNo);
-    return {selected:false,paymentAt:null,...p,memberNo,lineName,name:lineName};
+    return {selected:false,paymentAt:null,...p,id:p.id||uid(),memberNo,lineName,name:lineName};
   });
 }
 
@@ -3531,10 +3532,10 @@ function normalizeRoster(list=[]){
       while(used.has(String(n).padStart(3,'0'))||used.has(String(n)))n++;
       memberNo=String(n).padStart(3,'0');
     }
-    const nameKey=lineName.toLowerCase();
-    if(usedNo.has(memberNo)||usedName.has(nameKey))continue;
+    const normalizedName=nameKey(lineName);
+    if(usedNo.has(memberNo)||usedName.has(normalizedName))continue;
     usedNo.add(memberNo);
-    usedName.add(nameKey);
+    usedName.add(normalizedName);
     out.push({id:raw.id||uid(),memberNo,lineName,name:lineName});
   }
   return out;
@@ -3551,40 +3552,91 @@ function hasPaymentData(p){
 
 function ensureRosterAndPayments(data){
   data ||= {};
-  data.people ||= [];
-  data.roster ||= [];
+  const basePeople=Array.isArray(data.people)?data.people:Object.values(data.people||{});
+  const shadowPeople=(data.peopleByMember && typeof data.peopleByMember==='object')
+    ? Object.values(data.peopleByMember)
+    : [];
+  const baseRoster=Array.isArray(data.roster)?data.roster:Object.values(data.roster||{});
+
+  // root people 是管理端正式資料；peopleByMember 是一般使用者並行送款 shadow。
+  // Shadow 可以更新匯款內容／備註，但不能覆蓋管理員的 verified / verifiedAt。
+  const normalizedBase=normalizePeople(basePeople);
+  const normalizedShadow=normalizePeople(shadowPeople);
+  const mergedPeople=[...normalizedBase.map(p=>({...p}))];
+
+  const samePaymentMember=(a,b)=>
+    (a.id && b.id && String(a.id)===String(b.id)) ||
+    (a.memberNo && b.memberNo && String(a.memberNo).trim()===String(b.memberNo).trim()) ||
+    (nameKey(a.lineName||a.name) && nameKey(a.lineName||a.name)===nameKey(b.lineName||b.name));
+
+  for(const shadow of normalizedShadow){
+    const root=mergedPeople.find(p=>samePaymentMember(p,shadow));
+    if(root){
+      const rootTime=Math.max(Number(root.updatedAt)||0,Number(root.verifiedAt)||0);
+      const shadowTime=Number(shadow.updatedAt)||0;
+      if(shadowTime>=rootTime){
+        const adminVerified=root.verified===true;
+        const adminVerifiedAt=root.verifiedAt||null;
+        const canonicalId=root.id||shadow.id;
+        Object.assign(root,shadow,{
+          id:canonicalId,
+          verified:adminVerified,
+          verifiedAt:adminVerifiedAt,
+          selected:false
+        });
+      }
+    }else{
+      // 沒有 root 紀錄時，shadow 視為新的使用者回報；核對狀態一律由管理員開始。
+      mergedPeople.push({...shadow,verified:false,verifiedAt:null,selected:false});
+    }
+  }
+
+  // 舊資料若曾產生同會員多個 payment id：優先保留真正已匯款，再保留管理員已核對，
+  // 最後才以最新 updatedAt 決定，避免新一點的空白/舊頁面資料吃掉有效匯款。
+  const byMember=new Map();
+  for(const raw of mergedPeople){
+    const key=String(raw.memberNo||'').trim()
+      ? `no:${String(raw.memberNo||'').trim()}`
+      : `name:${nameKey(raw.lineName||raw.name)}`;
+    const old=byMember.get(key);
+    if(!old){byMember.set(key,raw);continue}
+
+    const rawReported=reported(raw), oldReported=reported(old);
+    const rawVerified=raw.verified===true, oldVerified=old.verified===true;
+    const rawTime=Math.max(Number(raw.updatedAt)||0,Number(raw.verifiedAt)||0);
+    const oldTime=Math.max(Number(old.updatedAt)||0,Number(old.verifiedAt)||0);
+
+    if(rawReported!==oldReported){
+      if(rawReported)byMember.set(key,raw);
+    }else if(rawVerified!==oldVerified){
+      if(rawVerified)byMember.set(key,raw);
+    }else if(rawTime>oldTime){
+      byMember.set(key,raw);
+    }
+  }
+  data.people=[...byMember.values()].filter(hasPaymentData);
 
   // 舊版的預建名單會自動搬到 roster。
   const seed=[
-    ...(data.roster||[]),
-    ...(data.people||[]).map(p=>({
-      id:p.rosterId||uid(),
-      memberNo:p.memberNo||p.no||'',
-      lineName:p.lineName||p.name||'',
-      name:p.lineName||p.name||''
+    ...baseRoster,
+    ...data.people.map(p=>({
+      id:p.rosterId||uid(),memberNo:p.memberNo||p.no||'',lineName:p.lineName||p.name||'',name:p.lineName||p.name||''
     }))
   ];
   data.roster=normalizeRoster(seed);
 
-  // 下方匯款結果只保留真正有回報內容的資料。
-  data.people=normalizePeople((data.people||[]).filter(hasPaymentData));
-
   // 匯款紀錄若不在名冊內，自動補入名冊。
-  for(const p of data.people){
+  for(const pay of data.people){
     const exists=data.roster.some(r=>
-      String(r.memberNo||'')===String(p.memberNo||'') ||
-      String(r.lineName||r.name||'').trim()===String(p.lineName||p.name||'').trim()
+      String(r.memberNo||'')===String(pay.memberNo||'') ||
+      nameKey(r.lineName||r.name)===nameKey(pay.lineName||pay.name)
     );
     if(!exists){
-      data.roster.push({
-        id:uid(),
-        memberNo:p.memberNo||nextMemberNo(data.roster),
-        lineName:p.lineName||p.name||'',
-        name:p.lineName||p.name||''
-      });
+      data.roster.push({id:uid(),memberNo:pay.memberNo||nextMemberNo(data.roster),lineName:pay.lineName||pay.name||'',name:pay.lineName||pay.name||''});
     }
   }
   data.roster=normalizeRoster(data.roster);
+  delete data.peopleByMember;
   return data;
 }
 
@@ -3613,11 +3665,110 @@ let queuedSnapshot=null;
 let cloudWriteInFlight=false;
 let suppressRemoteUntil=0;
 let latestLocalRevision=Number(state.modifiedAt)||0;
+let cloudRetryTimer=null;
+let pendingPaymentWrites=new Map();
+let pendingPaymentDeletes=new Set();
+let paymentShadowTimer=null;
+let paymentShadowInFlight=false;
+
+function cleanPaymentRecord(p){
+  if(!p)return null;
+  // public shadow 只保存一般使用者可寫的匯款資料；
+  // verified / verifiedAt 由管理員 root people 專屬管理，避免舊裝置把核對狀態蓋回去。
+  const {selected,verified,verifiedAt,...copy}=JSON.parse(JSON.stringify(p));
+  return copy;
+}
+function saveLocalStateAndRender(){
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+  render();
+}
+function schedulePaymentShadowFlush(delay=180){
+  if(paymentShadowTimer)clearTimeout(paymentShadowTimer);
+  paymentShadowTimer=setTimeout(()=>{paymentShadowTimer=null;flushPaymentShadowWrites()},delay);
+}
+function paymentShadowKey(p){
+  if(!p)return '';
+  const roster=(state.roster||[]).find(r=>
+    (p.memberNo && String(r.memberNo||'').trim()===String(p.memberNo||'').trim()) ||
+    (nameKey(p.lineName||p.name) && nameKey(r.lineName||r.name)===nameKey(p.lineName||p.name))
+  );
+  return roster?.id||p.id||'';
+}
+function persistPaymentOnly(p){
+  const now=Date.now();
+  latestLocalRevision=Math.max(now,latestLocalRevision+1);
+  state.modifiedAt=latestLocalRevision;
+  if(p){
+    p.updatedAt=Number(p.updatedAt)||Date.now();
+    const shadowKey=paymentShadowKey(p);
+    if(shadowKey){
+      pendingPaymentDeletes.delete(shadowKey);
+      pendingPaymentWrites.set(shadowKey,cleanPaymentRecord(p));
+    }
+  }
+  suppressRemoteUntil=Date.now()+4000;
+  saveLocalStateAndRender();
+  schedulePaymentShadowFlush();
+}
+function queuePaymentShadowDelete(id){
+  if(!id)return;
+  pendingPaymentWrites.delete(id);
+  pendingPaymentDeletes.add(id);
+  schedulePaymentShadowFlush();
+}
+async function flushPaymentShadowWrites(){
+  if(paymentShadowInFlight)return false;
+  if(!pendingPaymentWrites.size && !pendingPaymentDeletes.size)return true;
+
+  const writes=new Map(pendingPaymentWrites);
+  const deletes=new Set(pendingPaymentDeletes);
+  pendingPaymentWrites.clear();pendingPaymentDeletes.clear();
+  const patch={};
+  writes.forEach((record,id)=>patch[id]=record);
+  deletes.forEach(id=>patch[id]=null);
+
+  paymentShadowInFlight=true;
+  setCloud('☁️ 同步中');
+  try{
+    const res=await fetch(`${FIREBASE_BASE}/paymentRegistry/peopleByMember.json`,{
+      method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)
+    });
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    // modifiedAt 只做喚醒其他裝置用；shadow 本身已安全寫入。
+    try{
+      await fetch(`${FIREBASE_BASE}/paymentRegistry/modifiedAt.json`,{
+        method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({'.sv':'timestamp'})
+      });
+    }catch{}
+    setCloud('☁️ 雲端已同步');
+    return true;
+  }catch(err){
+    console.error(err);
+    writes.forEach((record,id)=>{
+      // 同步期間若使用者已刪除此人，就不要把失敗的舊 write 加回來。
+      if(pendingPaymentDeletes.has(id))return;
+      const current=pendingPaymentWrites.get(id);
+      if(!current || Number(current.updatedAt||0)<Number(record.updatedAt||0))pendingPaymentWrites.set(id,record);
+    });
+    deletes.forEach(id=>{
+      // 同步期間若同一人又產生新 write，就不要把舊 delete 加回來誤刪新資料。
+      if(!pendingPaymentWrites.has(id))pendingPaymentDeletes.add(id);
+    });
+    setCloud('⚠️ 同步失敗，資料已保留在本機');
+    if(navigator.onLine)schedulePaymentShadowFlush(5000);
+    return false;
+  }finally{
+    paymentShadowInFlight=false;
+  }
+}
+
 
 function cleanState(data){
   const copy=JSON.parse(JSON.stringify(data));
-  copy.people=(copy.people||[]).map(({selected,...p})=>p);
-  copy.roster=(copy.roster||[]).map(({selected,...p})=>p);
+  copy.people=(Array.isArray(copy.people)?copy.people:Object.values(copy.people||{})).map(({selected,...p})=>p);
+  copy.roster=(Array.isArray(copy.roster)?copy.roster:Object.values(copy.roster||{})).map(({selected,...p})=>p);
+  // peopleByMember 是給一般使用者並行送款用的 Firebase shadow，不跟著管理端根節點 PATCH 覆蓋。
+  delete copy.peopleByMember;
   return copy;
 }
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900)}
@@ -3640,31 +3791,23 @@ function persistAndSync(){
   writeTimer=setTimeout(flushCloudWrite,180);
 }
 async function flushCloudWrite(){
-  if(cloudWriteInFlight||!queuedSnapshot)return;
-  const snapshot=queuedSnapshot;
-  queuedSnapshot=null;
-  cloudWriteInFlight=true;
-  setCloud('☁️ 同步中');
+  if(cloudWriteInFlight)return false;
+  if(!queuedSnapshot)return true;
+  const snapshot=queuedSnapshot;queuedSnapshot=null;cloudWriteInFlight=true;setCloud('☁️ 同步中');
+  let success=false;
   try{
-    const res=await fetch(FIREBASE_URL,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(snapshot)
-    });
+    const res=await fetch(FIREBASE_URL,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(snapshot)});
     if(!res.ok)throw new Error('HTTP '+res.status);
-    setCloud('☁️ 雲端已同步');
+    success=true;setCloud(queuedSnapshot?'☁️ 尚有資料待同步':'☁️ 雲端已同步');
   }catch(err){
-    console.error(err);
-    setCloud('⚠️ 離線使用本機資料');
-    // 保留最後要寫入的快照，網路恢復時再重送
-    if(!queuedSnapshot || Number(queuedSnapshot.modifiedAt||0)<Number(snapshot.modifiedAt||0)){
-      queuedSnapshot=snapshot;
-    }
+    console.error(err);setCloud('⚠️ 同步失敗，資料已保留在本機');
+    if(!queuedSnapshot || Number(queuedSnapshot.modifiedAt||0)<Number(snapshot.modifiedAt||0))queuedSnapshot=snapshot;
   }finally{
-    cloudWriteInFlight=false;
-    suppressRemoteUntil=Date.now()+1200;
-    if(queuedSnapshot && navigator.onLine)setTimeout(flushCloudWrite,250);
+    cloudWriteInFlight=false;suppressRemoteUntil=Date.now()+1200;
+    if(cloudRetryTimer){clearTimeout(cloudRetryTimer);cloudRetryTimer=null}
+    if(queuedSnapshot && navigator.onLine)cloudRetryTimer=setTimeout(()=>{cloudRetryTimer=null;flushCloudWrite()},5000);
   }
+  return success;
 }
 async function pullCloud({force=false}={}){
   // 關鍵修正：有本機待寫資料時，禁止遠端舊資料覆蓋刪除結果。
@@ -3679,8 +3822,11 @@ async function pullCloud({force=false}={}){
     }
     const remoteRevision=Number(remote.modifiedAt)||0;
     const localRevision=Number(state.modifiedAt)||0;
+    const remoteShadowLatest=Math.max(0,...Object.values(remote.peopleByMember||{}).map(p=>Number(p?.updatedAt)||0));
+    const localPeopleLatest=Math.max(0,...(state.people||[]).map(p=>Number(p.updatedAt)||0));
+    const hasNewPublicPayment=remoteShadowLatest>localPeopleLatest;
 
-    if(force || remoteRevision>localRevision || (localRevision===0 && state.people.length===0 && state.roster.length===0)){
+    if(force || remoteRevision>localRevision || hasNewPublicPayment || (localRevision===0 && state.people.length===0 && state.roster.length===0)){
       state=remote;
       state.settings ||= {projectName:'收費匯款登記表',totalAmount:0,shareCount:0,paymentGroups:[]};
       state.settings.paymentGroups ||= [];
@@ -3702,32 +3848,37 @@ async function pullCloud({force=false}={}){
 async function initialCloudLoad(){
   setCloud('☁️ 雲端讀取中');
   try{
-    const res=await fetch(FIREBASE_URL,{cache:'no-store'});
-    if(!res.ok)throw new Error('HTTP '+res.status);
-    const remote=await res.json();
+    const res=await fetch(FIREBASE_URL,{cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);
+    const remote=await res.json();let pendingUpload=false;
     if(remote && typeof remote==='object'){
-      const rr=Number(remote.modifiedAt)||0, lr=Number(state.modifiedAt)||0;
+      const rr=Number(remote.modifiedAt)||0,lr=Number(state.modifiedAt)||0;
       if(rr>=lr || (state.people.length===0 && state.roster.length===0)){
         state=remote;state.settings ||= {};state.settings.paymentGroups ||= [];state.settings.showBankInList = typeof state.settings.showBankInList==='boolean' ? state.settings.showBankInList : true;state.people ||= [];state.roster ||= [];
-        state=ensureRosterAndPayments(state);
-        state.modifiedAt=rr;latestLocalRevision=Math.max(latestLocalRevision,rr);
-        localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+        state=ensureRosterAndPayments(state);state.modifiedAt=rr;latestLocalRevision=Math.max(latestLocalRevision,rr);localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
       }else{
-        queuedSnapshot=cleanState(state);flushCloudWrite();
+        if(isAdmin){queuedSnapshot=cleanState(state);pendingUpload=true}
+        else{
+          for(const p of (state.people||[]))pendingPaymentWrites.set(paymentShadowKey(p),cleanPaymentRecord(p));
+          pendingUpload='payment';
+        }
       }
     }else if(state.people.length||state.roster.length||state.settings.totalAmount){
-      queuedSnapshot=cleanState(state);flushCloudWrite();
+      if(isAdmin){queuedSnapshot=cleanState(state);pendingUpload=true}
+      else{for(const p of (state.people||[]))pendingPaymentWrites.set(paymentShadowKey(p),cleanPaymentRecord(p));pendingUpload='payment'}
     }
-    render();setCloud('☁️ 雲端已同步');
-  }catch{
-    render();setCloud('⚠️ 離線使用本機資料');
-  }
+    render();
+    if(pendingUpload==='payment'){const ok=await flushPaymentShadowWrites();if(ok)setCloud('☁️ 雲端已同步')}
+    else if(pendingUpload){const ok=await flushCloudWrite();if(ok)setCloud('☁️ 雲端已同步')}
+    else setCloud('☁️ 雲端已同步');
+  }catch(err){console.warn(err);render();setCloud('⚠️ 離線使用本機資料')}
 }
 
 function expected(){const n=Number(state.settings.shareCount)||0,t=Number(state.settings.totalAmount)||0;return n?t/n:0}
 function compactDate(ts){
   if(!ts)return '<span class="muted">—</span>';
-  const d=new Date(ts),p=n=>String(n).padStart(2,'0');
+  const d=new Date(ts);
+  if(Number.isNaN(d.getTime()))return '<span class="muted">—</span>';
+  const p=n=>String(n).padStart(2,'0');
   return `<div class="dt"><div class="m">${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}</div><div class="y">${d.getFullYear()}</div></div>`;
 }
 
@@ -3927,8 +4078,8 @@ function peopleForPaymentGroup(group){
 }
 function paymentForRosterMember(member){
   return state.people.find(p=>
-    (member.memberNo && String(p.memberNo||'')===String(member.memberNo)) ||
-    String(p.lineName||p.name||'').trim()===String(member.lineName||member.name||'').trim()
+    (member.memberNo && String(p.memberNo||'').trim()===String(member.memberNo||'').trim()) ||
+    (nameKey(member.lineName||member.name) && nameKey(p.lineName||p.name)===nameKey(member.lineName||member.name))
   )||null;
 }
 function groupPersonRows(list,mode='normal'){
@@ -4451,15 +4602,15 @@ function inlineAdminUpdate(rosterId,paymentId,field,value){
     if(dup){alert('此編號已被其他人使用');render();return}
     r.memberNo=v;
     const p=paymentId?paymentById(paymentId):paymentForRosterMember({...r,memberNo:oldNo,lineName:oldName,name:oldName});
-    if(p)p.memberNo=v;
+    if(p){p.memberNo=v;p.updatedAt=Date.now()}
   }else if(field==='lineName'){
     const v=String(value||'').trim();
     if(!v){alert('LINE 名稱不可空白');render();return}
-    const dup=state.roster.some(x=>x.id!==r.id&&String(x.lineName||x.name||'').trim()===v);
+    const dup=state.roster.some(x=>x.id!==r.id&&nameKey(x.lineName||x.name)===nameKey(v));
     if(dup){alert('此 LINE 名稱已存在');render();return}
     r.lineName=v;r.name=v;
     const p=paymentId?paymentById(paymentId):paymentForRosterMember({...r,memberNo:oldNo,lineName:oldName,name:oldName});
-    if(p){p.lineName=v;p.name=v}
+    if(p){p.lineName=v;p.name=v;p.updatedAt=Date.now()}
   }else{
     const p=ensurePaymentForRoster(r,paymentId);
     if(!p)return;
@@ -4515,7 +4666,7 @@ function deleteRosterMember(rosterId,paymentId=null){
   if(!confirm(`確定刪除「${label}」？\n\n名冊與此人的匯款紀錄都會一起刪除，並同步到 Firebase。`))return;
 
   state.roster=state.roster.filter(x=>x.id!==rosterId);
-  if(pay)state.people=state.people.filter(x=>x.id!==pay.id);
+  if(pay){state.people=state.people.filter(x=>x.id!==pay.id);queuePaymentShadowDelete(rosterId)}
   persistAndSync();
   toast(`已刪除 ${r.lineName||r.name||''}`);
 }
@@ -4877,7 +5028,7 @@ function openPay(id){
   $('#last5Warning').classList.remove('show');
   $('#last5').classList.remove('input-error');
   $('#payAmount').value=p.amount||'';
-  $('#paymentDateTime').value=formatDateTimeText(p.paymentAt||Date.now());$('#note').value=p.note||'';
+  $('#paymentDateTime').value=formatDateTimeText(p.paymentAt);$('#note').value=p.note||'';
   $('#verifyReceived').checked=p.verified===true;
   $('#verifyMeta').textContent=p.verified===true
     ? `已核對${p.verifiedAt?'｜'+fmtTime(p.verifiedAt):''}`
@@ -4939,12 +5090,36 @@ function openPublicNote(id){
 }
 window.openPublicNote=openPublicNote;
 
-$('#savePublicNote').onclick=()=>{
+$('#savePublicNote').onclick=async()=>{
   const id=$('#publicNoteId').value;
   const p=state.people.find(x=>x.id===id);if(!p)return;
+  const rosterMember=state.roster.find(r=>
+    String(r.memberNo||'').trim()===String(p.memberNo||'').trim() ||
+    nameKey(r.lineName||r.name)===nameKey(p.lineName||p.name)
+  );
+
+  const saveBtn=$('#savePublicNote');
+  saveBtn.disabled=true;
+  saveBtn.textContent='確認中…';
+  try{
+    if(rosterMember && !(await remotePaymentAlreadyExists(rosterMember))){
+      alert('這筆匯款紀錄目前已不存在或已由管理員移除，無法再修改備註。畫面將重新同步。');
+      $('#publicNoteModal').classList.remove('show');
+      await pullCloud({force:true});
+      return;
+    }
+  }catch(err){
+    console.warn('public note remote check failed',err);
+    alert('目前無法連線確認最新匯款資料，為避免覆蓋管理員更新，本次備註尚未送出。');
+    return;
+  }finally{
+    saveBtn.disabled=false;
+    saveBtn.textContent='儲存備註';
+  }
+
   p.note=$('#publicNoteText').value.trim();
   p.updatedAt=Date.now();
-  persistAndSync();
+  persistPaymentOnly(p);
   $('#publicNoteModal').classList.remove('show');
   toast('備註已更新');
 };
@@ -4952,8 +5127,10 @@ $('#savePublicNote').onclick=()=>{
 function deletePerson(id){
   if(!isAdmin)return;
   const p=state.people.find(x=>x.id===id);if(!p)return;
-  if(!confirm(`確定刪除「${p.memberNo||''}｜${p.lineName||p.name||''}」？\n刪除後會同步到 Firebase，其他裝置也會移除。`))return;
+  if(!confirm(`確定刪除「${p.memberNo||''}｜${p.lineName||p.name||''}」的匯款紀錄？\n名冊本人仍會保留，並恢復顯示為未匯款。`))return;
+  const shadowKey=paymentShadowKey(p);
   state.people=state.people.filter(x=>x.id!==id);
+  queuePaymentShadowDelete(shadowKey);
   persistAndSync();
   toast(`已刪除 ${p.lineName||p.name||''}，同步雲端中`);
 }
@@ -5054,6 +5231,44 @@ document.addEventListener('input',e=>{
 
 
 
+
+async function fetchJsonWithTimeout(url,options={},timeoutMs=8000){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try{
+    const res=await fetch(url,{...options,signal:controller.signal,cache:'no-store'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    return await res.json();
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+async function remotePaymentAlreadyExists(member){
+  if(!member)return false;
+  const shadowKey=member.id||'';
+  const shadowUrl=shadowKey
+    ? `${FIREBASE_BASE}/paymentRegistry/peopleByMember/${encodeURIComponent(shadowKey)}.json`
+    : null;
+
+  const requests=[
+    fetchJsonWithTimeout(`${FIREBASE_BASE}/paymentRegistry/people.json`)
+  ];
+  if(shadowUrl)requests.push(fetchJsonWithTimeout(shadowUrl));
+
+  const results=await Promise.all(requests);
+  const rootRaw=results[0];
+  const shadow=results[1]||null;
+  const rootPeople=Array.isArray(rootRaw)?rootRaw.filter(Boolean):Object.values(rootRaw||{});
+
+  const sameMember=p=>
+    (member.memberNo && String(p?.memberNo||'').trim()===String(member.memberNo||'').trim()) ||
+    (nameKey(member.lineName||member.name) && nameKey(p?.lineName||p?.name)===nameKey(member.lineName||member.name));
+
+  if(shadow && reported(shadow))return true;
+  return rootPeople.some(p=>p && reported(p) && sameMember(p));
+}
+
 function resetSelfEntry(){
   $('#publicLineLookup').value='';
   showPublicBankResult();
@@ -5067,7 +5282,7 @@ function resetSelfEntry(){
 }
 $('#selfPaymentAt').value=formatDateTimeText(Date.now());
 
-$('#selfAddBtn').onclick=()=>{
+$('#selfAddBtn').onclick=async()=>{
   const selectedRosterId=$('#publicLineLookup').value;
   const selectedMember=state.roster.find(r=>r.id===selectedRosterId);
   if(!selectedMember){
@@ -5099,7 +5314,7 @@ $('#selfAddBtn').onclick=()=>{
   const memberNo=rosterMember.memberNo;
   const existing=state.people.find(p=>
     String(p.memberNo||'')===String(memberNo) ||
-    String(p.lineName||p.name||'').trim()===lineName
+    nameKey(p.lineName||p.name)===nameKey(lineName)
   );
 
   // 防呆：同一個 LINE 名稱只能送出一次
@@ -5110,6 +5325,25 @@ $('#selfAddBtn').onclick=()=>{
         : `「${lineName}」已經有匯款回報紀錄，不能重複送出。\n如資料需要修改，請聯絡管理員處理。`
     );
     return;
+  }
+
+  // 跨裝置防呆：送出前再向 Firebase 確認一次，避免兩台裝置用同一名字重複填寫。
+  const submitBtn=$('#selfAddBtn');
+  submitBtn.disabled=true;
+  submitBtn.textContent='檢查中…';
+  try{
+    if(await remotePaymentAlreadyExists(rosterMember)){
+      alert(`「${lineName}」雲端已經有匯款回報紀錄，不能重複送出。\n如需修改，請聯絡管理員處理。`);
+      await pullCloud({force:true});
+      return;
+    }
+  }catch(err){
+    console.warn('remote duplicate check failed',err);
+    alert('目前無法連線確認是否已填過。為避免重複匯款紀錄，本次尚未送出，請確認網路連線後再試一次。');
+    return;
+  }finally{
+    submitBtn.disabled=false;
+    submitBtn.textContent='確認並送出';
   }
 
   // 送出前再次確認，按「確定」才真正寫入
@@ -5129,7 +5363,6 @@ LINE名稱：${lineName}
 
   if(!confirm(confirmText))return;
 
-  const submitBtn=$('#selfAddBtn');
   submitBtn.disabled=true;
   submitBtn.textContent='送出中…';
 
@@ -5143,7 +5376,7 @@ LINE名稱：${lineName}
     submitted={...p};
   }
 
-  persistAndSync();
+  persistPaymentOnly(state.people.find(x=>x.id===submitted.id)||submitted);
   resetSelfEntry();
   showSubmitSummary(submitted);
   toast(`匯款紀錄已回報，編號 ${memberNo}`);
@@ -5158,8 +5391,10 @@ $('#savePay').onclick=()=>{
   const memberNo=$('#editMemberNo').value.trim();
   const last5=$('#last5').value.trim(), amount=Number($('#payAmount').value);
   if(!memberNo)return alert('請輸入編號');
+  const targetRoster=state.roster.find(r=>String(r.memberNo||'')===String(p.memberNo||'') || nameKey(r.lineName||r.name)===nameKey(p.lineName||p.name));
   const duplicateNo=state.people.some(x=>x.id!==p.id && String(x.memberNo||'').trim()===memberNo);
-  if(duplicateNo){
+  const duplicateRosterNo=state.roster.some(r=>r.id!==targetRoster?.id && String(r.memberNo||'').trim()===memberNo);
+  if(duplicateNo || duplicateRosterNo){
     $('#editMemberNo').focus();
     return alert('此編號已被其他人使用，請輸入不同編號');
   }
@@ -5182,7 +5417,7 @@ $('#savePay').onclick=()=>{
   p.verified=verified;
   p.verifiedAt=verified?(p.verifiedAt||Date.now()):null;
   p.updatedAt=Date.now();
-  const rosterMember=state.roster.find(r=>String(r.memberNo||'')===String(oldMemberNo) || String(r.lineName||r.name||'').trim()===String(p.lineName||p.name||'').trim());
+  const rosterMember=state.roster.find(r=>String(r.memberNo||'')===String(oldMemberNo) || nameKey(r.lineName||r.name)===nameKey(p.lineName||p.name));
   if(rosterMember)rosterMember.memberNo=memberNo;
   state.roster=normalizeRoster(state.roster);
   persistAndSync();$('#payModal').classList.remove('show');toast(verified?'已儲存並移至已核對區':'已儲存並恢復至未核對區，匯款資料仍保留');
@@ -5195,7 +5430,7 @@ $('#addPersonBtn').onclick=()=>{
   if(!memberNo)return alert('請輸入編號');
   if(!lineName)return alert('請輸入 LINE 名稱');
   if(state.roster.some(p=>String(p.memberNo||'').trim()===memberNo))return alert('此編號已存在於名冊');
-  if(state.roster.some(p=>String(p.lineName||p.name||'').trim()===lineName))return alert('此 LINE 名稱已存在於名冊');
+  if(state.roster.some(p=>nameKey(p.lineName||p.name)===nameKey(lineName)))return alert('此 LINE 名稱已存在於名冊');
 
   state.roster.push({id:uid(),memberNo,lineName,name:lineName});
   state.roster=normalizeRoster(state.roster);
@@ -5267,37 +5502,43 @@ $('#quickImportBtn').onclick=()=>{
   if(!result.parsed.length)return alert('沒有辨識到可新增的名單');
   if(alertQuickListInvalid(result))return;
 
+  const seenNo=new Map(),seenName=new Map(),batchConflicts=[];
+  result.parsed.forEach(item=>{
+    const nk=nameKey(item.lineName);
+    if(seenNo.has(item.memberNo) && nameKey(seenNo.get(item.memberNo))!==nk){
+      batchConflicts.push(`編號 ${item.memberNo} 同時出現「${seenNo.get(item.memberNo)}」與「${item.lineName}」`);
+    }
+    if(seenName.has(nk) && seenName.get(nk)!==item.memberNo){
+      batchConflicts.push(`LINE 名稱「${item.lineName}」同時使用編號 ${seenName.get(nk)} 與 ${item.memberNo}`);
+    }
+    seenNo.set(item.memberNo,item.lineName);seenName.set(nk,item.memberNo);
+  });
+  if(batchConflicts.length)return alert(`貼上名單有衝突，尚未匯入：\n\n${[...new Set(batchConflicts)].join('\n')}`);
+
   let added=0,updated=0,conflict=0;
   for(const item of result.parsed){
-    const byNo=state.roster.find(p=>String(p.memberNo||'')===item.memberNo);
-    const byName=state.roster.find(p=>String(p.lineName||p.name||'').trim()===item.lineName);
-
+    const byNo=state.roster.find(p=>String(p.memberNo||'').trim()===item.memberNo);
+    const byName=state.roster.find(p=>nameKey(p.lineName||p.name)===nameKey(item.lineName));
+    if(byNo && byName && byNo.id!==byName.id){conflict++;continue}
     if(byNo){
-      byNo.lineName=item.lineName;
-      byNo.name=item.lineName;
-      updated++;
-      continue;
+      const old={...byNo},pay=paymentForRosterMember(old);
+      byNo.lineName=item.lineName;byNo.name=item.lineName;
+      if(pay){pay.lineName=item.lineName;pay.name=item.lineName;pay.memberNo=item.memberNo;pay.updatedAt=Date.now()}
+      updated++;continue;
     }
-
     if(byName){
-      const numberUsed=state.roster.some(p=>p.id!==byName.id&&String(p.memberNo||'')===item.memberNo);
+      const numberUsed=state.roster.some(p=>p.id!==byName.id&&String(p.memberNo||'').trim()===item.memberNo);
       if(numberUsed){conflict++;continue}
-      byName.memberNo=item.memberNo;
-      byName.lineName=item.lineName;
-      byName.name=item.lineName;
-      updated++;
-      continue;
+      const old={...byName},pay=paymentForRosterMember(old);
+      byName.memberNo=item.memberNo;byName.lineName=item.lineName;byName.name=item.lineName;
+      if(pay){pay.memberNo=item.memberNo;pay.lineName=item.lineName;pay.name=item.lineName;pay.updatedAt=Date.now()}
+      updated++;continue;
     }
-
-    state.roster.push({id:uid(),memberNo:item.memberNo,lineName:item.lineName,name:item.lineName});
-    added++;
+    state.roster.push({id:uid(),memberNo:item.memberNo,lineName:item.lineName,name:item.lineName});added++;
   }
-
-  state.roster=normalizeRoster(state.roster);
-  persistAndSync();
-  $('#quickImportResult').textContent=
-    `名冊完成：新增 ${added} 筆、更新 ${updated} 筆${conflict?`、衝突略過 ${conflict} 筆`:''}。下方匯款結果表格不會新增空白列。`;
-  toast(`查詢名冊已更新：新增 ${added}、更新 ${updated}`);
+  state.roster=normalizeRoster(state.roster);persistAndSync();
+  $('#quickImportResult').textContent=`名冊完成：新增 ${added} 筆、更新 ${updated} 筆${conflict?`、衝突略過 ${conflict} 筆`:''}。下方匯款結果表格不會新增空白列。`;
+  toast(`查詢名冊已更新：新增 ${added}、更新 ${updated}${conflict?`、衝突 ${conflict}`:''}`);
 };
 
 $('#groupBankCode').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,4)});
@@ -5391,8 +5632,7 @@ $('#clearFilter').onclick=()=>{$('#search').value='';$('#sortBy').value='updated
 $('#copyUnpaidBtn').onclick=async()=>{
   const unpaid=allRosterRows().filter(p=>!reported(p));
   const names=unpaid.map(p=>`${p.memberNo||''}｜${p.lineName||p.name||''}`);
-  await navigator.clipboard.writeText(names.join('\n'));
-  toast(`已複製 ${names.length} 位未匯款名單`);
+  await copyTextSafe(names.join('\n'),`已複製 ${names.length} 位未匯款名單`);
 };
 $('#pendingCheckAll').onchange=e=>{state.people.filter(p=>reported(p)&&!paid(p)).forEach(p=>p.selected=e.target.checked);saveLocalOnly()};
 $('#verifiedCheckAll').onchange=e=>{state.people.filter(p=>paid(p)).forEach(p=>p.selected=e.target.checked);saveLocalOnly()};
@@ -5400,41 +5640,171 @@ $('#deleteSelectedBtn').onclick=()=>{
   if(!isAdmin)return;
   const selected=state.people.filter(p=>p.selected);
   if(!selected.length)return alert('請先勾選要刪除的人員');
-  if(!confirm(`確定刪除已勾選的 ${selected.length} 位人員？\n刪除後會同步到 Firebase。`))return;
+  if(!confirm(`確定刪除已勾選的 ${selected.length} 筆匯款紀錄？\n名冊本人仍會保留並恢復顯示為未匯款。`))return;
   const ids=new Set(selected.map(p=>p.id));
+  const shadowKeys=selected.map(p=>paymentShadowKey(p)).filter(Boolean);
   state.people=state.people.filter(p=>!ids.has(p.id));
-  persistAndSync();toast(`已刪除 ${selected.length} 位人員，正在同步`);
+  shadowKeys.forEach(key=>queuePaymentShadowDelete(key));
+  persistAndSync();toast(`已刪除 ${selected.length} 筆匯款紀錄，正在同步`);
 };
 
-function parseSheet(file,cb){
-  const r=new FileReader();r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];cb(XLSX.utils.sheet_to_json(ws,{defval:''}))}catch(err){alert('Excel 讀取失敗')}};r.readAsArrayBuffer(file)
+function ensureXLSX(){
+  if(typeof XLSX==='undefined'){
+    alert('Excel 元件尚未載入。請確認網路連線後重新整理，再使用匯入／匯出功能。');
+    return false;
+  }
+  return true;
 }
-$('#importNamesBtn').onclick=()=>isAdmin&&$('#namesFile').click();
-$('#namesFile').onchange=e=>{const f=e.target.files[0];if(!f)return;parseSheet(f,rows=>{let c=0;rows.forEach(r=>{
+
+function normalizeImportedMemberNo(value){
+  let s=String(value??'').trim();
+  if(!s)return '';
+  // Excel 數字欄常變成 1 / 1.0；名冊編號統一至少 3 碼。
+  if(/^\d+(?:\.0+)?$/.test(s)){
+    s=String(parseInt(s,10));
+    return s.padStart(3,'0');
+  }
+  return s;
+}
+function normalizeImportedLast5(value){
+  let s=String(value??'').trim().replace(/\s/g,'');
+  if(!s)return '';
+  if(/^\d+(?:\.0+)?$/.test(s))s=String(parseInt(s,10));
+  else s=s.replace(/\D/g,'');
+  if(!s)return '';
+  // Excel 把 01234 當數字時會變 1234，因此 1～4 碼可補前導 0；
+  // 超過 5 碼不自動截斷，避免把錯誤帳號誤變成有效資料。
+  if(s.length>5)return '';
+  return s.padStart(5,'0');
+}
+function parseImportedAmount(value){
+  if(value===null||value===undefined||value==='')return null;
+  if(typeof value==='number')return Number.isFinite(value)?value:null;
+  const cleaned=String(value).replace(/[^\d.-]/g,'');
+  if(!cleaned || cleaned==='-' || cleaned==='.' || cleaned==='-.')return null;
+  const n=Number(cleaned);
+  return Number.isFinite(n)?n:null;
+}
+function parseImportedVerified(value){
+  const s=String(value??'').trim().toLowerCase();
+  if(!s)return null;
+  if(s.includes('已核對')||s==='true'||s==='1'||s==='yes'||s==='y')return true;
+  if(s.includes('待核對')||s.includes('未核對')||s==='false'||s==='0'||s==='no'||s==='n')return false;
+  return null;
+}
+
+function excelDateToTimestamp(value){
+  if(value===null||value===undefined||value==='')return null;
+  if(typeof value==='number' && typeof XLSX!=='undefined' && XLSX.SSF?.parse_date_code){
+    const d=XLSX.SSF.parse_date_code(value);
+    if(d){const dt=new Date(d.y,d.m-1,d.d,d.H||0,d.M||0,Math.floor(d.S||0),0);if(!Number.isNaN(dt.getTime()))return dt.getTime()}
+  }
+  if(value instanceof Date && !Number.isNaN(value.getTime()))return value.getTime();
+  const s=String(value).trim();
+  const strict=parseDateTimeTextStrict(s.replace(/\//g,'-'));
+  if(strict.ok && strict.ts)return strict.ts;
+  const d=new Date(s);return Number.isNaN(d.getTime())?null:d.getTime();
+}
+
+function parseSheet(file,cb){
+  if(!ensureXLSX())return;
+  const r=new FileReader();r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];cb(XLSX.utils.sheet_to_json(ws,{defval:''}))}catch(err){console.error(err);alert('Excel 讀取失敗，請確認檔案格式與欄位內容')}};r.readAsArrayBuffer(file)
+}
+$('#importNamesBtn').onclick=()=>{if(isAdmin&&ensureXLSX())$('#namesFile').click()};
+$('#namesFile').onchange=e=>{const f=e.target.files[0];if(!f)return;parseSheet(f,rows=>{let c=0,skipped=0;rows.forEach(r=>{
   const lineName=String(r['LINE名稱']||r['Line名稱']||r['LINE 名稱']||r['姓名']||r['名字']||'').trim();
-  let memberNo=String(r['編號']||r['No']||r['NO']||'').trim();
+  let memberNo=normalizeImportedMemberNo(r['編號']||r['No']||r['NO']||'');
   if(!lineName)return;
   if(!memberNo)memberNo=nextMemberNo();
-  if(state.roster.some(p=>String(p.memberNo||'')===memberNo || String(p.lineName||p.name||'')===lineName))return;
+  const byNo=state.roster.find(p=>String(p.memberNo||'').trim()===memberNo);
+  const byName=state.roster.find(p=>nameKey(p.lineName||p.name)===nameKey(lineName));
+  if(byNo||byName){skipped++;return}
   state.roster.push({id:uid(),memberNo,lineName,name:lineName});c++;
-});state.roster=normalizeRoster(state.roster);persistAndSync();toast(`已匯入 ${c} 人至查詢名冊`)})};
+});state.roster=normalizeRoster(state.roster);persistAndSync();toast(`已匯入 ${c} 人${skipped?`，略過 ${skipped} 筆重複／衝突`:''}`)})};
 
-$('#importDetailBtn').onclick=()=>isAdmin&&$('#detailFile').click();
-$('#detailFile').onchange=e=>{const f=e.target.files[0];if(!f)return;parseSheet(f,rows=>{let c=0;rows.forEach(r=>{
-  const lineName=String(r['LINE名稱']||r['Line名稱']||r['LINE 名稱']||r['姓名']||'').trim();
-  let memberNo=String(r['編號']||r['No']||r['NO']||'').trim();
-  if(!lineName && !memberNo)return;
-  let p=state.people.find(x=>(memberNo && String(x.memberNo||'')===memberNo) || (lineName && String(x.lineName||x.name||'')===lineName));
-  if(!p){
-    if(!memberNo)memberNo=nextMemberNo();
-    p={id:uid(),memberNo,lineName:lineName||('LINE-'+memberNo),name:lineName||('LINE-'+memberNo),last5:'',amount:0,paymentAt:null,note:'',updatedAt:null,selected:false};
-    state.people.push(p);
-  }else{
-    if(memberNo)p.memberNo=memberNo;
-    if(lineName){p.lineName=lineName;p.name=lineName;}
-  }p.last5=String(r['帳號後五碼']||p.last5||'').trim();p.amount=Number(r['匯款金額']||p.amount||0);const t=r['匯款日期／時間']||r['匯款日期/時間']||r['匯款時間'];if(t){const d=new Date(t);if(!isNaN(d))p.paymentAt=d.getTime()}p.note=String(r['備註']||p.note||'');p.updatedAt=Date.now();c++});state=ensureRosterAndPayments(state);persistAndSync();toast(`已匯入 ${c} 筆資料`)})};
+$('#importDetailBtn').onclick=()=>{if(isAdmin&&ensureXLSX())$('#detailFile').click()};
+$('#detailFile').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  parseSheet(f,rows=>{
+    let c=0,conflict=0;
+    for(const r of rows){
+      const lineName=String(r['LINE名稱']||r['Line名稱']||r['LINE 名稱']||r['姓名']||'').trim();
+      let memberNo=normalizeImportedMemberNo(r['編號']||r['No']||r['NO']||'');
+      if(!lineName && !memberNo)continue;
+
+      const rosterByNo=memberNo?state.roster.find(x=>String(x.memberNo||'').trim()===memberNo):null;
+      const rosterByName=lineName?state.roster.find(x=>nameKey(x.lineName||x.name)===nameKey(lineName)):null;
+
+      // 編號與姓名若分別指向兩個不同的人，禁止匯入，避免同一筆付款同時匹配兩位名冊人員。
+      if(rosterByNo && rosterByName && rosterByNo.id!==rosterByName.id){conflict++;continue}
+      if(rosterByNo && lineName && nameKey(rosterByNo.lineName||rosterByNo.name)!==nameKey(lineName)){conflict++;continue}
+      if(rosterByName && memberNo && String(rosterByName.memberNo||'').trim()!==memberNo){conflict++;continue}
+
+      const canonicalRoster=rosterByNo||rosterByName||null;
+      if(canonicalRoster){
+        memberNo=canonicalRoster.memberNo;
+      }else if(!memberNo){
+        memberNo=nextMemberNo();
+      }
+      const canonicalName=canonicalRoster
+        ? String(canonicalRoster.lineName||canonicalRoster.name||'').trim()
+        : (lineName||('LINE-'+memberNo));
+
+      let p=state.people.find(x=>
+        (memberNo && String(x.memberNo||'').trim()===memberNo) ||
+        (canonicalName && nameKey(x.lineName||x.name)===nameKey(canonicalName))
+      );
+
+      if(!p){
+        p={id:uid(),memberNo,lineName:canonicalName,name:canonicalName,last5:'',amount:0,paymentAt:null,note:'',verified:false,verifiedAt:null,updatedAt:null,selected:false};
+        state.people.push(p);
+      }else{
+        p.memberNo=memberNo;
+        p.lineName=canonicalName;
+        p.name=canonicalName;
+      }
+
+      if(Object.prototype.hasOwnProperty.call(r,'帳號後五碼')){
+        p.last5=normalizeImportedLast5(r['帳號後五碼']);
+      }
+      if(Object.prototype.hasOwnProperty.call(r,'匯款金額')){
+        const amount=parseImportedAmount(r['匯款金額']);
+        if(amount!==null)p.amount=amount;
+      }
+
+      const t=r['匯款日期／時間']??r['匯款日期/時間']??r['匯款時間'];
+      if(t!==''&&t!==null&&t!==undefined){
+        const ts=excelDateToTimestamp(t);
+        if(ts)p.paymentAt=ts;
+      }
+
+      if(Object.prototype.hasOwnProperty.call(r,'備註'))p.note=String(r['備註']??'').trim();
+
+      const importedVerified=parseImportedVerified(r['核對狀態']);
+      if(importedVerified!==null){
+        p.verified=importedVerified && reported(p);
+        if(p.verified){
+          const vt=excelDateToTimestamp(r['核對時間']);
+          p.verifiedAt=vt||p.verifiedAt||Date.now();
+        }else{
+          p.verifiedAt=null;
+        }
+      }
+
+      const importedUpdated=excelDateToTimestamp(r['最後更新']);
+      p.updatedAt=importedUpdated||Date.now();
+      if(!reported(p)){p.verified=false;p.verifiedAt=null}
+      c++;
+    }
+
+    state=ensureRosterAndPayments(state);
+    persistAndSync();
+    toast(`已匯入 ${c} 筆匯款資料${conflict?`，略過 ${conflict} 筆編號／姓名衝突`:''}`);
+  });
+};
 
 function exportExcel(template=false){
+  if(!ensureXLSX())return;
   const wb=XLSX.utils.book_new();
   const rows=template?[{'編號':'001','LINE名稱':'Ryan','帳號後五碼':'12345','匯款金額':1400,'匯款日期／時間':'2026/09/23 16:00','備註':''}]:
     state.people.map((p,i)=>({'編號':p.memberNo||'','LINE名稱':p.lineName||p.name||'','核對狀態':paid(p)?'已核對':'待核對','帳號後五碼':p.last5||'','匯款金額':p.amount||0,'匯款日期／時間':p.paymentAt?fmtTime(p.paymentAt):'','核對時間':p.verifiedAt?fmtTime(p.verifiedAt):'','備註':p.note||'','最後更新':p.updatedAt?fmtTime(p.updatedAt):''}));
@@ -5468,17 +5838,17 @@ function exportExcel(template=false){
 }
 $('#exportBtn').onclick=()=>isAdmin&&exportExcel(false);
 $('#templateBtn').onclick=()=>isAdmin&&exportExcel(true);
-$('#exportPeopleBtn').onclick=()=>{if(!isAdmin)return;const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(state.roster.map(p=>({'編號':p.memberNo||'','LINE名稱':p.lineName||p.name||''})));XLSX.utils.book_append_sheet(wb,ws,'人員名單');XLSX.writeFile(wb,(state.settings.projectName||'收費匯款登記表')+'_人員名單.xlsx')};
+$('#exportPeopleBtn').onclick=()=>{if(!isAdmin||!ensureXLSX())return;const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(state.roster.map(p=>({'編號':p.memberNo||'','LINE名稱':p.lineName||p.name||''})));XLSX.utils.book_append_sheet(wb,ws,'人員名單');XLSX.writeFile(wb,(state.settings.projectName||'收費匯款登記表')+'_人員名單.xlsx')};
 
-$('#backupBtn').onclick=()=>{if(!isAdmin)return;const blob=new Blob([JSON.stringify(cleanState(state),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(state.settings.projectName||'收費匯款登記表')+'_備份.json';a.click();URL.revokeObjectURL(a.href)};
+$('#backupBtn').onclick=()=>{if(!isAdmin)return;const blob=new Blob([JSON.stringify(cleanState(state),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(state.settings.projectName||'收費匯款登記表')+'_備份.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
 $('#restoreBtn').onclick=()=>isAdmin&&$('#restoreFile').click();
-$('#restoreFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.people&&!d.roster)throw 0;state=d;state.settings ||= {};state.settings.paymentGroups ||= [];state.people ||= [];state.roster ||= [];state=ensureRosterAndPayments(state);persistAndSync();toast('備份已還原')}catch{alert('JSON 格式錯誤')}};r.readAsText(f)};
-$('#cloudSyncBtn').onclick=async()=>{if(!isAdmin)return;queuedSnapshot=cleanState(state);await flushCloudWrite();await pullCloud({force:false});toast('雲端同步完成')};
+$('#restoreFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const d=JSON.parse(r.result);if(!d.people&&!d.roster)throw new Error('invalid backup');state=d;state.settings ||= {};state.settings.paymentGroups ||= [];state.people ||= [];state.roster ||= [];state=ensureRosterAndPayments(state);let shadowCleared=true;try{const res=await fetch(`${FIREBASE_BASE}/paymentRegistry/peopleByMember.json`,{method:'DELETE'});shadowCleared=res.ok}catch{shadowCleared=false}persistAndSync();toast(shadowCleared?'備份已還原':'備份已還原至本機；舊 shadow 清除失敗，請稍後按「立即同步」')}catch{alert('JSON 格式錯誤')}};r.readAsText(f)};
+$('#cloudSyncBtn').onclick=async()=>{if(!isAdmin)return;queuedSnapshot=cleanState(state);const ok=await flushCloudWrite();if(ok){await pullCloud({force:false});toast('雲端同步完成')}else{toast('同步失敗，已保留本機資料')}};
 
-setInterval(()=>pullCloud(),5000);
+setInterval(()=>{if(pendingPaymentWrites.size||pendingPaymentDeletes.size)flushPaymentShadowWrites();else pullCloud()},5000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pullCloud()});
 window.addEventListener('focus',()=>pullCloud());
-window.addEventListener('online',()=>{setCloud('☁️ 重新連線中');if(queuedSnapshot)flushCloudWrite();else pullCloud()});
+window.addEventListener('online',()=>{setCloud('☁️ 重新連線中');if(pendingPaymentWrites.size||pendingPaymentDeletes.size)flushPaymentShadowWrites();if(queuedSnapshot)flushCloudWrite();else if(!pendingPaymentWrites.size&&!pendingPaymentDeletes.size)pullCloud()});
 window.addEventListener('offline',()=>setCloud('⚠️ 離線使用本機資料'));
 
 render();
