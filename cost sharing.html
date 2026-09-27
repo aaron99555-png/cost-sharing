@@ -2876,6 +2876,38 @@ textarea:focus{
 }
 </style>
 
+
+<style>
+/* ===== 快速核對 / 已核對：辨識度強化 ===== */
+#groupCollectionStats .group-quick-btn.verify{
+  background:linear-gradient(135deg,#ffb020,#ff8a00) !important;
+  border:1px solid #e18400 !important;
+  color:#ffffff !important;
+  font-weight:900 !important;
+  letter-spacing:.3px;
+  box-shadow:0 6px 14px rgba(255,138,0,.22) !important;
+}
+
+#groupCollectionStats .group-quick-btn.verify:hover{
+  background:linear-gradient(135deg,#f2a116,#ef7f00) !important;
+}
+
+#groupCollectionStats .group-quick-status.verified{
+  background:linear-gradient(135deg,#12a150,#0d8c46) !important;
+  border:1px solid #0d8c46 !important;
+  color:#ffffff !important;
+  font-weight:900 !important;
+  letter-spacing:.3px;
+  box-shadow:0 5px 12px rgba(13,140,70,.18) !important;
+}
+
+#groupCollectionStats .group-quick-status.pending{
+  background:linear-gradient(135deg,#fff0d8,#ffe1ae) !important;
+  color:#8a5a00 !important;
+  border:1px solid #e5c57d !important;
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -3182,7 +3214,7 @@ textarea:focus{
   <div class="verification-section verified-section">
     <div class="verification-section-head">
       <div>
-        <h3>✅ 已核對區</h3>
+        <h3>✔ 已完成區</h3>
         <div class="muted">管理員已確認款項入帳的匯款紀錄；若核對錯誤，可恢復為未核對，資料不會刪除。</div>
       </div>
       <span class="pill paid" id="verifiedCount">0 筆已核對</span>
@@ -3371,7 +3403,7 @@ textarea:focus{
     </div>
 
     <div class="dolly-reminder">
-      📌 匯款資料已送出，目前為「待管理員核對」。管理員確認款項入帳後，才會移到「✅ 已核對區」。
+      📌 匯款資料已送出，目前為「待管理員核對」。管理員確認款項入帳後，才會移到「✔ 已完成區」。
     </div>
 
     <div class="modal-row">
@@ -3420,7 +3452,7 @@ const reported=p=>Number(p.amount)>0 && /^\d{5}$/.test(String(p.last5||''));
 const paid=p=>reported(p) && p.verified===true;
 const fmtTime=v=>v?new Date(v).toLocaleString('zh-TW',{hour12:false,hourCycle:'h23'}):'—';
 const toDateTimeLocal=ts=>{if(!ts)return '';const d=new Date(ts),pad=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`};
-const statusLabel=p=>paid(p)?'✅ 已核對':(reported(p)?'⏳ 待核對':'待回報');
+const statusLabel=p=>paid(p)?'✔ 已完成':(reported(p)?'⏳ 待核對':'待回報');
 const statusClass=p=>paid(p)?'paid':(reported(p)?'pending':'unpaid');
 
 function nextMemberNo(list=[...(state?.roster||[]),...(state?.people||[])]){
@@ -3871,9 +3903,9 @@ function groupPersonRows(list,mode='normal'){
       if(!hasPayment){
         action='<span class="group-quick-status unpaid">未匯款</span>';
       }else if(isVerified){
-        action='<span class="group-quick-status verified">✅ 已核對</span>';
+        action='<span class="group-quick-status verified">✔ 已完成</span>';
       }else{
-        action=`<button class="group-quick-btn verify" type="button" onclick="toggleVerification('${pay.id}',true)">✅ 快速核對</button>`;
+        action=`<button class="group-quick-btn verify" type="button" onclick="toggleVerification('${pay.id}',true)">🔍 立即核對</button>`;
       }
     }else if(isAdmin && mode==='verified'){
       action=pay
@@ -3883,7 +3915,7 @@ function groupPersonRows(list,mode='normal'){
       action=!hasPayment
         ? '<span class="group-quick-status unpaid">未匯款</span>'
         : (isVerified
-            ? '<span class="group-quick-status verified">✅ 已核對</span>'
+            ? '<span class="group-quick-status verified">✔ 已完成</span>'
             : '<span class="group-quick-status pending">⏳ 待核對</span>');
     }
 
@@ -4477,7 +4509,7 @@ function renderPublicPaymentRows(rows){
           ${hasPayment
             ? `<select class="inline-edit-status" data-roster-id="${esc(rosterId)}" data-field-index="6" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','verified',this.value)">
                 <option value="pending" ${!isVerified?'selected':''}>⏳ 待核對</option>
-                <option value="verified" ${isVerified?'selected':''}>✅ 已核對</option>
+                <option value="verified" ${isVerified?'selected':''}>✔ 已完成</option>
               </select>
               ${p.verifiedAt?`<div class="muted" style="margin-top:4px">${fmtTime(p.verifiedAt)}</div>`:''}`
             : `<span class="muted">— 尚無需核對</span>`}
@@ -4503,7 +4535,7 @@ function renderPublicPaymentRows(rows){
       <td>
         ${!hasPayment
           ? `<div class="public-verify-result muted">— 尚無需核對</div>`
-          : `<div class="public-verify-result ${isVerified?'ok':'pending'}">${isVerified?'✅ 已核對':'⏳ 待核對'}</div>
+          : `<div class="public-verify-result ${isVerified?'ok':'pending'}">${isVerified?'✔ 已完成':'⏳ 待核對'}</div>
              ${p.verifiedAt?`<div class="muted" style="margin-top:4px">${fmtTime(p.verifiedAt)}</div>`:''}`}
       </td>
     </tr>`;
@@ -4534,7 +4566,7 @@ function renderPublicPaymentRows(rows){
           <div class="person-item"><div class="k">核對結果</div><div class="v">${hasPayment
             ? `<select class="inline-edit-status" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','verified',this.value)">
                 <option value="pending" ${!isVerified?'selected':''}>⏳ 待核對</option>
-                <option value="verified" ${isVerified?'selected':''}>✅ 已核對</option>
+                <option value="verified" ${isVerified?'selected':''}>✔ 已完成</option>
               </select>`
             : '— 尚無需核對'}</div></div>
         </div>
@@ -4555,7 +4587,7 @@ function renderPublicPaymentRows(rows){
         <div class="person-item"><div class="k">帳號後五碼</div><div class="v">${esc(p.last5||'—')}</div></div>
         <div class="person-item"><div class="k">匯款金額</div><div class="v">${hasPayment?money(p.amount):'—'}</div></div>
         <div class="person-item"><div class="k">匯款時間</div><div class="v">${hasPayment?fmtTime(p.paymentAt):'—'}</div></div>
-        <div class="person-item"><div class="k">核對結果</div><div class="v public-verify-result ${isVerified?'ok':(hasPayment?'pending':'')}">${!hasPayment?'— 尚無需核對':(isVerified?'✅ 已核對':'⏳ 待核對')}</div></div>
+        <div class="person-item"><div class="k">核對結果</div><div class="v public-verify-result ${isVerified?'ok':(hasPayment?'pending':'')}">${!hasPayment?'— 尚無需核對':(isVerified?'✔ 已完成':'⏳ 待核對')}</div></div>
       </div>
       ${p.note?`<div class="note" style="margin-bottom:9px">備註：${esc(p.note)}</div>`:''}
       ${hasPayment?`<button class="btn note-edit-btn" style="width:100%" onclick="openPublicNote('${p.paymentId||p.id}')">✏️ 修改備註</button>`:''}
@@ -4650,6 +4682,7 @@ let currentAppPage='main';
 
 function switchAppPage(page){
   if(page==='admin' && !isAdmin)page='main';
+  const previousPage=currentAppPage;
   currentAppPage=page;
 
   const main=$('#mainPage');
@@ -4662,7 +4695,10 @@ function switchAppPage(page){
   if(mainTab)mainTab.classList.toggle('active',page==='main');
   if(adminTab)adminTab.classList.toggle('active',page==='admin');
 
-  window.scrollTo({top:0,behavior:'smooth'});
+  // 只有真正切換分頁時才回到頁首；資料重新 render 時維持原本位置
+  if(previousPage!==page){
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
   requestAnimationFrame(syncResizableTableWidth);
 }
 window.switchAppPage=switchAppPage;
@@ -4818,6 +4854,12 @@ function toggleVerification(id,verified){
     if(!ok)return;
   }
 
+  // 核對前先記住目前畫面位置，避免重新 render 後跳回上方
+  const pageScrollY=window.scrollY;
+  const groupStatsScrollTop=$('#groupCollectionStats')?.scrollTop||0;
+  const groupListScrolls=[...document.querySelectorAll('#groupCollectionStats .group-name-items')]
+    .map(el=>el.scrollTop);
+
   p.verified=!!verified;
   p.verifiedAt=p.verified?Date.now():null;
   p.updatedAt=Date.now();
@@ -4825,10 +4867,22 @@ function toggleVerification(id,verified){
   // 僅修改核對狀態，不刪除、不清空任何匯款回報內容
   persistAndSync();
 
+  // render 完後恢復整頁與分組名單原本捲動位置，方便接著核對下一筆
+  requestAnimationFrame(()=>{
+    window.scrollTo({top:pageScrollY,left:0,behavior:'auto'});
+    const stats=$('#groupCollectionStats');
+    if(stats)stats.scrollTop=groupStatsScrollTop;
+
+    const newLists=[...document.querySelectorAll('#groupCollectionStats .group-name-items')];
+    newLists.forEach((el,index)=>{
+      if(groupListScrolls[index]!=null)el.scrollTop=groupListScrolls[index];
+    });
+  });
+
   if(p.verified){
-    toast('已確認收款，資料已移至「已核對區」');
+    toast('已確認收款，可繼續核對下一筆');
   }else{
-    toast('已恢復為未核對，資料已移回「未核對區」並完整保留');
+    toast('已恢復為未核對，可繼續處理下一筆');
   }
 }
 window.toggleVerification=toggleVerification;
