@@ -2786,7 +2786,10 @@ textarea:focus{
   box-shadow:
     0 10px 22px rgba(80,8,22,.22),
     inset 0 0 0 10px rgba(255,255,255,.06) !important;
-  background:conic-gradient(#ffffff 0deg 300deg, rgba(255,255,255,.22) 300deg 360deg) !important;
+  background:conic-gradient(
+    #ffffff 0deg var(--ring-deg,0deg),
+    rgba(255,255,255,.22) var(--ring-deg,0deg) 360deg
+  ) !important;
 }
 
 #ring::before{
@@ -2905,6 +2908,44 @@ textarea:focus{
   background:linear-gradient(135deg,#fff0d8,#ffe1ae) !important;
   color:#8a5a00 !important;
   border:1px solid #e5c57d !important;
+}
+</style>
+
+
+<style>
+#ring .ring-in{
+  position:relative;
+  z-index:1;
+  background:#fff !important;
+}
+#ring .ring-in span{
+  color:#7f2939 !important;
+  font-weight:900 !important;
+  opacity:1 !important;
+}
+#ring::before{
+  z-index:0;
+}
+</style>
+
+
+<style>
+/* ===== 分組收款統計：名單區加高，可一次看到更多筆 ===== */
+#groupCollectionStats .group-name-items{
+  min-height:700px !important;
+  max-height:700px !important;
+  overflow-y:auto !important;
+}
+
+#groupCollectionStats .group-name-person{
+  min-height:82px !important;
+}
+
+@media(max-width:720px){
+  #groupCollectionStats .group-name-items{
+    min-height:620px !important;
+    max-height:620px !important;
+  }
 }
 </style>
 
@@ -3214,7 +3255,7 @@ textarea:focus{
   <div class="verification-section verified-section">
     <div class="verification-section-head">
       <div>
-        <h3>✔ 已完成區</h3>
+        <h3>✅ 已核對區</h3>
         <div class="muted">管理員已確認款項入帳的匯款紀錄；若核對錯誤，可恢復為未核對，資料不會刪除。</div>
       </div>
       <span class="pill paid" id="verifiedCount">0 筆已核對</span>
@@ -3403,7 +3444,7 @@ textarea:focus{
     </div>
 
     <div class="dolly-reminder">
-      📌 匯款資料已送出，目前為「待管理員核對」。管理員確認款項入帳後，才會移到「✔ 已完成區」。
+      📌 匯款資料已送出，目前為「待管理員核對」。管理員確認款項入帳後，核對結果會更新為「✅ 已核對」。
     </div>
 
     <div class="modal-row">
@@ -3452,7 +3493,7 @@ const reported=p=>Number(p.amount)>0 && /^\d{5}$/.test(String(p.last5||''));
 const paid=p=>reported(p) && p.verified===true;
 const fmtTime=v=>v?new Date(v).toLocaleString('zh-TW',{hour12:false,hourCycle:'h23'}):'—';
 const toDateTimeLocal=ts=>{if(!ts)return '';const d=new Date(ts),pad=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`};
-const statusLabel=p=>paid(p)?'✔ 已完成':(reported(p)?'⏳ 待核對':'待回報');
+const statusLabel=p=>paid(p)?'✅ 已核對':(reported(p)?'⏳ 待核對':'待回報');
 const statusClass=p=>paid(p)?'paid':(reported(p)?'pending':'unpaid');
 
 function nextMemberNo(list=[...(state?.roster||[]),...(state?.people||[])]){
@@ -4509,7 +4550,7 @@ function renderPublicPaymentRows(rows){
           ${hasPayment
             ? `<select class="inline-edit-status" data-roster-id="${esc(rosterId)}" data-field-index="6" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','verified',this.value)">
                 <option value="pending" ${!isVerified?'selected':''}>⏳ 待核對</option>
-                <option value="verified" ${isVerified?'selected':''}>✔ 已完成</option>
+                <option value="verified" ${isVerified?'selected':''}>✅ 已核對</option>
               </select>
               ${p.verifiedAt?`<div class="muted" style="margin-top:4px">${fmtTime(p.verifiedAt)}</div>`:''}`
             : `<span class="muted">— 尚無需核對</span>`}
@@ -4535,7 +4576,7 @@ function renderPublicPaymentRows(rows){
       <td>
         ${!hasPayment
           ? `<div class="public-verify-result muted">— 尚無需核對</div>`
-          : `<div class="public-verify-result ${isVerified?'ok':'pending'}">${isVerified?'✔ 已完成':'⏳ 待核對'}</div>
+          : `<div class="public-verify-result ${isVerified?'ok':'pending'}">${isVerified?'✅ 已核對':'⏳ 待核對'}</div>
              ${p.verifiedAt?`<div class="muted" style="margin-top:4px">${fmtTime(p.verifiedAt)}</div>`:''}`}
       </td>
     </tr>`;
@@ -4566,7 +4607,7 @@ function renderPublicPaymentRows(rows){
           <div class="person-item"><div class="k">核對結果</div><div class="v">${hasPayment
             ? `<select class="inline-edit-status" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','verified',this.value)">
                 <option value="pending" ${!isVerified?'selected':''}>⏳ 待核對</option>
-                <option value="verified" ${isVerified?'selected':''}>✔ 已完成</option>
+                <option value="verified" ${isVerified?'selected':''}>✅ 已核對</option>
               </select>`
             : '— 尚無需核對'}</div></div>
         </div>
@@ -4587,7 +4628,7 @@ function renderPublicPaymentRows(rows){
         <div class="person-item"><div class="k">帳號後五碼</div><div class="v">${esc(p.last5||'—')}</div></div>
         <div class="person-item"><div class="k">匯款金額</div><div class="v">${hasPayment?money(p.amount):'—'}</div></div>
         <div class="person-item"><div class="k">匯款時間</div><div class="v">${hasPayment?fmtTime(p.paymentAt):'—'}</div></div>
-        <div class="person-item"><div class="k">核對結果</div><div class="v public-verify-result ${isVerified?'ok':(hasPayment?'pending':'')}">${!hasPayment?'— 尚無需核對':(isVerified?'✔ 已完成':'⏳ 待核對')}</div></div>
+        <div class="person-item"><div class="k">核對結果</div><div class="v public-verify-result ${isVerified?'ok':(hasPayment?'pending':'')}">${!hasPayment?'— 尚無需核對':(isVerified?'✅ 已核對':'⏳ 待核對')}</div></div>
       </div>
       ${p.note?`<div class="note" style="margin-bottom:9px">備註：${esc(p.note)}</div>`:''}
       ${hasPayment?`<button class="btn note-edit-btn" style="width:100%" onclick="openPublicNote('${p.paymentId||p.id}')">✏️ 修改備註</button>`:''}
@@ -4680,7 +4721,7 @@ function bindInlineEnterNavigation(){
 
 let currentAppPage='main';
 
-function switchAppPage(page){
+function switchAppPage(page,forceTop=false){
   if(page==='admin' && !isAdmin)page='main';
   const previousPage=currentAppPage;
   currentAppPage=page;
@@ -4696,7 +4737,7 @@ function switchAppPage(page){
   if(adminTab)adminTab.classList.toggle('active',page==='admin');
 
   // 只有真正切換分頁時才回到頁首；資料重新 render 時維持原本位置
-  if(previousPage!==page){
+  if(forceTop || previousPage!==page){
     window.scrollTo({top:0,behavior:'smooth'});
   }
   requestAnimationFrame(syncResizableTableWidth);
@@ -4744,7 +4785,7 @@ function render(){
   $('#ringPct').textContent=Math.round(paymentPct)+'%';
   $('#ringCaption').textContent=`已繳 ${reportedN} / 應繳 ${total} 人`;
   const deg=Math.min(360,Math.max(0,paymentPct*3.6));
-  $('#ring').style.background=`conic-gradient(#fff 0deg ${deg}deg,#efd8de ${deg}deg 360deg)`;
+  $('#ring').style.setProperty('--ring-deg',`${deg}deg`);
 
   // 收款完成進度
   $('#progress').style.width=Math.min(100,paymentPct)+'%';
@@ -4926,8 +4967,8 @@ $('#backToMainBtn').onclick=()=>switchAppPage('main');
 
 $$('[data-close]').forEach(b=>b.onclick=()=>$('#'+b.dataset.close).classList.remove('show'));
 $('#adminBtn').onclick=()=>{$('#adminPassword').value='';$('#loginModal').classList.add('show');setTimeout(()=>$('#adminPassword').focus(),50)};
-$('#loginSubmit').onclick=()=>{if($('#adminPassword').value===ADMIN_PASSWORD){isAdmin=true;sessionStorage.setItem('payment_admin','1');$('#loginModal').classList.remove('show');currentAppPage='admin';render();toast('已進入管理者控制台')}else alert('密碼錯誤')};
-$('#logoutBtn').onclick=()=>{isAdmin=false;sessionStorage.removeItem('payment_admin');currentAppPage='main';render();toast('已登出管理模式')};
+$('#loginSubmit').onclick=()=>{if($('#adminPassword').value===ADMIN_PASSWORD){isAdmin=true;sessionStorage.setItem('payment_admin','1');$('#loginModal').classList.remove('show');render();switchAppPage('admin',true);toast('已進入管理者控制台')}else alert('密碼錯誤')};
+$('#logoutBtn').onclick=()=>{isAdmin=false;sessionStorage.removeItem('payment_admin');currentAppPage='main';render();window.scrollTo({top:0,behavior:'smooth'});toast('已登出管理模式')};
 $('#adminPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginSubmit').click()});
 $('#adminToggleBtn').onclick=()=>{adminPanelOpen=!adminPanelOpen;localStorage.setItem('payment_admin_panel_open',adminPanelOpen?'1':'0');render()};
 
@@ -5062,7 +5103,7 @@ $('#selfAddBtn').onclick=()=>{
   );
 
   // 防呆：同一個 LINE 名稱只能送出一次
-  if(existing && hasPaymentData(existing)){
+  if(existing && reported(existing)){
     alert(
       paid(existing)
         ? `「${lineName}」已完成匯款回報並已核對，不能重複送出。`
