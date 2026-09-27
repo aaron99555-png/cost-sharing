@@ -2949,6 +2949,113 @@ textarea:focus{
 }
 </style>
 
+
+<style>
+/* ===== 分組收款統計：可排序表格抬頭 ===== */
+#groupCollectionStats .group-sort-row{
+  display:grid;
+  grid-template-columns:.72fr 1.15fr .88fr .82fr 1.15fr;
+  gap:1px;
+  background:#edc9cf;
+  border-bottom:1px solid #e3b8c0;
+}
+
+#groupCollectionStats .group-sort-btn{
+  appearance:none;
+  border:0;
+  border-radius:0;
+  min-width:0;
+  padding:8px 5px;
+  background:#fff0f2;
+  color:#792033;
+  font-size:10px;
+  font-weight:900;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  white-space:nowrap;
+  transition:.15s ease;
+}
+
+#groupCollectionStats .group-sort-btn:hover{
+  background:#ffe2e7;
+}
+
+#groupCollectionStats .group-sort-btn.active{
+  background:#c92339;
+  color:#fff;
+}
+
+#groupCollectionStats .group-sort-btn span{
+  font-size:11px;
+  line-height:1;
+}
+
+@media(max-width:720px){
+  #groupCollectionStats .group-sort-row{
+    grid-template-columns:.75fr 1fr .85fr .78fr 1.12fr;
+  }
+  #groupCollectionStats .group-sort-btn{
+    padding:8px 2px;
+    font-size:9px;
+  }
+}
+</style>
+
+
+<style>
+/* ===== 人名旁分組標籤 ===== */
+.member-group-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  vertical-align:middle;
+  margin-left:6px;
+  padding:3px 8px;
+  border-radius:999px;
+  font-size:10px;
+  line-height:1.2;
+  font-weight:950;
+  white-space:nowrap;
+  letter-spacing:.2px;
+}
+.member-group-badge.assigned{
+  background:#c92339;
+  color:#fff !important;
+  border:1px solid #ad172c;
+  box-shadow:0 3px 8px rgba(174,24,45,.14);
+}
+.member-group-badge.unassigned{
+  background:#f1ecee;
+  color:#69575d !important;
+  border:1px solid #d8cbd0;
+}
+.name-with-group{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:2px;
+}
+.name-with-group .inline-edit{
+  flex:1 1 130px;
+  min-width:0;
+}
+.field label .member-group-badge{
+  margin-left:5px;
+}
+#groupCollectionStats .who .member-group-badge{
+  margin-left:8px;
+}
+@media(max-width:720px){
+  .member-group-badge{
+    font-size:10px;
+    padding:3px 7px;
+  }
+}
+</style>
+
 </head>
 <body>
 <div class="wrap" id="app">
@@ -3895,6 +4002,26 @@ function paymentGroupForNo(memberNo){
     return s!==null&&e!==null&&n>=s&&n<=e;
   })||null;
 }
+
+function paymentGroupIndexForNo(memberNo){
+  const n=memberNoValue(memberNo);
+  if(n===null)return -1;
+  const groups=[...(state.settings.paymentGroups||[])]
+    .sort((a,b)=>(memberNoValue(a.start)||0)-(memberNoValue(b.start)||0));
+  return groups.findIndex(g=>{
+    const s=memberNoValue(g.start),e=memberNoValue(g.end);
+    return s!==null&&e!==null&&n>=s&&n<=e;
+  });
+}
+function groupLabelForNo(memberNo){
+  const index=paymentGroupIndexForNo(memberNo);
+  return index>=0?`第 ${index+1} 組`:'未分組';
+}
+function groupBadgeForNo(memberNo){
+  const index=paymentGroupIndexForNo(memberNo);
+  return `<span class="member-group-badge ${index>=0?'assigned':'unassigned'}">${index>=0?`第 ${index+1} 組`:'未分組'}</span>`;
+}
+
 function renderPaymentGroups(){
   const box=$('#groupList');
   if(!box)return;
@@ -3971,8 +4098,8 @@ function updateBankLookup(){
   box.classList.add('show');
   box.classList.toggle('bank-lookup-missing',!g);
   $('#bankLookupMember').textContent=p
-    ? `編號 ${memberNo}｜${p.lineName||p.name||''}`
-    : `新加入預計編號 ${memberNo}｜${q}`;
+    ? `編號 ${memberNo}｜${p.lineName||p.name||''}｜${groupLabelForNo(memberNo)}`
+    : `新加入預計編號 ${memberNo}｜${q}｜${groupLabelForNo(memberNo)}`;
   if(g){
     $('#bankLookupTitle').textContent='您的指定匯款帳號';
     $('#bankLookupBankCode').textContent=g.bankCode||'—';
@@ -4003,7 +4130,7 @@ function renderPublicLookupOptions(){
     String(a.memberNo||'').localeCompare(String(b.memberNo||''),'zh-Hant',{numeric:true})
   );
   sel.innerHTML='<option value="">請選擇 LINE 名稱</option>'+
-    people.map(p=>`<option value="${esc(p.id)}">${esc(p.memberNo||'—')}｜${esc(p.lineName||p.name||'')}</option>`).join('');
+    people.map(p=>`<option value="${esc(p.id)}">${esc(p.memberNo||'—')}｜${esc(p.lineName||p.name||'')}｜${groupLabelForNo(p.memberNo)}</option>`).join('');
   if(people.some(p=>p.id===current))sel.value=current;
 }
 function showPublicBankResult(){
@@ -4082,6 +4209,91 @@ function paymentForRosterMember(member){
     (nameKey(member.lineName||member.name) && nameKey(p.lineName||p.name)===nameKey(member.lineName||member.name))
   )||null;
 }
+
+let groupStatsSortKey='memberNo';
+let groupStatsSortDir='asc';
+
+function groupStatsSortArrow(key){
+  if(groupStatsSortKey!==key)return '↕';
+  return groupStatsSortDir==='asc'?'↑':'↓';
+}
+
+function groupStatsSortButton(key,label){
+  const active=groupStatsSortKey===key?' active':'';
+  return `<button class="group-sort-btn${active}" type="button"
+    onclick="toggleGroupStatsSort('${key}')">${label}<span>${groupStatsSortArrow(key)}</span></button>`;
+}
+
+function groupStatsSortValue(member,key){
+  const pay=paymentForRosterMember(member);
+  if(key==='memberNo')return memberNoValue(member.memberNo)||0;
+  if(key==='lineName')return nameKey(member.lineName||member.name);
+  if(key==='last5')return String(pay?.last5||'');
+  if(key==='amount')return Number(pay?.amount)||0;
+  if(key==='paymentAt')return pay?.paymentAt?Number(pay.paymentAt):null;
+  return 0;
+}
+
+function sortGroupStatsMembers(list){
+  const arr=[...list];
+  const key=groupStatsSortKey;
+  const dir=groupStatsSortDir==='asc'?1:-1;
+
+  arr.sort((a,b)=>{
+    const av=groupStatsSortValue(a,key);
+    const bv=groupStatsSortValue(b,key);
+
+    // 匯款時間沒有資料者固定排最後，方便管理員先核對已匯款資料。
+    if(key==='paymentAt'){
+      const aMissing=av===null;
+      const bMissing=bv===null;
+      if(aMissing!==bMissing)return aMissing?1:-1;
+      if(aMissing&&bMissing){
+        return ((memberNoValue(a.memberNo)||0)-(memberNoValue(b.memberNo)||0));
+      }
+    }
+
+    if(typeof av==='string' || typeof bv==='string'){
+      const cmp=String(av).localeCompare(String(bv),'zh-Hant',{numeric:true,sensitivity:'base'});
+      if(cmp!==0)return cmp*dir;
+    }else if(av!==bv){
+      return (Number(av)-Number(bv))*dir;
+    }
+
+    return ((memberNoValue(a.memberNo)||0)-(memberNoValue(b.memberNo)||0));
+  });
+  return arr;
+}
+
+function groupStatsSortHeader(){
+  return `<div class="group-sort-row">
+    ${groupStatsSortButton('memberNo','編號')}
+    ${groupStatsSortButton('lineName','LINE名稱')}
+    ${groupStatsSortButton('last5','後五碼')}
+    ${groupStatsSortButton('amount','金額')}
+    ${groupStatsSortButton('paymentAt','匯款時間')}
+  </div>`;
+}
+
+function toggleGroupStatsSort(key){
+  const pageY=window.scrollY;
+  if(groupStatsSortKey===key){
+    groupStatsSortDir=groupStatsSortDir==='asc'?'desc':'asc';
+  }else{
+    groupStatsSortKey=key;
+    groupStatsSortDir='asc';
+  }
+
+  renderGroupCollectionStats();
+
+  requestAnimationFrame(()=>{
+    window.scrollTo({top:pageY,left:0,behavior:'auto'});
+    document.querySelectorAll('#groupCollectionStats .group-name-items')
+      .forEach(el=>el.scrollTop=0);
+  });
+}
+window.toggleGroupStatsSort=toggleGroupStatsSort;
+
 function groupPersonRows(list,mode='normal'){
   if(!list.length)return '<div class="group-name-empty">目前無人員</div>';
 
@@ -4129,7 +4341,7 @@ function groupPersonRows(list,mode='normal'){
 
     return `<div class="group-name-person ${isAdmin&&(mode==='receivable'||mode==='verified')?'actionable':''}">
       <div class="group-person-main">
-        <div class="who"><strong>${esc(member.memberNo||'—')}</strong>｜${esc(member.lineName||member.name||'')}</div>
+        <div class="who"><strong>${esc(member.memberNo||'—')}</strong>｜${esc(member.lineName||member.name||'')} ${groupBadgeForNo(member.memberNo)}</div>
         ${detail}
       </div>
       ${action?`<div class="group-person-action">${action}</div>`:''}
@@ -4204,18 +4416,21 @@ function renderGroupCollectionStats(){
             <span>應收款名單 <small class="group-fast-hint">｜已匯款者可快速核對</small></span>
             <span>${members.length} 人</span>
           </div>
-          <div class="group-name-items">${groupPersonRows(members,'receivable')}</div>
+          ${groupStatsSortHeader()}
+          <div class="group-name-items">${groupPersonRows(sortGroupStatsMembers(members),'receivable')}</div>
         </div>
         <div class="group-name-box">
           <div class="group-name-head">
             <span>已核對名單 <small class="group-fast-hint">｜可快速取消</small></span>
             <span>${paidMembers.length} 人</span>
           </div>
-          <div class="group-name-items">${groupPersonRows(paidMembers,'verified')}</div>
+          ${groupStatsSortHeader()}
+          <div class="group-name-items">${groupPersonRows(sortGroupStatsMembers(paidMembers),'verified')}</div>
         </div>
         <div class="group-name-box">
           <div class="group-name-head"><span>未核對名單</span><span>${unpaidMembers.length} 人</span></div>
-          <div class="group-name-items">${groupPersonRows(unpaidMembers,'pending')}</div>
+          ${groupStatsSortHeader()}
+          <div class="group-name-items">${groupPersonRows(sortGroupStatsMembers(unpaidMembers),'pending')}</div>
         </div>
       </div>
     </div>`;
@@ -4444,7 +4659,7 @@ function renderPaymentRows(rows,verifiedSection=false){
     <td class="admin-cell"><input type="checkbox" ${p.selected?'checked':''} onchange="toggleSelect('${p.id}',this.checked)"></td>
     <td><strong>${esc(p.memberNo||'—')}</strong></td>
     <td>
-      <div class="name">${esc(p.lineName||p.name||'')}</div>
+      <div class="name name-with-group">${esc(p.lineName||p.name||'')} ${groupBadgeForNo(p.memberNo)}</div>
       ${state.settings.showBankInList!==false && paymentGroupForNo(p.memberNo)?`<div class="list-bank-info">應匯款：${esc(paymentGroupForNo(p.memberNo).bank)}｜收款人：${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}
     </td>
     <td>
@@ -4687,7 +4902,10 @@ function renderPublicPaymentRows(rows){
       return `<tr data-roster-id="${esc(rosterId)}" style="box-shadow:inset 4px 0 0 ${isVerified?'#c84455':(hasPayment?'#d7a03b':'#cfc3c7')}">
         <td><input class="inline-edit" data-roster-id="${esc(rosterId)}" data-field-index="0" value="${esc(p.memberNo||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','memberNo',this.value)" aria-label="編號"></td>
         <td>
-          <input class="inline-edit" data-roster-id="${esc(rosterId)}" data-field-index="1" value="${esc(p.lineName||p.name||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','lineName',this.value)" aria-label="LINE名稱">
+          <div class="name-with-group">
+            <input class="inline-edit" data-roster-id="${esc(rosterId)}" data-field-index="1" value="${esc(p.lineName||p.name||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','lineName',this.value)" aria-label="LINE名稱">
+            ${groupBadgeForNo(p.memberNo)}
+          </div>
           ${state.settings.showBankInList!==false && paymentGroupForNo(p.memberNo)?`<div class="list-bank-info">應匯款：${esc(paymentGroupForNo(p.memberNo).bank)}｜收款人：${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}
         </td>
         <td><input class="inline-edit" data-roster-id="${esc(rosterId)}" data-field-index="2" inputmode="numeric" maxlength="5" value="${esc(p.last5||'')}" placeholder="未匯款" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','last5',this.value)" aria-label="帳號後五碼"></td>
@@ -4712,7 +4930,7 @@ function renderPublicPaymentRows(rows){
     return `<tr style="box-shadow:inset 4px 0 0 ${isVerified?'#c84455':(hasPayment?'#d7a03b':'#cfc3c7')}">
       <td><strong>${esc(p.memberNo||'—')}</strong></td>
       <td>
-        <div class="name">${esc(p.lineName||p.name||'')}</div>
+        <div class="name name-with-group">${esc(p.lineName||p.name||'')} ${groupBadgeForNo(p.memberNo)}</div>
         ${state.settings.showBankInList!==false && paymentGroupForNo(p.memberNo)?`<div class="list-bank-info">應匯款：${esc(paymentGroupForNo(p.memberNo).bank)}｜收款人：${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}
       </td>
       <td>${esc(p.last5||'—')}</td>
@@ -4744,7 +4962,7 @@ function renderPublicPaymentRows(rows){
         <div class="person-top">
           <div style="width:100%">
             <div class="field"><label>編號</label><input class="inline-edit" value="${esc(p.memberNo||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','memberNo',this.value)"></div>
-            <div class="field" style="margin-top:7px"><label>LINE名稱</label><input class="inline-edit" value="${esc(p.lineName||p.name||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','lineName',this.value)"></div>
+            <div class="field" style="margin-top:7px"><label>LINE名稱 ${groupBadgeForNo(p.memberNo)}</label><input class="inline-edit" value="${esc(p.lineName||p.name||'')}" onchange="inlineAdminUpdate('${rosterId}','${paymentId}','lineName',this.value)"></div>
           </div>
         </div>
         <div class="person-grid">
@@ -4769,7 +4987,7 @@ function renderPublicPaymentRows(rows){
     return `<div class="person-card" style="border-left:4px solid ${isVerified?'#c84455':(hasPayment?'#d7a03b':'#cfc3c7')}">
       <div class="person-top">
         <div>
-          <div class="person-name">${esc(p.lineName||p.name||'')}</div>
+          <div class="person-name name-with-group">${esc(p.lineName||p.name||'')} ${groupBadgeForNo(p.memberNo)}</div>
           <div class="muted">編號 ${esc(p.memberNo||'—')}</div>
           ${state.settings.showBankInList!==false && paymentGroupForNo(p.memberNo)?`<div class="list-bank-info">🏦 應匯款：${esc(paymentGroupForNo(p.memberNo).bank)}｜收款人：${esc(paymentGroupForNo(p.memberNo).recipient)}</div>`:''}
         </div>
